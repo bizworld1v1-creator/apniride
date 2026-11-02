@@ -27,22 +27,32 @@ Low commission, daily payouts to JazzCash / Easypaisa, family health insurance a
 ## Rewards
 Points per ride → mobile load, petrol, Daraz vouchers.
 
-## Proposed tech stack (confirm before building)
-- **Mobile apps:** Flutter (one codebase for Android + iOS) – separate Passenger and Driver apps
-- **Backend:** Node.js + TypeScript (NestJS), REST + WebSockets for live tracking
-- **Database:** PostgreSQL + PostGIS (geo queries), Redis (live driver locations, matching)
-- **Maps:** Google Maps Platform (consider cheaper alternatives later)
+## Tech stack (decided – use this)
+- **Monorepo:** Turborepo + pnpm workspaces
+- **apps/passenger, apps/driver:** Expo (latest SDK) + TypeScript, Expo Router, EAS Build + EAS Update (OTA),
+  react-native-maps (Google Maps on both Android and iOS), expo-location (background location in the driver app),
+  TanStack Query, Zustand, React Hook Form + Zod, i18next (English + Urdu, RTL), Sentry
+- **apps/admin:** Next.js + TypeScript (placeholder for now)
+- **backend:** NestJS + TypeScript, PostgreSQL + PostGIS, Redis, Socket.IO (Redis adapter), BullMQ
+- **packages/shared:** shared types, Zod schemas and the API client used by all apps
+- **Local infra:** `docker-compose.yml` with PostgreSQL + PostGIS and Redis
 - **Payments:** Cash first, then JazzCash / Easypaisa wallets
-- **Admin panel:** React (Next.js)
-- **Infra:** Docker, deploy on a cloud VPS / AWS to start
 
-## Repo layout (planned)
+### Engineering priorities
+- Optimise for **low-end Android phones and weak internet**: small bundles, few re-renders, cache with TanStack Query,
+  retry/offline-tolerant requests, throttle location updates, avoid heavy animations.
+- **Phone numbers stay masked** – never send a real phone number to the other party's app or log it.
+- **Feature flags per city** – every new feature is switchable per city (e.g. Lahore on, Karachi off).
+
+## Repo layout
 ```
-/apps/passenger    Flutter passenger app
-/apps/driver       Flutter driver app
-/apps/admin        Next.js admin panel
-/backend           NestJS API + WebSocket server
+/apps/passenger    Expo passenger app
+/apps/driver       Expo driver app
+/apps/admin        Next.js admin panel (placeholder)
+/backend           NestJS API + Socket.IO server
+/packages/shared   Shared types, Zod schemas, API client
 /docs              Specs, decisions
+docker-compose.yml PostgreSQL + PostGIS, Redis
 ```
 
 ## Version 1 scope (MVP – one city, e.g. Lahore)
