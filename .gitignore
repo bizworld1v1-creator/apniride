@@ -14,20 +14,22 @@ coverage/
 npm-debug.log*
 yarn-error.log*
 
-# Flutter / Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-**/android/.gradle/
-**/android/local.properties
-**/android/app/google-services.json
-**/ios/Pods/
-**/ios/Runner/GoogleService-Info.plist
+# Turborepo
+.turbo/
+
+# Expo / React Native
+.expo/
+expo-env.d.ts
+web-build/
+/apps/*/android/
+/apps/*/ios/
 *.jks
 *.keystore
+*.p8
+*.p12
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
 
 # OS / editors
 .DS_Store

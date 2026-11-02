@@ -1,0 +1,24 @@
+{
+  "name": "apniride",
+  "private": true,
+  "description": "ApniRide – trust-first ride-hailing for Pakistan",
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "backend": "pnpm --filter @apniride/backend start:dev",
+    "passenger": "pnpm --filter @apniride/passenger start",
+    "driver": "pnpm --filter @apniride/driver start"
+  },
+  "devDependencies": {
+    "turbo": "^2.11.10"
+  }
+}
