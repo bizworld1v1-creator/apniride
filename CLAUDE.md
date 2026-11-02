@@ -1,4 +1,6 @@
-# Project: Ride-Hailing App for Pakistan (working name: TBD)
+# Project: ApniRide — Ride-Hailing App for Pakistan
+
+Repo: https://github.com/bizworld1v1-creator/apniride
 
 This file gives Claude Code the context for this project. Keep it updated as decisions change.
 

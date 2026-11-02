@@ -1,4 +1,4 @@
-# ride-app
+# ApniRide
 
 Trust-first ride-hailing app for Pakistan. *Thanda safar, mehfooz safar, waqt pe safar.*
 
@@ -13,8 +13,8 @@ See [CLAUDE.md](CLAUDE.md) for the product vision, signature features, v1 scope 
 3. Clone this repo and start Claude Code:
 
 ```
-git clone https://github.com/bizworld1v1-creator/ride-app.git
-cd ride-app
+git clone https://github.com/bizworld1v1-creator/apniride.git
+cd apniride
 claude
 ```
 
