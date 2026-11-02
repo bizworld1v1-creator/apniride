@@ -14,7 +14,7 @@
     "test": "turbo run test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
-    "backend": "pnpm --filter @apniride/backend start:dev",
+    "backend": "turbo run dev --filter=@apniride/backend",
     "passenger": "pnpm --filter @apniride/passenger start",
     "driver": "pnpm --filter @apniride/driver start"
   },
