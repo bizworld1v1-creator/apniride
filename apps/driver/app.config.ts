@@ -31,6 +31,8 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-status-bar',
+    'expo-secure-store',
+    ['expo-splash-screen', { backgroundColor: '#FFFFFF', image: './assets/splash-icon.png', imageWidth: 120 }],
     ['expo-localization', { supportsRTL: true }],
     [
       'expo-location',
