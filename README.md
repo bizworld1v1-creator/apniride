@@ -71,7 +71,21 @@ If Docker isn't running you'll get HTTP 503 with `"status":"degraded"`.
 7. First time only: enter your name. Then allow location when asked. You should see a map of Lahore,
    your blue location dot, and a green "Server connected" dot. You stay signed in after closing the app.
 8. Tap **Where to?**, drag the map so the 📍 pin is on your destination, then **Confirm destination**. You get a
-   fixed fare for Bike and Car (AC). Booking itself comes next.
+   fixed fare for Bike and Car (AC).
+
+### Try a whole ride (passenger + driver)
+
+You can do this on **one phone**: run `pnpm passenger` and `pnpm driver` in two terminals, open both in Expo Go
+and switch between them. Using the same number in both apps is fine in development.
+
+1. **Driver app**: sign in → pick **Bike** or **Car** → **Go online**. You'll see "Waiting for ride requests…".
+2. **Passenger app**: Where to? → pick a destination → choose the **same vehicle type** as the driver → **Book**.
+3. **Driver app**: the phone vibrates and shows the offer with a 15-second countdown → **Accept**.
+4. **Driver app**: **I've arrived** → **Start ride** → **Complete ride**. The passenger app follows each step
+   live and ends with "Please pay Rs … in cash".
+
+The driver must be within 5 km of the pickup. Pickup is the passenger's GPS position, so on one phone it always is.
+If nobody accepts within 2 minutes, the passenger sees "No drivers available".
 
 The apps find the backend automatically at `http://<your PC's IP>:3000`.
 To point them somewhere else, set `EXPO_PUBLIC_API_URL` in `apps/<app>/.env`.
@@ -137,5 +151,6 @@ pnpm start:dev-client                       # then open the installed dev build 
 - [ ] Admin panel (placeholder only)
 - [x] Phone OTP signup – passenger + driver (dev SMS only; see [docs/auth.md](docs/auth.md))
 - [x] Fixed fare estimate: bike + car (AC), per-city rates, 10-min quotes (see [docs/fares.md](docs/fares.md))
+- [x] Booking + dispatch: driver goes online, nearest driver gets a 15 s offer, accept → arrived → start → complete, cancel by either side (see [docs/rides.md](docs/rides.md))
+- [ ] Live driver tracking on the passenger map
 - [ ] Real SMS provider
-- [ ] Booking, matching, live tracking (Socket.IO)
