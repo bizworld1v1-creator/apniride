@@ -70,6 +70,8 @@ If Docker isn't running you'll get HTTP 503 with `"status":"degraded"`.
    automatically.
 7. First time only: enter your name. Then allow location when asked. You should see a map of Lahore,
    your blue location dot, and a green "Server connected" dot. You stay signed in after closing the app.
+8. Tap **Where to?**, drag the map so the 📍 pin is on your destination, then **Confirm destination**. You get a
+   fixed fare for Bike and Car (AC). Booking itself comes next.
 
 The apps find the backend automatically at `http://<your PC's IP>:3000`.
 To point them somewhere else, set `EXPO_PUBLIC_API_URL` in `apps/<app>/.env`.
@@ -134,5 +136,6 @@ pnpm start:dev-client                       # then open the installed dev build 
 - [x] Driver app: map screen + go-online toggle
 - [ ] Admin panel (placeholder only)
 - [x] Phone OTP signup – passenger + driver (dev SMS only; see [docs/auth.md](docs/auth.md))
+- [x] Fixed fare estimate: bike + car (AC), per-city rates, 10-min quotes (see [docs/fares.md](docs/fares.md))
 - [ ] Real SMS provider
 - [ ] Booking, matching, live tracking (Socket.IO)
