@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
-import { type BookRideBody, bookRideBodySchema, type CurrentRideResponse, type Ride } from '@apniride/shared';
+import { type BookRideBody, bookRideBodySchema, type CurrentRideResponse, type DriverPosition, type Ride } from '@apniride/shared';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { assertRole } from '../auth/roles.js';
@@ -33,6 +33,15 @@ export class RidesController {
   @Get(':id')
   get(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string): Promise<Ride> {
     return this.rides.get(me.userId, id);
+  }
+
+  @Get(':id/driver-location')
+  async driverLocation(
+    @CurrentUser() me: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ position: DriverPosition | null }> {
+    assertRole(me, 'passenger');
+    return { position: await this.rides.driverPosition(me.userId, id) };
   }
 
   @Post(':id/cancel')

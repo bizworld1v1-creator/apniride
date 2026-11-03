@@ -4,6 +4,7 @@ import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import {
   authSessionSchema,
+  type DriverPosition,
   fareEstimateResponseSchema,
   type LatLng,
   requestOtpResponseSchema,
@@ -169,15 +170,49 @@ describe('Booking and dispatch (e2e)', () => {
     // No phone numbers anywhere in what the apps get.
     expect(JSON.stringify(acceptRes.body)).not.toMatch(/\+92|phone/i);
 
+    // Live tracking: the driver's position reaches the passenger with an ETA to the pickup.
+    const approach = { latitude: pickup.latitude + 0.01, longitude: pickup.longitude };
+    const toPickup = next<DriverPosition>(passenger.socket, SOCKET_EVENTS.rideDriverLocation, (p) => p.rideId === ride.id);
+    driver.socket.emit(SOCKET_EVENTS.driverLocation, { ...approach, heading: 180 });
+    const pos = await toPickup;
+    expect(pos).toMatchObject({ location: approach, heading: 180, ageSeconds: 0 });
+    expect(pos.distanceKm).toBeCloseTo(1.5, 1);
+    expect(pos.etaMin).toBeGreaterThan(0);
+    // A passenger who reconnects can fetch it; nobody else can.
+    const fetched = (await http().get(`/rides/${ride.id}/driver-location`).set(passenger.auth).expect(200)).body;
+    expect(fetched.position.location).toEqual(approach);
+    const stranger = await signIn('passenger', 'Stranger');
+    await http().get(`/rides/${ride.id}/driver-location`).set(stranger.auth).expect(404);
+
     for (const [step, status] of [
       ['arrived', 'arrived'],
       ['start', 'in_progress'],
-      ['complete', 'completed'],
     ] as const) {
       const seen = update(passenger, ride.id, status);
       await http().post(`/driver/rides/${ride.id}/${step}`).set(driver.auth).expect(200);
       await seen;
     }
+
+    // On board: the ETA now counts to the destination.
+    const toDropoff = next<DriverPosition>(passenger.socket, SOCKET_EVENTS.rideDriverLocation, (p) => p.rideId === ride.id);
+    driver.socket.emit(SOCKET_EVENTS.driverLocation, pickup);
+    const onBoard = await toDropoff;
+    expect(onBoard.distanceKm).toBeGreaterThan(2.5); // pickup → DROPOFF is ~3 km straight line
+
+    const completed = update(passenger, ride.id, 'completed');
+    await http().post(`/driver/rides/${ride.id}/complete`).set(driver.auth).expect(200);
+    await completed;
+
+    // After the ride, the passenger never sees the driver's location again.
+    driver.socket.emit(SOCKET_EVENTS.driverLocation, approach);
+    await new Promise((r) => setTimeout(r, 700));
+    const leaked = received.get(passenger.socket)!.filter(
+      (e) => e.event === SOCKET_EVENTS.rideDriverLocation && !e.used,
+    );
+    expect(leaked).toHaveLength(0);
+    expect((await http().get(`/rides/${ride.id}/driver-location`).set(passenger.auth).expect(200)).body).toEqual({
+      position: null,
+    });
     // Retrying a step after a lost response is harmless.
     await http().post(`/driver/rides/${ride.id}/complete`).set(driver.auth).expect(200);
 

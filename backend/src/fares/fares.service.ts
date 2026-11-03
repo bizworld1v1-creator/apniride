@@ -89,6 +89,12 @@ export class FaresService {
     return quote.userId === userId ? quote : null;
   }
 
+  /** Typical city speed for this vehicle type, for ETAs. Falls back to 20 km/h if the rate is missing. */
+  async avgSpeedKmh(city: CityCode, vehicleType: FareRate['vehicleType']): Promise<number> {
+    const rate = (await this.ratesFor(city)).find((r) => r.vehicleType === vehicleType);
+    return rate?.avgSpeedKmh ?? 20;
+  }
+
   private async ratesFor(city: CityCode): Promise<FareRate[]> {
     const cached = this.ratesCache.get(city);
     if (cached && Date.now() - cached.at < RATES_CACHE_MS) return cached.rates;

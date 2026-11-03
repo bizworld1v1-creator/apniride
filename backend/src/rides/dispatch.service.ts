@@ -14,6 +14,7 @@ import { AppException } from '../common/app-exception.js';
 import { bullConnection, compareAndDelete } from '../common/redis-scripts.js';
 import type { Env } from '../config/env.js';
 import { DriversService } from '../drivers/drivers.service.js';
+import { TrackingService } from '../drivers/tracking.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
 import { REDIS } from '../redis/redis.module.js';
 import { type RideRecord, RidesRepository, toRide } from './rides.repository.js';
@@ -58,6 +59,7 @@ export class DispatchService implements OnModuleInit, OnApplicationShutdown {
     private readonly drivers: DriversService,
     private readonly rides: RidesRepository,
     private readonly realtime: RealtimeGateway,
+    private readonly tracking: TrackingService,
   ) {
     this.offerTimeoutS = config.get('OFFER_TIMEOUT_SECONDS', { infer: true });
     this.searchTimeoutS = config.get('SEARCH_TIMEOUT_SECONDS', { infer: true });
@@ -119,6 +121,14 @@ export class DispatchService implements OnModuleInit, OnApplicationShutdown {
     }
 
     await this.drivers.setBusy(driverId, rideId);
+    await this.tracking.start({
+      rideId,
+      passengerId: ride.passengerId,
+      city: ride.city,
+      vehicleType: ride.vehicleType,
+      pickup: ride.pickup,
+      dropoff: ride.dropoff,
+    });
     await this.rides.respondOffer(rideId, driverId, 'accepted');
     this.broadcast(ride);
     return toRide(ride);

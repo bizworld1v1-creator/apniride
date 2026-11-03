@@ -1,7 +1,8 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import type { BookRideBody, DriverCurrentResponse, Ride, RideStatus } from '@apniride/shared';
+import type { BookRideBody, DriverCurrentResponse, DriverPosition, Ride, RideStatus } from '@apniride/shared';
 import { AppException } from '../common/app-exception.js';
 import { DriversService } from '../drivers/drivers.service.js';
+import { TrackingService } from '../drivers/tracking.service.js';
 import { FaresService } from '../fares/fares.service.js';
 import { DispatchService } from './dispatch.service.js';
 import { type RideRecord, RidesRepository, toRide } from './rides.repository.js';
@@ -20,6 +21,7 @@ export class RidesService {
     private readonly fares: FaresService,
     private readonly drivers: DriversService,
     private readonly dispatch: DispatchService,
+    private readonly tracking: TrackingService,
   ) {}
 
   // ---------------------------------------------------------------- passenger
@@ -78,6 +80,14 @@ export class RidesService {
     return toRide(ride);
   }
 
+  /** The passenger's view of where their driver is. Null outside an active ride with a driver. */
+  async driverPosition(passengerId: string, rideId: string): Promise<DriverPosition | null> {
+    const ride = await this.rides.find(rideId);
+    if (!ride || ride.passengerId !== passengerId) throw notFound();
+    if (!ride.driverId || !['accepted', 'arrived', 'in_progress'].includes(ride.status)) return null;
+    return this.tracking.lastPosition(rideId, ride.driverId);
+  }
+
   async cancelByPassenger(passengerId: string, rideId: string): Promise<Ride> {
     const before = await this.rides.find(rideId);
     if (!before || before.passengerId !== passengerId) throw notFound();
@@ -90,6 +100,7 @@ export class RidesService {
     if (!ride) throw invalidState();
 
     await this.dispatch.withdrawOffer(rideId);
+    await this.tracking.stop(rideId);
     if (before.driverId) await this.drivers.clearBusy(before.driverId, rideId);
     this.dispatch.broadcast(ride, { toDriverId: before.driverId });
     return toRide(ride);
@@ -109,12 +120,16 @@ export class RidesService {
     return this.driverStep(driverId, rideId, ['accepted'], 'arrived', 'arrived_at = now()');
   }
 
-  start(driverId: string, rideId: string) {
-    return this.driverStep(driverId, rideId, ['arrived'], 'in_progress', 'started_at = now()');
+  async start(driverId: string, rideId: string): Promise<Ride> {
+    const ride = await this.driverStep(driverId, rideId, ['arrived'], 'in_progress', 'started_at = now()');
+    // ETA now counts to the destination.
+    await this.tracking.passengerOnBoard(rideId);
+    return ride;
   }
 
   async complete(driverId: string, rideId: string): Promise<Ride> {
     const ride = await this.driverStep(driverId, rideId, ['in_progress'], 'completed', 'completed_at = now()');
+    await this.tracking.stop(rideId);
     await this.drivers.clearBusy(driverId, rideId);
     return ride;
   }
@@ -130,6 +145,7 @@ export class RidesService {
             cancelled_by = 'driver', search_started_at = now()`,
     });
     if (!ride) throw invalidState();
+    await this.tracking.stop(rideId);
     await this.drivers.clearBusy(driverId, rideId);
     await this.dispatch.markTried(rideId, driverId);
     this.dispatch.broadcast(ride);
