@@ -55,7 +55,8 @@ export default function DriverHomeScreen() {
   const follow = useCallback((p: LatLng) => {
     mapRef.current?.animateCamera({ center: p }, { duration: 400 });
   }, []);
-  useLocationSharing(online, follow);
+  // Keep sharing during a ride even if the driver went offline: the passenger is tracking them.
+  useLocationSharing(online || onRide, follow);
 
   // Show the whole trip when an offer or ride appears.
   const focusId = offer?.rideId ?? ride?.id;
@@ -118,7 +119,7 @@ export default function DriverHomeScreen() {
         style={StyleSheet.absoluteFill}
         provider={PROVIDER_GOOGLE}
         initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
-        showsUserLocation={online}
+        showsUserLocation={online || onRide}
         toolbarEnabled={false}
         showsIndoors={false}
         showsBuildings={false}
