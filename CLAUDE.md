@@ -79,7 +79,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
   `npx expo export --platform android` in each app to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-04)
+## Progress (last updated 2026-11-04, after rides chunk 2)
 
 ### Done ✅
 | Feature | Where | Notes |
@@ -91,33 +91,33 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
 | Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
 | Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard`, `VehiclePicker` | Vibrates on offer, Google Maps navigation link |
+| Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `DriverMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
 
-Tests: 33 shared + 27 backend unit, 15 backend e2e (all passing at the last commit).
-**Not yet tested by the owner on a real phone** for the sign-in, fare and booking flows.
+Tests: 33 shared + 30 backend unit, 15 backend e2e (all passing at the last commit).
+**Not yet tested by the owner on a real phone** for sign-in, fares, booking and tracking. They said they
+would test after chunk 2, so ask for their feedback first and fix any bugs before starting the next feature.
 
 ### Next up ▶️
-**Rides chunk 2: live tracking.** The passenger sees the driver's marker move on the map, with an ETA
-("Bilal · 4 min away"). The driver location already reaches the server via `driver:location`
-(`DriversService.updateLocation`). Still needed: forward it to the passenger's room while a ride is accepted /
-arrived / in_progress (throttled), keep the last position in Redis for reconnects, plus a passenger map marker
-and ETA.
+1. **First: the owner's phone-test feedback** on everything so far. Fix bugs before new features.
+2. Then (to be confirmed with the owner) **driver onboarding**: CNIC, licence, vehicle details + photos, document
+   upload, gender, and an approval status that the admin panel will set. It replaces `DRIVER_AUTO_APPROVE` and
+   unblocks the female-driver option.
 
 ### Still missing ❌ (V1 scope, rough order)
-1. Live tracking (next up)
-2. Driver onboarding: CNIC, licence, vehicle details + photos, document upload, gender (needed for the
+1. Driver onboarding: CNIC, licence, vehicle details + photos, document upload, gender (needed for the
    female-driver option), admin approval. Replaces `DRIVER_AUTO_APPROVE`.
-3. Admin panel (`apps/admin` is a placeholder): approve drivers, view rides, handle complaints, edit fare rates
-4. Masked calling (phone numbers never shared)
-5. SOS button + share-trip link
-6. Female-driver option for passengers
-7. Ratings + complaints with tracked response time
-8. Per-city feature flags (CLAUDE.md requires them; not built yet)
-9. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
-10. Development build (EAS) for background location and an offer sound while the driver app is closed
+2. Admin panel (`apps/admin` is a placeholder): approve drivers, view rides, handle complaints, edit fare rates
+3. Masked calling (phone numbers never shared)
+4. SOS button + share-trip link
+5. Female-driver option for passengers
+6. Ratings + complaints with tracked response time
+7. Per-city feature flags (CLAUDE.md requires them; not built yet)
+8. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
+9. Development build (EAS) for background location and an offer sound while the driver app is closed
 
 ### Known limits / TODOs
 - Expo Go only: no background location; offers only vibrate while the driver app is open.
-- Road distance = straight line × 1.35 (no routing API yet).
+- Road distance and ETA = straight line × 1.35 (no routing/traffic API yet).
 - Driver cancellations / declines have no penalty yet.
 - Auth screens are duplicated in both apps (`apps/*/src/app/sign-in.tsx` etc.).
 

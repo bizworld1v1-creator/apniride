@@ -81,8 +81,10 @@ and switch between them. Using the same number in both apps is fine in developme
 1. **Driver app**: sign in → pick **Bike** or **Car** → **Go online**. You'll see "Waiting for ride requests…".
 2. **Passenger app**: Where to? → pick a destination → choose the **same vehicle type** as the driver → **Book**.
 3. **Driver app**: the phone vibrates and shows the offer with a 15-second countdown → **Accept**.
-4. **Driver app**: **I've arrived** → **Start ride** → **Complete ride**. The passenger app follows each step
-   live and ends with "Please pay Rs … in cash".
+4. **Passenger app**: you see the driver's 🚗/🏍️ marker on the map and "Arriving in N min". Walk or drive a bit
+   with the driver phone to see it move (it updates every 5 s / 25 m).
+5. **Driver app**: **I've arrived** → **Start ride** → **Complete ride**. The passenger app follows each step
+   live (once on board: "About N min to your destination") and ends with "Please pay Rs … in cash".
 
 The driver must be within 5 km of the pickup. Pickup is the passenger's GPS position, so on one phone it always is.
 If nobody accepts within 2 minutes, the passenger sees "No drivers available".
@@ -152,5 +154,5 @@ pnpm start:dev-client                       # then open the installed dev build 
 - [x] Phone OTP signup – passenger + driver (dev SMS only; see [docs/auth.md](docs/auth.md))
 - [x] Fixed fare estimate: bike + car (AC), per-city rates, 10-min quotes (see [docs/fares.md](docs/fares.md))
 - [x] Booking + dispatch: driver goes online, nearest driver gets a 15 s offer, accept → arrived → start → complete, cancel by either side (see [docs/rides.md](docs/rides.md))
-- [ ] Live driver tracking on the passenger map
+- [x] Live driver tracking on the passenger map with ETA (only during the passenger's own ride)
 - [ ] Real SMS provider

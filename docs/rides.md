@@ -90,11 +90,28 @@ the phone.
 | `ride:offer` | server → driver | `RideOffer`, with `expiresInSeconds` (count down from receipt: phone clocks are often wrong) |
 | `ride:offer_cancelled` | server → driver | `{ rideId }`: expired or the passenger cancelled |
 | `ride:update` | server → passenger + driver | `Ride`, on every status change |
-| `driver:location` | driver → server | `{ latitude, longitude }` |
+| `driver:location` | driver → server | `{ latitude, longitude, heading? }` |
+| `ride:driver_location` | server → passenger | `DriverPosition`: `{ rideId, location, heading, etaMin, distanceKm, ageSeconds }` |
 
 **Weak networks:** events are only a fast path. After every (re)connect both apps re-read
 `/rides/current` or `/driver/current`, and if a ride ended while they were offline they fetch its final state.
 Socket.IO's connection-state recovery also replays events missed during short drops (up to 2 minutes).
+
+## Live tracking (`backend/src/drivers/tracking.service.ts`)
+
+- The driver app sends its position every 5 s / 25 m (and every 30 s when parked) while **online or on a ride**.
+- Every position is saved as `drv:loc:<driverId>` (3 min TTL). If the driver is on a ride (`drv:ride:<id>`),
+  it is forwarded to **that ride's passenger only**, as `ride:driver_location`, with an ETA:
+  - `accepted` / `arrived`: to the **pickup**
+  - `in_progress`: to the **destination**
+- ETA = road distance (straight line × 1.35) ÷ the vehicle's average city speed from `fare_rates`; under 100 m = 0 min.
+- Per-ride info (passenger, pickup, destination, phase) is kept in `ride:track:<rideId>` from accept until
+  complete / cancel, so a location update needs no database query.
+- `GET /rides/:id/driver-location` → `{ position }` for a passenger who reconnects. `ageSeconds` says how old it
+  is (the app shows "last updated N min ago" after 60 s instead of trusting a stale ETA).
+- **Privacy:** outside the passenger's own active ride, nothing is forwarded and the endpoint returns null.
+  Another passenger gets 404.
+- The passenger app moves the marker in jumps without animation: cheaper on low-end phones.
 
 ## Privacy
 
@@ -102,7 +119,7 @@ Apps get **first names only** and never a phone number. Masked calling comes as 
 
 ## Not done yet
 
-- Live driver position on the passenger's map (next chunk).
+- ETA from a real routing/traffic API (today: straight line × 1.35 at an average speed).
 - Masked calling, SOS and share-trip.
 - Female-driver option (needs driver gender from onboarding).
 - Penalties for driver cancellations and declines; ratings.
