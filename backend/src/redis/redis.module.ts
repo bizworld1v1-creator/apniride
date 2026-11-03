@@ -26,7 +26,7 @@ class RedisCloser implements OnApplicationShutdown {
     {
       provide: REDIS,
       inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>) => {
+      useFactory: async (config: ConfigService<Env, true>) => {
         const logger = new Logger('Redis');
         const redis = new Redis(config.get('REDIS_URL', { infer: true }), {
           // Fail fast instead of queueing commands forever while Redis is down.
@@ -43,6 +43,15 @@ class RedisCloser implements OnApplicationShutdown {
             logger.error(`${err.message || err.name}${code ? ` (${code})` : ''}`);
             lastLogged = Date.now();
           }
+        });
+        // Wait briefly for the first connection so early requests don't fail (the offline queue is off).
+        // If Redis is really down we start anyway; /health reports it and ioredis keeps retrying.
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(resolve, 3_000);
+          redis.once('ready', () => {
+            clearTimeout(timer);
+            resolve();
+          });
         });
         return redis;
       },
