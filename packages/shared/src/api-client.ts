@@ -19,6 +19,8 @@ import {
   currentRideResponseSchema,
   type DriverCurrentResponse,
   driverCurrentResponseSchema,
+  type DriverPosition,
+  driverPositionResponseSchema,
   type DriverProfile,
   driverProfileSchema,
   type GoOnlineBody,
@@ -232,6 +234,9 @@ export function createApiClient(options: ApiClientOptions) {
       current: (): Promise<Ride | null> =>
         request('/rides/current', (d) => currentRideResponseSchema.parse(d).ride),
       get: (id: string): Promise<Ride> => request(`/rides/${id}`, (d) => rideSchema.parse(d)),
+      /** Last known position of the driver on this ride (after app start / reconnect). */
+      driverPosition: (id: string): Promise<DriverPosition | null> =>
+        request(`/rides/${id}/driver-location`, (d) => driverPositionResponseSchema.parse(d).position),
       cancel: (id: string): Promise<Ride> =>
         request(`/rides/${id}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
     },

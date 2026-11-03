@@ -110,8 +110,32 @@ export const SOCKET_EVENTS = {
   rideOfferCancelled: 'ride:offer_cancelled',
   /** server → passenger and driver: Ride (any status change) */
   rideUpdate: 'ride:update',
-  /** driver → server: LatLng. Every few seconds while online. */
+  /** driver → server: DriverLocationUpdate. Every few seconds while online or on a ride. */
   driverLocation: 'driver:location',
+  /** server → passenger: DriverPosition. Only for the passenger's own active ride. */
+  rideDriverLocation: 'ride:driver_location',
 } as const;
+
+/** What the driver app sends. heading = compass degrees (0 = north), null if unknown. */
+export const driverLocationUpdateSchema = latLngSchema.extend({
+  heading: z.number().min(0).max(360).nullable().optional(),
+});
+export type DriverLocationUpdate = z.infer<typeof driverLocationUpdateSchema>;
+
+/** Where the passenger's driver is, and how long until they reach the pickup (or the destination once on board). */
+export const driverPositionSchema = z.object({
+  rideId: z.string().uuid(),
+  location: latLngSchema,
+  heading: z.number().nullable(),
+  /** Estimated minutes to the pickup (accepted / arrived) or to the destination (in_progress). */
+  etaMin: z.number().int(),
+  /** Estimated road km to the same target. */
+  distanceKm: z.number(),
+  /** How old this position is, in seconds (0 for live updates). Use instead of clocks, which differ per phone. */
+  ageSeconds: z.number().int(),
+});
+export type DriverPosition = z.infer<typeof driverPositionSchema>;
+
+export const driverPositionResponseSchema = z.object({ position: driverPositionSchema.nullable() });
 
 export const rideOfferCancelledSchema = z.object({ rideId: z.string().uuid() });
