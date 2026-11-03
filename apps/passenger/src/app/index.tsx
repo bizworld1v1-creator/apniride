@@ -6,6 +6,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ServerStatus } from '@/components/ServerStatus';
+import { signOut } from '@/lib/api';
+import { useAuth } from '@/lib/auth-store';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
 
@@ -13,6 +15,7 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
   const [locationGranted, setLocationGranted] = useState(false);
+  const name = useAuth((s) => s.user?.name);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +56,13 @@ export default function HomeScreen() {
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
         <View style={styles.card}>
-          <Text style={styles.brand}>ApniRide</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.brand}>ApniRide</Text>
+            <Pressable onPress={() => void signOut()} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.signOut}>{t('auth.signOut')}</Text>
+            </Pressable>
+          </View>
+          {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
           <Text style={styles.tagline}>{t('tagline')}</Text>
           <ServerStatus />
         </View>
@@ -78,7 +87,10 @@ const styles = StyleSheet.create({
     padding: 12,
     elevation: 3,
   },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 20, fontWeight: '700', color: '#0E7490' },
+  signOut: { fontSize: 13, color: '#6B7280' },
+  greeting: { fontSize: 15, fontWeight: '600', color: '#111827', marginTop: 4 },
   tagline: { fontSize: 13, color: '#374151', marginTop: 2 },
   whereTo: {
     backgroundColor: '#0E7490',
