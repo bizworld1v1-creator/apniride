@@ -47,6 +47,20 @@ New-NetFirewallRule -DisplayName "ApniRide dev" -Direction Inbound -Protocol TCP
 
 Also set your Wi-Fi to a **Private** network (Settings → Network → Wi-Fi → your network → Private).
 
+**Still blocked? Look for "Node.js" Block rules.** If Windows' "Allow Node.js?" popup was ever closed or
+cancelled, Windows silently creates **Block** rules for `node.exe`, and **Block beats Allow**. Symptom: the phone's
+browser keeps spinning on `http://<PC IP>:8081/status`, but works when you briefly turn the firewall off.
+Fix: Windows key → "Allow an app through Windows Firewall" → **Change settings** → on every
+**"Node.js JavaScript Runtime"** line **untick Private and Public** → OK. (In that list a tick on a Block rule
+means "blocked", so don't tick them.) Or, in an **Administrator** PowerShell:
+
+```powershell
+Get-NetFirewallRule -DisplayName "Node.js JavaScript Runtime" | Where-Object Action -eq Block | Remove-NetFirewallRule
+```
+
+Check from a normal terminal: `netsh advfirewall firewall show rule name="Node.js JavaScript Runtime" dir=in`
+should show no rule with `Enabled: Yes` and `Action: Block`.
+
 **Quick test from the phone:** open `http://<PC IP>:3000/health` in the phone's browser. If that doesn't
 load, the app can't reach the backend either. It's the firewall or the network, not the app.
 Find the PC's IP with `ipconfig` (Windows) or `ipconfig getifaddr en0` (Mac).
@@ -58,6 +72,8 @@ Find the PC's IP with `ipconfig` (Windows) or `ipconfig getifaddr en0` (Mac).
 1. Play Store → install **Expo Go** (keep it updated: it must support Expo **SDK 58**).
 2. Phone and PC on the **same Wi-Fi**.
 3. On the PC: `pnpm passenger` (passenger app, port 8081) or `pnpm driver` (driver app, port 8082).
+   If the PC also has WSL/Docker/Hyper-V adapters, tell Expo the Wi-Fi IP so the QR code uses it:
+   PowerShell `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.x.x"; pnpm passenger`.
    For both apps, run them in two terminals.
 4. Expo Go → **Scan QR code** → scan the QR in the terminal. The first load takes about a minute.
 
@@ -185,6 +201,8 @@ The driver must be **within 5 km of the pickup**, and both apps need to reach th
 
 | Symptom | Fix |
 | --- | --- |
+| Expo Go stuck on loading / phone browser spins on `:8081/status` | Windows Firewall. Check for **Node.js Block rules** (section 1). Test: turn the firewall off for 1 minute; if it then works, it's the firewall (turn it back on!) |
+| Scanned the QR with the camera and got a web page / "Web Bundling failed" | Scan from **inside Expo Go** (Android) or use Expo Go → Enter URL manually → `exp://<PC IP>:8081`. The app doesn't run in a browser |
 | QR scans but "Could not connect to development server" | Same Wi-Fi? Firewall (section 1)? Office/hotel Wi-Fi often blocks devices from seeing each other: use tunnels (section 6) |
 | "Server unreachable" / "No internet connection" in the app | Open `http://<PC IP>:3000/health` on the phone. Fails → firewall/network. Works → check `EXPO_PUBLIC_API_URL` in `apps/<app>/.env` and restart with `--clear` |
 | "Sorry, we only serve Lahore for now" / driver "outside our service area" | Device GPS isn't in Lahore. Emulator: set the location. Passenger: place the pickup pin in Lahore by hand |

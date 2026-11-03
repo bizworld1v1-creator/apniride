@@ -124,6 +124,10 @@ would test after chunk 2, so ask for their feedback first and fix any bugs befor
 
 ### Local setup reminders
 - Docker Desktop needs WSL 2. If it fails to start, run `wsl --update` as admin and reboot.
+- Phone can't reach the laptop: Windows had **Block rules for node.exe** (from a cancelled firewall popup); they were
+  disabled on 2026-11-04. Allow rule "ApniRide dev" opens TCP 3000/8081/8082 on Private networks. Use
+  `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.100.6"` before `pnpm passenger` (WSL adapters confuse Expo's IP pick).
+- **2026-11-04: the owner got the passenger app running on their phone via Expo Go** (first real-device test).
 - Dev backend: `pnpm db:up && pnpm db:migrate && pnpm backend`. The laptop's LAN IP was `192.168.100.6`.
 - `backend/.env` has dev-only flags: `OTP_DEV_ECHO=true`, `DRIVER_AUTO_APPROVE=true`. Never use them in production;
   env validation refuses them when `NODE_ENV=production`.
