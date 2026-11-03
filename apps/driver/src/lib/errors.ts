@@ -10,6 +10,12 @@ const KNOWN = new Set([
   'rate_limited',
   'name_too_short',
   'name_too_long',
+  'offer_expired',
+  'invalid_ride_state',
+  'driver_not_approved',
+  'vehicle_not_set',
+  'outside_service_area',
+  'on_a_ride',
 ]);
 
 /** Turns an API / network error into a message in the user's language. */
