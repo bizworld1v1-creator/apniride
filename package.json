@@ -16,7 +16,8 @@
     "db:down": "docker compose down",
     "backend": "turbo run dev --filter=@apniride/backend",
     "passenger": "pnpm --filter @apniride/passenger start",
-    "driver": "pnpm --filter @apniride/driver start"
+    "driver": "pnpm --filter @apniride/driver start",
+    "db:migrate": "pnpm --filter @apniride/backend migrate"
   },
   "devDependencies": {
     "turbo": "^2.11.10"
