@@ -17,8 +17,6 @@ export const OTP_LIMITS = {
   maxAttempts: 5,
   /** Codes per phone number per hour (SMS costs money; stops SMS bombing). */
   maxPerPhonePerHour: 5,
-  /** Codes per client IP per hour. Generous because many users share carrier NAT IPs. */
-  maxPerIpPerHour: 30,
 } as const;
 
 const HOUR = 3600;
@@ -27,6 +25,7 @@ const HOUR = 3600;
 export class OtpService {
   private readonly secret: string;
   private readonly devEcho: boolean;
+  private readonly maxPerIpPerHour: number;
 
   constructor(
     @Inject(REDIS) private readonly redis: Redis,
@@ -35,6 +34,7 @@ export class OtpService {
   ) {
     this.secret = config.get('OTP_SECRET', { infer: true });
     this.devEcho = config.get('OTP_DEV_ECHO', { infer: true });
+    this.maxPerIpPerHour = config.get('OTP_MAX_PER_IP_PER_HOUR', { infer: true });
   }
 
   /** Generates, stores (hashed) and sends a code. `phone` must already be E.164. */
@@ -50,7 +50,7 @@ export class OtpService {
 
     // 2. Hourly caps per phone and per IP.
     await this.enforceHourlyCap(`otp:hr:${id}`, OTP_LIMITS.maxPerPhonePerHour);
-    await this.enforceHourlyCap(`otp:ip:${this.hmac(ip).slice(0, 32)}`, OTP_LIMITS.maxPerIpPerHour);
+    await this.enforceHourlyCap(`otp:ip:${this.hmac(ip).slice(0, 32)}`, this.maxPerIpPerHour);
 
     // 3. Store the hash of a fresh code (replaces any previous code for this number).
     const code = randomInt(0, 10 ** OTP_LENGTH).toString().padStart(OTP_LENGTH, '0');

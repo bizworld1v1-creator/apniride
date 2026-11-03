@@ -54,6 +54,7 @@ class FakeRedis {
 
 const PHONE = '+923001234567';
 const IP = '203.0.113.7';
+const MAX_PER_IP = 30;
 
 function setup(devEcho = true) {
   const redis = new FakeRedis();
@@ -64,7 +65,7 @@ function setup(devEcho = true) {
     },
   };
   const config = {
-    get: (k: string) => ({ OTP_SECRET: 'x'.repeat(40), OTP_DEV_ECHO: devEcho })[k],
+    get: (k: string) => ({ OTP_SECRET: 'x'.repeat(40), OTP_DEV_ECHO: devEcho, OTP_MAX_PER_IP_PER_HOUR: MAX_PER_IP })[k],
   };
   const service = new OtpService(redis as never, sms, config as never);
   const lastCode = () => sent.at(-1)!.message.match(/\d{6}/)![0];
@@ -160,7 +161,7 @@ describe('OtpService', () => {
 
   it('caps codes per IP per hour', async () => {
     const { service } = setup();
-    for (let i = 0; i < OTP_LIMITS.maxPerIpPerHour; i++) {
+    for (let i = 0; i < MAX_PER_IP; i++) {
       await service.request(`+92300${String(i).padStart(7, '0')}`, 'passenger', IP);
     }
     await expectCode(service.request('+923339999999', 'passenger', IP), 'rate_limited');
