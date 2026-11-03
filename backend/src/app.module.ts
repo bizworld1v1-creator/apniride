@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { validateEnv } from './config/env.js';
 import { DatabaseModule } from './database/database.module.js';
+import { FaresModule } from './fares/fares.module.js';
 import { HealthModule } from './health/health.module.js';
 import { RedisModule } from './redis/redis.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -17,6 +18,7 @@ import { UsersModule } from './users/users.module.js';
     HealthModule,
     AuthModule,
     UsersModule,
+    FaresModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
