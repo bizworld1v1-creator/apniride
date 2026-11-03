@@ -10,6 +10,9 @@ const KNOWN = new Set([
   'rate_limited',
   'name_too_short',
   'name_too_long',
+  'outside_service_area',
+  'trip_too_short',
+  'trip_too_long',
 ]);
 
 /** Turns an API / network error into a message in the user's language. */
