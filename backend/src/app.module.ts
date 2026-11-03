@@ -5,9 +5,12 @@ import { AuthModule } from './auth/auth.module.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { validateEnv } from './config/env.js';
 import { DatabaseModule } from './database/database.module.js';
+import { DriversModule } from './drivers/drivers.module.js';
 import { FaresModule } from './fares/fares.module.js';
 import { HealthModule } from './health/health.module.js';
+import { RealtimeModule } from './realtime/realtime.module.js';
 import { RedisModule } from './redis/redis.module.js';
+import { RidesModule } from './rides/rides.module.js';
 import { UsersModule } from './users/users.module.js';
 
 @Module({
@@ -19,6 +22,9 @@ import { UsersModule } from './users/users.module.js';
     AuthModule,
     UsersModule,
     FaresModule,
+    DriversModule,
+    RealtimeModule,
+    RidesModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })

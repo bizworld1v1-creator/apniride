@@ -21,11 +21,27 @@ const envSchema = z
     OTP_DEV_ECHO: boolString,
     /** Only "console" exists for now (prints the code in the server log). */
     SMS_PROVIDER: z.enum(['console']).default('console'),
+    /** OTP codes per client IP per hour. Generous because many users share carrier NAT IPs. */
+    OTP_MAX_PER_IP_PER_HOUR: z.coerce.number().int().positive().default(30),
+
+    /** Approve drivers as soon as they pick a vehicle. Dev only, until onboarding + admin approval exist. */
+    DRIVER_AUTO_APPROVE: boolString,
+    /** Seconds a driver has to accept an offer before it goes to the next driver. */
+    OFFER_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(60).default(15),
+    /** Give up and tell the passenger "no driver" after this long. */
+    SEARCH_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(600).default(120),
+    /** Only offer rides to drivers within this distance of the pickup. */
+    MATCH_RADIUS_KM: z.coerce.number().positive().max(30).default(5),
+    /** BullMQ key prefix. Tests use their own so a running dev server doesn't pick up their jobs. */
+    QUEUE_PREFIX: z.string().min(1).default('apniride'),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return;
     if (env.OTP_DEV_ECHO) {
       ctx.addIssue({ code: 'custom', path: ['OTP_DEV_ECHO'], message: 'must be false in production' });
+    }
+    if (env.DRIVER_AUTO_APPROVE) {
+      ctx.addIssue({ code: 'custom', path: ['DRIVER_AUTO_APPROVE'], message: 'must be false in production' });
     }
     if (env.SMS_PROVIDER === 'console') {
       ctx.addIssue({
