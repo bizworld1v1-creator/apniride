@@ -6,9 +6,11 @@ import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FareSheet } from '@/components/FareSheet';
+import { RideStatusSheet } from '@/components/RideStatusSheet';
 import { ServerStatus } from '@/components/ServerStatus';
 import { signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { useCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
@@ -27,6 +29,20 @@ export default function HomeScreen() {
   const [dropoff, setDropoff] = useState<LatLng | null>(null);
   const [step, setStep] = useState<Step>('home');
   const name = useAuth((s) => s.user?.name);
+  const { data: ride } = useCurrentRide();
+  const rideId = ride?.id;
+
+  // A booked ride takes over the screen; when it's dismissed, start fresh from "Where to?".
+  useEffect(() => {
+    if (!rideId || !ride) return;
+    setStep('home');
+    setDropoff(null);
+    mapRef.current?.fitToCoordinates([ride.pickup, ride.dropoff], {
+      edgePadding: { top: 160, right: 60, bottom: 340, left: 60 },
+      animated: true,
+    });
+    // Only when a different ride appears, not on every status change.
+  }, [rideId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +126,13 @@ export default function HomeScreen() {
         showsIndoors={false}
         showsBuildings={false}
       >
-        {pickup && step !== 'home' && step !== 'pickup' ? (
+        {ride ? (
+          <>
+            <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
+            <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor="red" tracksViewChanges={false} />
+          </>
+        ) : null}
+        {!ride && pickup && step !== 'home' && step !== 'pickup' ? (
           <Marker coordinate={pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
         ) : null}
         {dropoff && step === 'quote' ? (
@@ -146,7 +168,9 @@ export default function HomeScreen() {
       </SafeAreaView>
 
       <SafeAreaView edges={['bottom']} style={styles.bottom} pointerEvents="box-none">
-        {step === 'home' ? (
+        {ride ? (
+          <RideStatusSheet ride={ride} />
+        ) : step === 'home' ? (
           <Pressable style={styles.primary} onPress={startBooking} accessibilityRole="button">
             <Text style={styles.primaryText}>{t('whereTo')}</Text>
           </Pressable>

@@ -1,10 +1,12 @@
 import type { FareOption, LatLng, VehicleType } from '@apniride/shared';
-import { useQuery } from '@tanstack/react-query';
+import { ApiError } from '@apniride/shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
+import { setCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
 
 const ICONS: Record<VehicleType, string> = { bike: '🏍️', car: '🚗' };
@@ -39,6 +41,18 @@ export function FareSheet({
   const { t } = useTranslation();
   const { data, error, isPending, refetch, isRefetching } = useFareEstimate(pickup, dropoff);
   const [selected, setSelected] = useState<VehicleType>('car');
+  const queryClient = useQueryClient();
+
+  const book = useMutation({
+    mutationFn: (vehicleType: VehicleType) => api.rides.book({ quoteId: data!.quoteId, vehicleType }),
+    // The home screen switches to the ride status sheet as soon as there's a current ride.
+    onSuccess: (ride) => setCurrentRide(queryClient, ride),
+    onError: (err) => {
+      // Quote older than 10 minutes: get a fresh fare; the passenger taps Book again.
+      if (err instanceof ApiError && err.code === 'quote_expired') void refetch();
+    },
+  });
+  const selectedFare = data?.options.find((o) => o.vehicleType === selected)?.fare;
 
   return (
     <View style={styles.sheet}>
@@ -66,9 +80,23 @@ export function FareSheet({
             />
           ))}
           <Text style={styles.fixed}>{t('ride.fixedFare')}</Text>
-          {/* Booking is the next feature; the quote id is already kept on the server. */}
-          <Pressable style={[styles.primary, styles.disabled]} disabled accessibilityRole="button">
-            <Text style={styles.primaryText}>{t('ride.bookingSoon')}</Text>
+          {book.isError ? <Text style={styles.error}>{errorMessage(t, book.error)}</Text> : null}
+          <Pressable
+            style={[styles.primary, (book.isPending || isRefetching) && styles.disabled]}
+            onPress={() => book.mutate(selected)}
+            disabled={book.isPending || isRefetching}
+            accessibilityRole="button"
+          >
+            {book.isPending ? (
+              <ActivityIndicator color={colors.brandText} />
+            ) : (
+              <Text style={styles.primaryText}>
+                {t('ride.book', {
+                  vehicle: t(`ride.${selected}`),
+                  fare: t('ride.fare', { amount: formatRupees(selectedFare ?? 0) }),
+                })}
+              </Text>
+            )}
           </Pressable>
         </>
       )}

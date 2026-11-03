@@ -13,6 +13,9 @@ const KNOWN = new Set([
   'outside_service_area',
   'trip_too_short',
   'trip_too_long',
+  'quote_expired',
+  'active_ride_exists',
+  'invalid_ride_state',
 ]);
 
 /** Turns an API / network error into a message in the user's language. */

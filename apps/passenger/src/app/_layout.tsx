@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { RealtimeBridge } from '@/components/RealtimeBridge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 
@@ -51,6 +52,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <StatusBar style="dark" />
+        {signedIn ? <RealtimeBridge /> : null}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn && hasName}>
             <Stack.Screen name="index" />
