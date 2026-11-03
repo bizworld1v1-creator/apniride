@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatRupees } from '@/components/FareSheet';
 import { api } from '@/lib/api';
+import { type ReceivedPosition, useAgeSeconds } from '@/lib/driver-position';
 import { errorMessage } from '@/lib/errors';
 import { setCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
@@ -11,11 +12,15 @@ import { colors } from '@/lib/theme';
 const ICONS = { bike: '🏍️', car: '🚗' } as const;
 
 /** Bottom sheet for a booked ride, from "finding a driver" to "pay cash". */
-export function RideStatusSheet({ ride }: { ride: Ride }) {
+export function RideStatusSheet({ ride, driverPosition }: { ride: Ride; driverPosition: ReceivedPosition | null }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const name = ride.driver?.firstName || t('ride.yourDriver');
   const fare = t('ride.fare', { amount: formatRupees(ride.fare) });
+  const age = useAgeSeconds(driverPosition);
+  const eta = driverPosition?.etaMin;
+  // No update for over a minute (driver in a dead zone): say so instead of showing a stale ETA as live.
+  const stale = !!driverPosition && age > 60;
 
   const cancel = useMutation({
     mutationFn: () => api.rides.cancel(ride.id),
@@ -40,13 +45,14 @@ export function RideStatusSheet({ ride }: { ride: Ride }) {
       break;
     case 'accepted':
       title = t('ride.onTheWay', { name });
+      if (eta !== undefined) body = eta <= 1 ? t('ride.almostThere') : t('ride.etaPickup', { count: eta });
       break;
     case 'arrived':
       title = t('ride.arrived', { name });
       body = t('ride.arrivedBody');
       break;
     case 'in_progress':
-      title = t('ride.inProgress');
+      title = eta !== undefined ? t('ride.etaDropoff', { count: Math.max(1, eta) }) : t('ride.inProgress');
       body = t('ride.payAtEnd', { fare });
       break;
     case 'completed':
@@ -71,6 +77,9 @@ export function RideStatusSheet({ ride }: { ride: Ride }) {
         </Text>
       </View>
       {body ? <Text style={styles.body}>{body}</Text> : null}
+      {stale ? (
+        <Text style={styles.stale}>{t('ride.lastUpdated', { count: Math.round(age / 60) })}</Text>
+      ) : null}
 
       <View style={styles.summary}>
         <Text style={styles.icon}>{ICONS[ride.vehicleType]}</Text>
@@ -108,6 +117,7 @@ const styles = StyleSheet.create({
   spinner: { marginEnd: 10 },
   title: { flex: 1, fontSize: 18, fontWeight: '700', color: colors.text },
   body: { fontSize: 15, color: colors.muted, marginTop: 6 },
+  stale: { fontSize: 13, color: '#B45309', marginTop: 4 },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',

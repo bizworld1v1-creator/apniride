@@ -5,11 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { DriverMarker } from '@/components/DriverMarker';
 import { FareSheet } from '@/components/FareSheet';
 import { RideStatusSheet } from '@/components/RideStatusSheet';
 import { ServerStatus } from '@/components/ServerStatus';
 import { signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { useDriverPosition } from '@/lib/driver-position';
 import { useCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
 
@@ -31,6 +33,8 @@ export default function HomeScreen() {
   const name = useAuth((s) => s.user?.name);
   const { data: ride } = useCurrentRide();
   const rideId = ride?.id;
+  const { data: driverPosition } = useDriverPosition(ride);
+  const hasDriverPosition = !!driverPosition;
 
   // A booked ride takes over the screen; when it's dismissed, start fresh from "Where to?".
   useEffect(() => {
@@ -106,6 +110,18 @@ export default function HomeScreen() {
     }
   };
 
+  // When the driver first shows up (and again once on board), frame the driver and where they're heading.
+  const phase = ride?.status === 'in_progress' ? 'to_dropoff' : 'to_pickup';
+  useEffect(() => {
+    if (!ride || !driverPosition) return;
+    const target = phase === 'to_dropoff' ? ride.dropoff : ride.pickup;
+    mapRef.current?.fitToCoordinates([driverPosition.location, target], {
+      edgePadding: { top: 160, right: 60, bottom: 340, left: 60 },
+      animated: true,
+    });
+    // Not on every position update: the passenger may be panning the map.
+  }, [rideId, phase, hasDriverPosition]);
+
   const onRegionChangeComplete = (region: Region) => {
     centerRef.current = { latitude: region.latitude, longitude: region.longitude };
   };
@@ -130,6 +146,7 @@ export default function HomeScreen() {
           <>
             <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
             <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor="red" tracksViewChanges={false} />
+            {driverPosition ? <DriverMarker position={driverPosition} vehicleType={ride.vehicleType} /> : null}
           </>
         ) : null}
         {!ride && pickup && step !== 'home' && step !== 'pickup' ? (
@@ -169,7 +186,7 @@ export default function HomeScreen() {
 
       <SafeAreaView edges={['bottom']} style={styles.bottom} pointerEvents="box-none">
         {ride ? (
-          <RideStatusSheet ride={ride} />
+          <RideStatusSheet ride={ride} driverPosition={driverPosition ?? null} />
         ) : step === 'home' ? (
           <Pressable style={styles.primary} onPress={startBooking} accessibilityRole="button">
             <Text style={styles.primaryText}>{t('whereTo')}</Text>
