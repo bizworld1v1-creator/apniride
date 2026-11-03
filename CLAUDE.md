@@ -77,7 +77,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
   `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
   `npx expo export --platform android` in each app to confirm it bundles.
-- Design notes live in `docs/` (auth.md, fares.md, rides.md). Keep them in sync with the code.
+- Design notes live in `docs/` (auth.md, fares.md, rides.md, running-on-devices.md). Keep them in sync with the code.
 
 ## Progress (last updated 2026-11-04, after rides chunk 2)
 
@@ -91,6 +91,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
 | Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
 | Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard`, `VehiclePicker` | Vibrates on offer, Google Maps navigation link |
+| Run on any device guide | `docs/running-on-devices.md`, `apps/*/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
 | Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `DriverMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
 
 Tests: 33 shared + 30 backend unit, 15 backend e2e (all passing at the last commit).

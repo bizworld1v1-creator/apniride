@@ -4,6 +4,9 @@ Trust-first ride-hailing app for Pakistan. *Thanda safar, mehfooz safar, waqt pe
 
 See [CLAUDE.md](CLAUDE.md) for the product vision, signature features, v1 scope and tech stack.
 
+📱 **Run it on any device** (Android, iPhone, emulator, simulator, other networks, installable APK):
+see [docs/running-on-devices.md](docs/running-on-devices.md).
+
 ## Repo layout
 
 ```
@@ -56,6 +59,9 @@ Check it: open http://localhost:3000/health. You should get `"status":"ok"` with
 If Docker isn't running you'll get HTTP 503 with `"status":"degraded"`.
 
 ## Run the apps on your Android phone (Expo Go)
+
+This is the quickest path. For iPhone, emulators, mobile data or an installable APK, see
+[docs/running-on-devices.md](docs/running-on-devices.md).
 
 1. Put your **phone and PC on the same Wi-Fi**.
 2. Start the backend (above) so the apps can show "Server connected".
