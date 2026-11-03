@@ -12,6 +12,7 @@ import {
   type User,
   type VerifyOtpBody,
 } from './auth';
+import { type FareEstimateBody, type FareEstimateResponse, fareEstimateResponseSchema } from './fares';
 import { healthResponseSchema, type HealthResponse } from './health';
 
 /**
@@ -204,6 +205,12 @@ export function createApiClient(options: ApiClientOptions) {
           auth: false,
         }).catch(() => undefined);
       },
+    },
+
+    fares: {
+      /** Fixed fares for every vehicle type between two points. */
+      estimate: (body: FareEstimateBody): Promise<FareEstimateResponse> =>
+        request('/fares/estimate', (d) => fareEstimateResponseSchema.parse(d), { method: 'POST', body }),
     },
 
     me: {
