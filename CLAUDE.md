@@ -69,3 +69,60 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Commit small, descriptive commits. Never commit secrets – use `.env` files (gitignored).
 - Write tests for fare calculation and matching logic.
 - UI text must support English and Urdu (RTL).
+
+## How we work
+- **One feature per chunk.** Build it end to end (backend + both apps + tests + docs), commit, push, then
+  **stop and ask** the owner before starting the next one.
+- **After every chunk, update the Progress section below** (move the item to Done, set "Next up").
+- Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
+  `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
+  `npx expo export --platform android` in each app to confirm it bundles.
+- Design notes live in `docs/` (auth.md, fares.md, rides.md). Keep them in sync with the code.
+
+## Progress (last updated 2026-11-04)
+
+### Done ✅
+| Feature | Where | Notes |
+| --- | --- | --- |
+| Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
+| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers |
+| Phone OTP sign-in (both apps) | `backend/src/auth`, `apps/*/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
+| Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
+| Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
+| Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
+| Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard`, `VehiclePicker` | Vibrates on offer, Google Maps navigation link |
+
+Tests: 33 shared + 27 backend unit, 15 backend e2e (all passing at the last commit).
+**Not yet tested by the owner on a real phone** for the sign-in, fare and booking flows.
+
+### Next up ▶️
+**Rides chunk 2: live tracking.** The passenger sees the driver's marker move on the map, with an ETA
+("Bilal · 4 min away"). The driver location already reaches the server via `driver:location`
+(`DriversService.updateLocation`). Still needed: forward it to the passenger's room while a ride is accepted /
+arrived / in_progress (throttled), keep the last position in Redis for reconnects, plus a passenger map marker
+and ETA.
+
+### Still missing ❌ (V1 scope, rough order)
+1. Live tracking (next up)
+2. Driver onboarding: CNIC, licence, vehicle details + photos, document upload, gender (needed for the
+   female-driver option), admin approval. Replaces `DRIVER_AUTO_APPROVE`.
+3. Admin panel (`apps/admin` is a placeholder): approve drivers, view rides, handle complaints, edit fare rates
+4. Masked calling (phone numbers never shared)
+5. SOS button + share-trip link
+6. Female-driver option for passengers
+7. Ratings + complaints with tracked response time
+8. Per-city feature flags (CLAUDE.md requires them; not built yet)
+9. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
+10. Development build (EAS) for background location and an offer sound while the driver app is closed
+
+### Known limits / TODOs
+- Expo Go only: no background location; offers only vibrate while the driver app is open.
+- Road distance = straight line × 1.35 (no routing API yet).
+- Driver cancellations / declines have no penalty yet.
+- Auth screens are duplicated in both apps (`apps/*/src/app/sign-in.tsx` etc.).
+
+### Local setup reminders
+- Docker Desktop needs WSL 2. If it fails to start, run `wsl --update` as admin and reboot.
+- Dev backend: `pnpm db:up && pnpm db:migrate && pnpm backend`. The laptop's LAN IP was `192.168.100.6`.
+- `backend/.env` has dev-only flags: `OTP_DEV_ECHO=true`, `DRIVER_AUTO_APPROVE=true`. Never use them in production;
+  env validation refuses them when `NODE_ENV=production`.
