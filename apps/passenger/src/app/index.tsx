@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, type Region } from 'react-native-maps';
+import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DriverMarker } from '@/components/DriverMarker';
 import { FareSheet } from '@/components/FareSheet';
@@ -12,6 +12,7 @@ import { ServerStatus } from '@/components/ServerStatus';
 import { signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { useDriverPosition } from '@/lib/driver-position';
+import { MAP_PROVIDER } from '@/lib/map-provider';
 import { useCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
 
@@ -133,7 +134,7 @@ export default function HomeScreen() {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
+        provider={MAP_PROVIDER}
         initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
         onRegionChangeComplete={onRegionChangeComplete}
         showsUserLocation={locationGranted}

@@ -50,6 +50,8 @@ const config: ExpoConfig = {
     ],
     ['react-native-maps', { androidGoogleMapsApiKey, iosGoogleMapsApiKey }],
   ],
+  // Read by src/lib/map-provider.ts: use Google Maps on iOS only when a key is built in.
+  extra: { iosGoogleMaps: !!iosGoogleMapsApiKey },
   experiments: {
     typedRoutes: true,
   },

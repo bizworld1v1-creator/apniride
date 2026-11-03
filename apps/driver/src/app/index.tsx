@@ -4,7 +4,7 @@ import * as Location from 'expo-location';
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActiveRideCard } from '@/components/ActiveRideCard';
 import { OfferCard } from '@/components/OfferCard';
@@ -14,6 +14,7 @@ import { api, signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
+import { MAP_PROVIDER } from '@/lib/map-provider';
 import { colors } from '@/lib/theme';
 import { useLocationSharing } from '@/lib/use-location-sharing';
 
@@ -117,7 +118,7 @@ export default function DriverHomeScreen() {
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
-        provider={PROVIDER_GOOGLE}
+        provider={MAP_PROVIDER}
         initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
         showsUserLocation={online || onRide}
         toolbarEnabled={false}
