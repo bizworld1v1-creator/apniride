@@ -37,7 +37,14 @@ cd apniride
 pnpm install
 cp backend/.env.example backend/.env
 pnpm db:up            # starts Postgres + PostGIS and Redis in Docker
+pnpm db:migrate       # creates the database tables (run again after pulling new migrations)
 ```
+
+`backend/.env.example` has placeholder `JWT_SECRET` / `OTP_SECRET` values that work locally. For anything
+shared, generate real ones: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
+
+**Docker says "Docker Desktop is unable to start"?** Usually WSL 2 is missing or outdated. Open PowerShell
+**as Administrator**, run `wsl --update`, restart the PC, then start Docker Desktop again.
 
 ## Run the backend
 
@@ -56,8 +63,13 @@ If Docker isn't running you'll get HTTP 503 with `"status":"degraded"`.
    - Passenger app: `pnpm passenger` (Metro on port 8081)
    - Driver app: `pnpm driver` (Metro on port 8082). You can run both at once in two terminals.
 4. A QR code appears in the terminal. Open **Expo Go** on the phone → **Scan QR code** → scan it.
-5. The first load takes a minute. Allow location when asked. You should see a map of Lahore,
-   your blue location dot, and a green "Server connected" dot.
+5. The first load takes a minute. You land on **Sign in**: type any Pakistani mobile number
+   (e.g. `0300 1234567`) → **Send code**.
+6. No real SMS is sent in development. The code appears in a yellow **Dev code** box on the screen and in
+   the backend terminal (`[dev] to +92 3•• ••• 4567: ApniRide code: 123456`). Type it in and it signs in
+   automatically.
+7. First time only: enter your name. Then allow location when asked. You should see a map of Lahore,
+   your blue location dot, and a green "Server connected" dot. You stay signed in after closing the app.
 
 The apps find the backend automatically at `http://<your PC's IP>:3000`.
 To point them somewhere else, set `EXPO_PUBLIC_API_URL` in `apps/<app>/.env`.
@@ -74,6 +86,11 @@ To point them somewhere else, set `EXPO_PUBLIC_API_URL` in `apps/<app>/.env`.
 - **"Project is incompatible with this version of Expo Go"**: update Expo Go from the Play Store.
 - Press `r` in the Metro terminal to reload, or shake the phone for the dev menu.
 - Phone language set to **Urdu** → the apps show Urdu text with a right-to-left layout.
+- **"Please wait … before asking for another code"**: you can request a code once a minute and 5 times an hour
+  per number. Use a different number while testing, or reset with
+  `docker exec apniride-redis redis-cli --scan --pattern "otp:*" | xargs docker exec apniride-redis redis-cli del`.
+- **Sign-in says "Something went wrong"**: the backend can't reach Redis/Postgres (is Docker running?) or the
+  tables are missing (run `pnpm db:migrate`).
 
 ### What needs a development build (not Expo Go)
 
@@ -99,11 +116,13 @@ pnpm start:dev-client                       # then open the installed dev build 
 | Command | What it does |
 | --- | --- |
 | `pnpm db:up` / `pnpm db:down` | Start / stop Postgres + PostGIS and Redis |
+| `pnpm db:migrate` | Apply new SQL migrations from `backend/migrations` |
 | `pnpm backend` | Backend in watch mode |
 | `pnpm passenger` / `pnpm driver` | Expo dev server for each app |
 | `pnpm --filter @apniride/admin dev` | Admin placeholder on http://localhost:3001 |
 | `pnpm typecheck` | Type-check every package |
 | `pnpm test` | Unit tests (shared + backend) |
+| `pnpm --filter @apniride/backend test:e2e` | API tests against real Postgres + Redis (needs `pnpm db:up`) |
 | `pnpm build` | Build shared, backend, admin |
 
 ## Status
@@ -114,5 +133,6 @@ pnpm start:dev-client                       # then open the installed dev build 
 - [x] Passenger app: map screen
 - [x] Driver app: map screen + go-online toggle
 - [ ] Admin panel (placeholder only)
-- [ ] Phone OTP signup
+- [x] Phone OTP signup – passenger + driver (dev SMS only; see [docs/auth.md](docs/auth.md))
+- [ ] Real SMS provider
 - [ ] Booking, matching, live tracking (Socket.IO)
