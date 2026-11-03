@@ -6,6 +6,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { PROVIDER_GOOGLE } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ServerStatus } from '@/components/ServerStatus';
+import { signOut } from '@/lib/api';
+import { useAuth } from '@/lib/auth-store';
 
 const DELTA = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
 
@@ -24,6 +26,7 @@ export default function DriverHomeScreen() {
   const { t } = useTranslation();
   const mapRef = useRef<MapView>(null);
   const [online, setOnline] = useState(false);
+  const name = useAuth((s) => s.user?.name);
   const [permissionDenied, setPermissionDenied] = useState(false);
   const [position, setPosition] = useState<Location.LocationObjectCoords | null>(null);
 
@@ -69,7 +72,19 @@ export default function DriverHomeScreen() {
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
         <View style={styles.card}>
-          <Text style={styles.brand}>{t('appName')}</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.brand}>{t('appName')}</Text>
+            <Pressable
+              onPress={() => void signOut()}
+              disabled={online}
+              accessibilityRole="button"
+              hitSlop={8}
+            >
+              {/* Go offline before signing out, so a driver never vanishes mid-shift by accident. */}
+              <Text style={[styles.signOut, online && styles.signOutDisabled]}>{t('auth.signOut')}</Text>
+            </Pressable>
+          </View>
+          {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
           <Text style={[styles.status, { color: online ? '#16A34A' : '#6B7280' }]}>
             {online ? t('online') : t('offline')}
           </Text>
@@ -97,7 +112,11 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, start: 0, end: 0, padding: 12 },
   bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: 16 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 3 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 20, fontWeight: '700', color: '#B45309' },
+  signOut: { fontSize: 13, color: '#6B7280' },
+  signOutDisabled: { opacity: 0.4 },
+  greeting: { fontSize: 15, fontWeight: '600', color: '#111827', marginTop: 4 },
   status: { fontSize: 15, fontWeight: '600', marginTop: 2 },
   warning: { fontSize: 13, color: '#DC2626', marginTop: 4 },
   toggle: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', elevation: 3 },
