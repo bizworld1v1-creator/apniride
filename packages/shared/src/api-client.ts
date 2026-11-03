@@ -14,6 +14,18 @@ import {
 } from './auth';
 import { type FareEstimateBody, type FareEstimateResponse, fareEstimateResponseSchema } from './fares';
 import { healthResponseSchema, type HealthResponse } from './health';
+import {
+  type BookRideBody,
+  currentRideResponseSchema,
+  type DriverCurrentResponse,
+  driverCurrentResponseSchema,
+  type DriverProfile,
+  driverProfileSchema,
+  type GoOnlineBody,
+  type Ride,
+  rideSchema,
+  type UpdateDriverProfileBody,
+} from './rides';
 
 /**
  * Where the app keeps its tokens (e.g. memory + SecureStore).
@@ -57,7 +69,7 @@ export class ApiError extends Error {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
   /** Send the access token and refresh it on 401. Default true. */
   auth?: boolean;
@@ -211,6 +223,41 @@ export function createApiClient(options: ApiClientOptions) {
       /** Fixed fares for every vehicle type between two points. */
       estimate: (body: FareEstimateBody): Promise<FareEstimateResponse> =>
         request('/fares/estimate', (d) => fareEstimateResponseSchema.parse(d), { method: 'POST', body }),
+    },
+
+    rides: {
+      book: (body: BookRideBody): Promise<Ride> =>
+        request('/rides', (d) => rideSchema.parse(d), { method: 'POST', body }),
+      /** The passenger's active ride, if any (use after app start / reconnect). */
+      current: (): Promise<Ride | null> =>
+        request('/rides/current', (d) => currentRideResponseSchema.parse(d).ride),
+      get: (id: string): Promise<Ride> => request(`/rides/${id}`, (d) => rideSchema.parse(d)),
+      cancel: (id: string): Promise<Ride> =>
+        request(`/rides/${id}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
+    },
+
+    driver: {
+      profile: (): Promise<DriverProfile> => request('/driver/me', (d) => driverProfileSchema.parse(d)),
+      updateProfile: (body: UpdateDriverProfileBody): Promise<DriverProfile> =>
+        request('/driver/me', (d) => driverProfileSchema.parse(d), { method: 'PUT', body }),
+      goOnline: (body: GoOnlineBody): Promise<DriverProfile> =>
+        request('/driver/online', (d) => driverProfileSchema.parse(d), { method: 'POST', body }),
+      goOffline: (): Promise<DriverProfile> =>
+        request('/driver/offline', (d) => driverProfileSchema.parse(d), { method: 'POST' }),
+      current: (): Promise<DriverCurrentResponse> =>
+        request('/driver/current', (d) => driverCurrentResponseSchema.parse(d)),
+      accept: (rideId: string): Promise<Ride> =>
+        request(`/driver/rides/${rideId}/accept`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      decline: (rideId: string): Promise<void> =>
+        request(`/driver/rides/${rideId}/decline`, () => undefined, { method: 'POST' }),
+      arrived: (rideId: string): Promise<Ride> =>
+        request(`/driver/rides/${rideId}/arrived`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      start: (rideId: string): Promise<Ride> =>
+        request(`/driver/rides/${rideId}/start`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      complete: (rideId: string): Promise<Ride> =>
+        request(`/driver/rides/${rideId}/complete`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      cancel: (rideId: string): Promise<Ride> =>
+        request(`/driver/rides/${rideId}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
     },
 
     me: {
