@@ -108,13 +108,18 @@ The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04
    SOS + share-trip.
 
 ### Still missing ❌ (V1 scope, rough order)
-1. Masked calling (phone numbers never shared)
-2. SOS button + share-trip link
-3. Female-driver option for passengers
-4. Ratings + complaints with tracked response time (+ complaints page in the admin panel)
-5. Per-city feature flags (CLAUDE.md requires them; not built yet)
-6. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
-7. Development build (EAS) for background location and an offer sound while the driver app is closed
+1. **Two-way live tracking.** Today only passenger ← driver works (driver marker + ETA on the passenger map).
+   Missing: (a) **driver ← passenger**: the passenger's live location shared with their driver from accept until
+   pickup (helps find them; stop sharing at pickup, never outside the ride); (b) the **driver's own map** following
+   the trip route with ETA to pickup / destination; (c) **background tracking** for the driver (see 8).
+2. Masked calling (phone numbers never shared)
+3. SOS button + share-trip link (family watches the ride live, also needed for Ammi Mode)
+4. Female-driver option for passengers
+5. Ratings + complaints with tracked response time (+ complaints page in the admin panel)
+6. Per-city feature flags (CLAUDE.md requires them; not built yet)
+7. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
+8. Development build (EAS) for background location and an offer sound while the driver app is closed. Without it,
+   tracking pauses whenever the driver switches to Google Maps for navigation or locks the phone.
 
 ### Known limits / TODOs
 - Expo Go only: no background location; offers only vibrate while the driver app is open.
