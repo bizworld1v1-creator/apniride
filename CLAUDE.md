@@ -107,23 +107,46 @@ The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04
    (`pnpm admins add <their number>`, `pnpm admin`), then a ride with the new vehicle markers (glide + turning,
    nearby drivers before booking, driver ETA). The glide uses a native map command that hasn't run on a device
    yet: check the marker doesn't snap back or freeze. Fix bugs before new features.
-2. Then (to be confirmed with the owner): the **female-driver option** (gender is collected), or masked calling /
-   SOS + share-trip.
+2. Then (to be confirmed with the owner): the next **free** item from "Still missing", most likely the
+   **female-driver option**. Paid items wait (see the paid table).
 
-### Still missing ❌ (V1 scope, rough order)
-1. **Tracking leftovers.** (a) a **route line** on both maps (needs a routing API, e.g. Google Directions:
-   costs money per request); (b) **background tracking** for the driver (see 8); (c) designer-made marker art
-   (ours are placeholders that look decent). Driver → passenger live location is NOT wanted: like inDrive, the
-   driver sees the pickup pin only.
-   **Rickshaw** would be a new vehicle type (fares, onboarding, dispatch, apps, marker), so it's a separate chunk.
-2. Masked calling (phone numbers never shared)
-3. SOS button + share-trip link (family watches the ride live, also needed for Ammi Mode)
-4. Female-driver option for passengers
-5. Ratings + complaints with tracked response time (+ complaints page in the admin panel)
-6. Per-city feature flags (CLAUDE.md requires them; not built yet)
-7. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
-8. Development build (EAS) for background location and an offer sound while the driver app is closed. Without it,
-   tracking pauses whenever the driver switches to Google Maps for navigation or locks the phone.
+### Still missing ❌
+Owner's rule (2026-11-05): **build the free things now; anything that costs money waits** but stays on the list.
+
+**Free: V1 scope (build next, rough order)**
+1. Female-driver option for passengers (gender is already collected and reviewed)
+2. SOS button + share-trip link (SOS opens the phone dialer for 15 / 1122 and alerts admins; the link is a public
+   web page showing the ride live, served by our own server)
+3. Ratings + complaints with tracked response time (+ complaints page in the admin panel)
+4. Per-city feature flags (required by the engineering rules; every new feature switchable per city)
+5. Android development build for background location + an offer sound while the driver app is closed (local or
+   EAS free tier). Without it, tracking pauses when the driver opens Google Maps or locks the phone.
+   Driver → passenger live location is NOT wanted: like inDrive, the driver sees the pickup pin only.
+
+**Free: after V1 (signature features + polish)**
+6. Route-deviation / early-drop detection (signature #8), using the GPS we already collect
+7. AC Guarantee (signature #1): "AC off" tap → automatic discount (ride credit, since rides are cash)
+8. Scheduled rides + On-Time Promise (signature #5): compensation credit if pickup is late
+9. Rickshaw as a vehicle type (fares, onboarding, dispatch, apps, marker)
+10. Driver penalties for cancelling / declining; auto-suspend when a licence expires
+11. Ammi Mode (signature #3), basic version (book for a family member, track them). The "driver calls them"
+    part needs masked calling (paid, below)
+12. Rewards points (no partner vouchers yet), Urdu for the admin panel, admin roles
+
+**Paid: later (keep, don't build yet)**
+| Item | Why it costs | Needed for |
+| --- | --- | --- |
+| Real SMS provider (implement `SmsSender`) | per SMS | **launch blocker**: OTP codes |
+| Masked calling | telephony provider, per minute | V1 scope; Ammi Mode calls |
+| Route line + road distance / traffic ETA | Google Directions / Distance Matrix per request (or our own OSRM server) | nicer maps, exact fares |
+| Production hosting: server, managed Postgres/Redis, S3-compatible storage for documents | monthly | launch |
+| App stores: Google Play ($25 once), Apple developer ($99/year) for iOS builds | fees | launch; iOS background location |
+| Designer-made marker art (car, bike, rickshaw) | designer | polish |
+| WhatsApp booking (signature #4) | WhatsApp Business API per conversation | no-app booking |
+| Missed-call booking | telephony number | no-app booking |
+| Trip Black Box audio (signature #2) | storage + encryption keys service | safety |
+| JazzCash / Easypaisa payments + daily driver payouts | merchant fees | payments |
+| NADRA CNIC / licence verification | paid government API | stronger driver checks |
 
 ### Known limits / TODOs
 - Expo Go only: no background location; offers only vibrate while the driver app is open.
