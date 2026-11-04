@@ -17,12 +17,26 @@ import {
   adminDriverDetailSchema,
   adminDriverSummarySchema,
   type AdminDriverSummary,
+  type AdminFareRate,
+  adminFareRateSchema,
+  type AdminMe,
+  adminMeSchema,
+  type AdminRideDetail,
+  adminRideDetailSchema,
+  type AdminRideListQuery,
+  adminRideSummarySchema,
+  type AdminRideSummary,
+  type AdminStats,
+  adminStatsSchema,
+  type FareRateBody,
+  type ReviewNoteBody,
+} from './admin';
+import {
   type DriverApprovalStatus,
   type DriverDetailsBody,
   type DriverDocumentType,
   type DriverOnboarding,
   driverOnboardingSchema,
-  type ReviewNoteBody,
 } from './drivers';
 import { type FareEstimateBody, type FareEstimateResponse, fareEstimateResponseSchema } from './fares';
 import { healthResponseSchema, type HealthResponse } from './health';
@@ -311,21 +325,35 @@ export function createApiClient(options: ApiClientOptions) {
         request(`/driver/rides/${rideId}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
     },
 
-    /** Driver review. Temporary: authenticated with the shared ADMIN_API_KEY until admins can sign in. */
-    admin: (adminKey: string) => {
-      const opts = { auth: false, headers: { 'X-Admin-Key': adminKey } } as const;
-      return {
-        drivers: (status?: DriverApprovalStatus): Promise<AdminDriverSummary[]> =>
-          request(`/admin/drivers${status ? `?status=${status}` : ''}`, (d) => adminDriverSummarySchema.array().parse(d), opts),
-        driver: (id: string): Promise<AdminDriverDetail> =>
-          request(`/admin/drivers/${id}`, (d) => adminDriverDetailSchema.parse(d), opts),
-        approve: (id: string): Promise<AdminDriverDetail> =>
-          request(`/admin/drivers/${id}/approve`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST' }),
-        reject: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
-          request(`/admin/drivers/${id}/reject`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST', body }),
-        suspend: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
-          request(`/admin/drivers/${id}/suspend`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST', body }),
-      };
+    /** Admin panel. Needs a session from signing in with role "admin". */
+    admin: {
+      me: (): Promise<AdminMe> => request('/admin/me', (d) => adminMeSchema.parse(d)),
+      stats: (): Promise<AdminStats> => request('/admin/stats', (d) => adminStatsSchema.parse(d)),
+      drivers: (status?: DriverApprovalStatus): Promise<AdminDriverSummary[]> =>
+        request(`/admin/drivers${status ? `?status=${status}` : ''}`, (d) => adminDriverSummarySchema.array().parse(d)),
+      driver: (id: string): Promise<AdminDriverDetail> =>
+        request(`/admin/drivers/${id}`, (d) => adminDriverDetailSchema.parse(d)),
+      approve: (id: string): Promise<AdminDriverDetail> =>
+        request(`/admin/drivers/${id}/approve`, (d) => adminDriverDetailSchema.parse(d), { method: 'POST' }),
+      reject: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
+        request(`/admin/drivers/${id}/reject`, (d) => adminDriverDetailSchema.parse(d), { method: 'POST', body }),
+      suspend: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
+        request(`/admin/drivers/${id}/suspend`, (d) => adminDriverDetailSchema.parse(d), { method: 'POST', body }),
+      rides: (query: AdminRideListQuery = {}): Promise<AdminRideSummary[]> => {
+        const params = new URLSearchParams();
+        for (const [k, v] of Object.entries(query)) if (v !== undefined) params.set(k, String(v));
+        const qs = params.toString();
+        return request(`/admin/rides${qs ? `?${qs}` : ''}`, (d) => adminRideSummarySchema.array().parse(d));
+      },
+      ride: (id: string): Promise<AdminRideDetail> => request(`/admin/rides/${id}`, (d) => adminRideDetailSchema.parse(d)),
+      fareRates: (): Promise<AdminFareRate[]> =>
+        request('/admin/fare-rates', (d) => adminFareRateSchema.array().parse(d)),
+      updateFareRate: (city: string, vehicleType: string, body: FareRateBody): Promise<AdminFareRate> =>
+        request(`/admin/fare-rates/${city}/${vehicleType}`, (d) => adminFareRateSchema.parse(d), {
+          method: 'PUT',
+          body,
+          idempotent: true,
+        }),
     },
 
     me: {

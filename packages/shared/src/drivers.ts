@@ -241,40 +241,5 @@ export const onboardingErrorCodeSchema = z.enum([
 ]);
 export type OnboardingErrorCode = z.infer<typeof onboardingErrorCodeSchema>;
 
-// --- Admin review (until the admin panel has its own sign-in, these need the ADMIN_API_KEY header) ---
-
-export const adminDriverSummarySchema = z.object({
-  id: z.string().uuid(),
-  name: z.string().nullable(),
-  /** Full number: admins call drivers to verify them. Never sent to passenger apps. */
-  phone: z.string(),
-  status: driverApprovalStatusSchema,
-  vehicleType: vehicleTypeSchema,
-  gender: genderSchema.nullable(),
-  submittedAt: z.string().nullable(),
-  createdAt: z.string(),
-});
-export type AdminDriverSummary = z.infer<typeof adminDriverSummarySchema>;
-
-export const adminDriverDetailSchema = adminDriverSummarySchema.extend({
-  details: driverDetailsSchema.nullable(),
-  documents: z.array(driverDocumentSchema),
-  missingDocuments: z.array(driverDocumentTypeSchema),
-  /** False when the CNIC's last digit disagrees with the chosen gender: check the card closely. */
-  cnicGenderMatches: z.boolean().nullable(),
-  reviewNote: z.string().nullable(),
-  reviewedAt: z.string().nullable(),
-});
-export type AdminDriverDetail = z.infer<typeof adminDriverDetailSchema>;
-
-export const adminDriverListQuerySchema = z.object({
-  status: driverApprovalStatusSchema.optional(),
-});
-
-export const reviewNoteBodySchema = z.object({
-  reason: z.string().trim().min(3, 'required').max(300, 'too_long'),
-});
-export type ReviewNoteBody = z.input<typeof reviewNoteBodySchema>;
-
 /** Sent to the driver app when an admin approves, rejects or suspends them. */
 export const driverReviewedEventSchema = z.object({ status: driverApprovalStatusSchema });

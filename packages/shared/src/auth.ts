@@ -55,8 +55,11 @@ export const pkMobileSchema = z
 
 export const OTP_LENGTH = 6;
 
-/** Which app the person is signing in to. One phone number can be both. */
-export const userRoleSchema = z.enum(['passenger', 'driver']);
+/**
+ * Which app the person is signing in to. One phone number can be several.
+ * "admin" only works for numbers an existing admin added (`pnpm admins add`); nobody can sign up as one.
+ */
+export const userRoleSchema = z.enum(['passenger', 'driver', 'admin']);
 export type UserRole = z.infer<typeof userRoleSchema>;
 
 export const otpCodeSchema = z.string().regex(new RegExp(`^\\d{${OTP_LENGTH}}$`), 'invalid_code');
