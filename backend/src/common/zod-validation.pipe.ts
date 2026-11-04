@@ -1,9 +1,16 @@
 import { HttpStatus, type PipeTransform } from '@nestjs/common';
+import { onboardingErrorCodeSchema } from '@apniride/shared';
 import type { z } from 'zod';
 import { AppException } from './app-exception.js';
 
-/** Codes we put in Zod issue messages (see packages/shared/src/auth.ts) that are worth surfacing as-is. */
-const SURFACED_CODES = new Set(['invalid_phone', 'invalid_code', 'name_too_short', 'name_too_long']);
+/** Codes we put in Zod issue messages (see packages/shared/src/auth.ts, drivers.ts) that are worth surfacing as-is. */
+const SURFACED_CODES = new Set<string>([
+  'invalid_phone',
+  'invalid_code',
+  'name_too_short',
+  'name_too_long',
+  ...onboardingErrorCodeSchema.options,
+]);
 
 /** Validates (and transforms, e.g. phone → E.164) a request body with a shared Zod schema. */
 export class ZodValidationPipe<S extends z.ZodType> implements PipeTransform<unknown, z.output<S>> {

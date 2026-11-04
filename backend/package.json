@@ -21,7 +21,8 @@
     "test:e2e": "vitest run --config ./vitest.config.e2e.ts",
     "typecheck": "tsc --noEmit",
     "dev": "nest start --watch",
-    "migrate": "node --env-file-if-exists=.env scripts/migrate.mjs"
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
+    "drivers": "node --env-file-if-exists=.env scripts/drivers.mjs"
   },
   "dependencies": {
     "@apniride/shared": "workspace:*",

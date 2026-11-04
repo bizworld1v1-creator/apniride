@@ -1,5 +1,4 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   type CityCode,
   cityForPoint,
@@ -12,7 +11,6 @@ import type { Redis } from 'ioredis';
 import type pg from 'pg';
 import { AppException } from '../common/app-exception.js';
 import { compareAndDelete } from '../common/redis-scripts.js';
-import type { Env } from '../config/env.js';
 import { PG_POOL } from '../database/database.module.js';
 import { REDIS } from '../redis/redis.module.js';
 
@@ -47,15 +45,10 @@ return 0`;
 
 @Injectable()
 export class DriversService {
-  private readonly autoApprove: boolean;
-
   constructor(
     @Inject(PG_POOL) private readonly pool: pg.Pool,
     @Inject(REDIS) private readonly redis: Redis,
-    config: ConfigService<Env, true>,
-  ) {
-    this.autoApprove = config.get('DRIVER_AUTO_APPROVE', { infer: true });
-  }
+  ) {}
 
   async getProfile(userId: string): Promise<DriverProfile> {
     const { rows } = await this.pool.query<{ vehicle_type: VehicleType; approval_status: DriverApprovalStatus }>(
@@ -65,32 +58,16 @@ export class DriversService {
     const online = (await this.redis.exists(driverKeys.online(userId))) === 1;
     return {
       vehicleType: rows[0]?.vehicle_type ?? null,
-      approvalStatus: rows[0]?.approval_status ?? null,
+      // No row yet = hasn't saved the onboarding details.
+      approvalStatus: rows[0]?.approval_status ?? 'incomplete',
       online,
     };
   }
 
-  /** Creates the driver profile or changes the vehicle type. */
-  async setVehicleType(userId: string, vehicleType: VehicleType): Promise<DriverProfile> {
-    if (await this.redis.exists(driverKeys.busy(userId))) {
-      throw new AppException(HttpStatus.CONFLICT, 'on_a_ride', 'Finish your current ride first');
-    }
-    // Changing vehicle while online would leave the driver in the wrong matching pool.
-    await this.goOffline(userId);
-    await this.pool.query(
-      `INSERT INTO drivers (user_id, vehicle_type, approval_status) VALUES ($1, $2, $3)
-       ON CONFLICT (user_id) DO UPDATE SET vehicle_type = EXCLUDED.vehicle_type, updated_at = now()`,
-      [userId, vehicleType, this.autoApprove ? 'approved' : 'pending'],
-    );
-    return this.getProfile(userId);
-  }
-
   async goOnline(userId: string, location: LatLng): Promise<DriverProfile> {
     const profile = await this.getProfile(userId);
-    if (!profile.vehicleType) {
-      throw new AppException(HttpStatus.CONFLICT, 'vehicle_not_set', 'Choose your vehicle first');
-    }
-    if (profile.approvalStatus !== 'approved') {
+    // Covers drivers who haven't onboarded yet (no vehicle either) as well as rejected / suspended ones.
+    if (profile.approvalStatus !== 'approved' || !profile.vehicleType) {
       throw new AppException(HttpStatus.FORBIDDEN, 'driver_not_approved', 'Your account is not approved yet');
     }
     const city = cityForPoint(location);

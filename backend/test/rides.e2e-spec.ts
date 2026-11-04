@@ -85,7 +85,13 @@ describe('Booking and dispatch (e2e)', () => {
   async function onlineDriver(vehicleType: VehicleType, at: LatLng): Promise<Actor> {
     const driver = await signIn('driver', 'Bilal Ahmed');
     drivers.push(driver);
-    await http().put('/driver/me').set(driver.auth).send({ vehicleType }).expect(200);
+    // Onboarding itself is tested in drivers.e2e-spec.ts; here we only need an approved driver.
+    await app
+      .get<pg.Pool>(PG_POOL)
+      .query(`INSERT INTO drivers (user_id, vehicle_type, approval_status) VALUES ($1, $2, 'approved')`, [
+        driver.userId,
+        vehicleType,
+      ]);
     const res = await http().post('/driver/online').set(driver.auth).send({ location: at }).expect(200);
     expect(res.body.online).toBe(true);
     return driver;

@@ -15,6 +15,8 @@ const DEFAULT_CODES: Partial<Record<number, string>> = {
   401: 'unauthorized',
   403: 'forbidden',
   404: 'not_found',
+  // Multer's upload size limit.
+  413: 'file_too_large',
   429: 'rate_limited',
 };
 

@@ -1,10 +1,8 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import {
   type DriverProfile,
   type GoOnlineBody,
   goOnlineBodySchema,
-  type UpdateDriverProfileBody,
-  updateDriverProfileBodySchema,
 } from '@apniride/shared';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -22,15 +20,6 @@ export class DriversController {
   me(@CurrentUser() me: AuthUser): Promise<DriverProfile> {
     assertRole(me, 'driver');
     return this.drivers.getProfile(me.userId);
-  }
-
-  @Put('me')
-  update(
-    @CurrentUser() me: AuthUser,
-    @Body(new ZodValidationPipe(updateDriverProfileBodySchema)) body: UpdateDriverProfileBody,
-  ): Promise<DriverProfile> {
-    assertRole(me, 'driver');
-    return this.drivers.setVehicleType(me.userId, body.vehicleType);
   }
 
   /** Start receiving ride offers. Location updates then come over Socket.IO. */
