@@ -63,34 +63,24 @@ resubmit. When an admin acts, the driver app gets a `driver:reviewed` socket eve
 - Each upload gets a new random file name; the old file is deleted once the new one is saved.
 - CNIC, licence and photos are personal data: don't log them, and delete downloaded review copies.
 
-## Reviewing drivers (until the admin panel exists)
+## Reviewing drivers
 
-The admin API needs the header `X-Admin-Key: <ADMIN_API_KEY>` (set in `backend/.env`; unset = admin API off).
-This is a stop-gap: the admin panel will need real admin accounts, roles and an audit log.
+In the **admin panel** ([admin.md](admin.md)): Drivers → *Waiting for review* (oldest first) → open a driver,
+compare the photos with the details, then Approve or Reject with a reason. Approved drivers can be suspended
+(with a reason) and reinstated later. Every decision is in the audit log with the admin's name.
 
-With the backend running (`pnpm backend`), from the repo root:
-
-```powershell
-pnpm drivers list pending            # the review queue, oldest first
-pnpm drivers show 03001234567        # details; warns if the CNIC's last digit doesn't match the gender
-pnpm drivers photos 03001234567      # saves the photos to backend/uploads/review/<phone>/ to look at
-pnpm drivers approve 03001234567
-pnpm drivers reject 03001234567 "CNIC photo is blurry, please take it again"
-pnpm drivers suspend 03001234567 "Several passenger complaints"
-```
-
-To approve yourself for phone testing: register in the driver app, send it for review, then
-`pnpm drivers approve <your number>`.
+To approve yourself for phone testing: register in the driver app, send it for review, then approve yourself
+in the panel.
 
 **CNIC gender hint:** by NADRA convention the last CNIC digit is odd for men and even for women. A mismatch
 isn't proof of anything, it just means "look at the card closely".
 
-### Admin API
+### Admin API (admin sign-in token)
 
 | | |
 | --- | --- |
 | `GET /admin/drivers?status=pending` | List (max 200). Pending is oldest submission first |
-| `GET /admin/drivers/:id` | Details, documents, missing documents, `cnicGenderMatches`, review note |
+| `GET /admin/drivers/:id` | Details, documents, missing documents, `cnicGenderMatches`, review note, history |
 | `GET /admin/drivers/:id/documents/:type` | The photo |
 | `POST /admin/drivers/:id/approve` | From `pending` or `suspended` |
 | `POST /admin/drivers/:id/reject` `{ reason }` | From `pending` |
@@ -107,7 +97,6 @@ with `invalid_driver_state`.
 
 ## Not done yet
 
-- Admin panel screens (the API is ready for them).
 - Changing vehicle after approval (needs a new review; for now, an admin would have to do it).
 - NADRA / licence verification APIs, police certificate requirement, vehicle inspection, live selfie before
   each shift.
