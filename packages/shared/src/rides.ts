@@ -108,7 +108,7 @@ export const SOCKET_EVENTS = {
   rideUpdate: 'ride:update',
   /** driver → server: DriverLocationUpdate. Every few seconds while online or on a ride. */
   driverLocation: 'driver:location',
-  /** server → passenger: DriverPosition. Only for the passenger's own active ride. */
+  /** server → passenger and driver: DriverPosition (with ETA). Only for that ride's passenger and its driver. */
   rideDriverLocation: 'ride:driver_location',
   /** server → driver: { status }. An admin approved, rejected or suspended this driver. */
   driverReviewed: 'driver:reviewed',

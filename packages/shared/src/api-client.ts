@@ -40,6 +40,7 @@ import {
 } from './drivers';
 import { type FareEstimateBody, type FareEstimateResponse, fareEstimateResponseSchema } from './fares';
 import { healthResponseSchema, type HealthResponse } from './health';
+import { type NearbyDriversQuery, type NearbyDriversResponse, nearbyDriversResponseSchema } from './tracking';
 import {
   type BookRideBody,
   currentRideResponseSchema,
@@ -273,6 +274,14 @@ export function createApiClient(options: ApiClientOptions) {
       current: (): Promise<Ride | null> =>
         request('/rides/current', (d) => currentRideResponseSchema.parse(d).ride),
       get: (id: string): Promise<Ride> => request(`/rides/${id}`, (d) => rideSchema.parse(d)),
+      /** Available drivers around a point, for the map before booking. Poll every ~10 s while the map is open. */
+      nearbyDrivers: (query: NearbyDriversQuery): Promise<NearbyDriversResponse> =>
+        request(
+          `/drivers/nearby?latitude=${query.latitude}&longitude=${query.longitude}`,
+          (d) => nearbyDriversResponseSchema.parse(d),
+          // Stale within seconds anyway: give up fast on weak networks, the next poll comes soon.
+          { timeoutMs: 8_000 },
+        ),
       /** Last known position of the driver on this ride (after app start / reconnect). */
       driverPosition: (id: string): Promise<DriverPosition | null> =>
         request(`/rides/${id}/driver-location`, (d) => driverPositionResponseSchema.parse(d).position),
