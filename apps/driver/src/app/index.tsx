@@ -1,15 +1,15 @@
 import { CITY_CENTERS, type LatLng } from '@apniride/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActiveRideCard } from '@/components/ActiveRideCard';
+import { DriverStatusCard } from '@/components/DriverStatusCard';
 import { OfferCard } from '@/components/OfferCard';
 import { ServerStatus } from '@/components/ServerStatus';
-import { VehiclePicker } from '@/components/VehiclePicker';
 import { api, signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
@@ -40,7 +40,6 @@ export default function DriverHomeScreen() {
   const name = useAuth((s) => s.user?.name);
   const profile = useDriverProfile();
   const { data: current } = useDriverCurrent();
-  const [changingVehicle, setChangingVehicle] = useState(false);
 
   const online = profile.data?.online ?? false;
   const offer = current?.offer ?? null;
@@ -79,16 +78,11 @@ export default function DriverHomeScreen() {
   let bottom: ReactNode;
   if (profile.isPending) {
     bottom = <ActivityIndicator color={colors.brand} />;
-  } else if (p && (!p.vehicleType || changingVehicle)) {
-    bottom = <VehiclePicker current={p.vehicleType} onDone={() => setChangingVehicle(false)} />;
-  } else if (p && p.approvalStatus !== 'approved') {
-    bottom = (
-      <View style={styles.sheet}>
-        <Text style={styles.sheetText}>{t('vehicle.pending')}</Text>
-      </View>
-    );
   } else if (ride) {
+    // Checked before the approval status: a driver suspended mid-ride can still finish it.
     bottom = <ActiveRideCard ride={ride} />;
+  } else if (p && p.approvalStatus !== 'approved') {
+    bottom = <DriverStatusCard status={p.approvalStatus} />;
   } else if (offer) {
     bottom = <OfferCard key={offer.rideId} offer={offer} />;
   } else {
@@ -147,18 +141,11 @@ export default function DriverHomeScreen() {
             <Text style={[styles.status, { color: online ? '#16A34A' : colors.muted }]}>
               {online ? t('online') : t('offline')}
             </Text>
-            {p?.vehicleType ? (
-              <Pressable
-                onPress={() => setChangingVehicle(true)}
-                disabled={online || onRide}
-                accessibilityRole="button"
-                hitSlop={8}
-              >
-                <Text style={styles.vehicle}>
-                  {ICONS[p.vehicleType]} {t(`vehicle.${p.vehicleType}`)}
-                  {online || onRide ? '' : ` · ${t('vehicle.change')}`}
-                </Text>
-              </Pressable>
+            {/* Part of the reviewed application now: changing vehicle means a new review (admin, later). */}
+            {p?.vehicleType && p.approvalStatus === 'approved' ? (
+              <Text style={styles.vehicle}>
+                {ICONS[p.vehicleType]} {t(`vehicle.${p.vehicleType}`)}
+              </Text>
             ) : null}
           </View>
           <ServerStatus />
@@ -185,8 +172,6 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   status: { fontSize: 15, fontWeight: '600' },
   vehicle: { fontSize: 13, color: colors.muted },
-  sheet: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 6 },
-  sheetText: { fontSize: 15, color: colors.text, textAlign: 'center' },
   waiting: {
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',

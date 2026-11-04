@@ -49,6 +49,15 @@ const config: ExpoConfig = {
       },
     ],
     ['react-native-maps', { androidGoogleMapsApiKey, iosGoogleMapsApiKey }],
+    [
+      'expo-image-picker',
+      {
+        // Registration: photos of the CNIC, licence and vehicle, and a selfie.
+        cameraPermission: 'ApniRide Driver uses the camera to photograph your CNIC, licence and vehicle.',
+        photosPermission: 'ApniRide Driver lets you choose photos of your documents from your gallery.',
+        microphonePermission: false,
+      },
+    ],
   ],
   // Read by src/lib/map-provider.ts: use Google Maps on iOS only when a key is built in.
   extra: { iosGoogleMaps: !!iosGoogleMapsApiKey },

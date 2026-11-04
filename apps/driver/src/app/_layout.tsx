@@ -56,6 +56,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn && hasName}>
             <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="onboarding-details" />
           </Stack.Protected>
           <Stack.Protected guard={signedIn && !hasName}>
             <Stack.Screen name="complete-profile" />

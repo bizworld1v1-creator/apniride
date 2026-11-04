@@ -1,7 +1,8 @@
-import { ApiError } from '@apniride/shared';
+import { ApiError, onboardingErrorCodeSchema } from '@apniride/shared';
 import type { TFunction } from 'i18next';
 
-const KNOWN = new Set([
+const KNOWN = new Set<string>([
+  ...onboardingErrorCodeSchema.options,
   'invalid_phone',
   'invalid_code',
   'code_expired',

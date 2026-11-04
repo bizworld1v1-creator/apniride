@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Vibration } from 'react-native';
 import { CURRENT_KEY, type DriverCurrent, patchCurrent, PROFILE_KEY, setOffer } from '@/lib/driver';
+import { ONBOARDING_KEY } from '@/lib/onboarding';
 import { disconnectSocket, getSocket } from '@/lib/socket';
 
 /** Keeps the socket connected while signed in and feeds offers / ride updates into the query cache. */
@@ -26,20 +27,29 @@ export function RealtimeBridge() {
       patchCurrent(queryClient, { ride: ride.status === 'searching' ? null : ride });
       if (ride.status === 'cancelled') Vibration.vibrate(400);
     };
+    // Approved / rejected / suspended by an admin: refresh the home screen at once.
+    const onReviewed = () => {
+      void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+      void queryClient.invalidateQueries({ queryKey: ONBOARDING_KEY });
+      Vibration.vibrate(400);
+    };
     const onConnect = () => {
       void queryClient.invalidateQueries({ queryKey: CURRENT_KEY });
       void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
+      void queryClient.invalidateQueries({ queryKey: ONBOARDING_KEY });
     };
 
     socket.on(SOCKET_EVENTS.rideOffer, onOffer);
     socket.on(SOCKET_EVENTS.rideOfferCancelled, onOfferCancelled);
     socket.on(SOCKET_EVENTS.rideUpdate, onRideUpdate);
+    socket.on(SOCKET_EVENTS.driverReviewed, onReviewed);
     socket.on('connect', onConnect);
     socket.connect();
     return () => {
       socket.off(SOCKET_EVENTS.rideOffer, onOffer);
       socket.off(SOCKET_EVENTS.rideOfferCancelled, onOfferCancelled);
       socket.off(SOCKET_EVENTS.rideUpdate, onRideUpdate);
+      socket.off(SOCKET_EVENTS.driverReviewed, onReviewed);
       socket.off('connect', onConnect);
       disconnectSocket();
     };
