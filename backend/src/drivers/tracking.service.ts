@@ -33,8 +33,10 @@ interface StoredLocation {
 
 const keys = {
   track: (rideId: string) => `ride:track:${rideId}`,
+  /** JSON StoredLocation, for reconnecting passengers and the heading of nearby drivers. */
   lastLocation: (driverId: string) => `drv:loc:${driverId}`,
 };
+export const TRACKING_KEYS = keys;
 
 /**
  * Passengers see their driver's position **only during their own ride**: from accept until

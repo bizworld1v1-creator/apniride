@@ -179,9 +179,12 @@ describe('Booking and dispatch (e2e)', () => {
     // Live tracking: the driver's position reaches the passenger with an ETA to the pickup.
     const approach = { latitude: pickup.latitude + 0.01, longitude: pickup.longitude };
     const toPickup = next<DriverPosition>(passenger.socket, SOCKET_EVENTS.rideDriverLocation, (p) => p.rideId === ride.id);
+    const ownEta = next<DriverPosition>(driver.socket, SOCKET_EVENTS.rideDriverLocation, (p) => p.rideId === ride.id);
     driver.socket.emit(SOCKET_EVENTS.driverLocation, { ...approach, heading: 180 });
     const pos = await toPickup;
     expect(pos).toMatchObject({ location: approach, heading: 180, ageSeconds: 0 });
+    // The driver gets the same ETA for their own screen.
+    expect(await ownEta).toEqual(pos);
     expect(pos.distanceKm).toBeCloseTo(1.5, 1);
     expect(pos.etaMin).toBeGreaterThan(0);
     // A passenger who reconnects can fetch it; nobody else can.
@@ -225,6 +228,39 @@ describe('Booking and dispatch (e2e)', () => {
     expect((await http().get('/driver/current').set(driver.auth).expect(200)).body).toEqual({ offer: null, ride: null });
     expect((await http().get('/rides/current').set(passenger.auth).expect(200)).body).toEqual({ ride: null });
     expect((await http().get(`/rides/${ride.id}`).set(passenger.auth).expect(200)).body.status).toBe('completed');
+  });
+
+  it('shows available drivers near a passenger, without ids or exact positions', async () => {
+    const here = spot(0.3, 0.3);
+    const bike = await onlineDriver('bike', { latitude: here.latitude + 0.005, longitude: here.longitude });
+    bike.socket.emit(SOCKET_EVENTS.driverLocation, {
+      latitude: here.latitude + 0.0051234,
+      longitude: here.longitude + 0.0000049,
+      heading: 92.6,
+    });
+    await new Promise((r) => setTimeout(r, 300));
+    const passenger = await signIn('passenger', 'Hina');
+    const res = await http().get('/drivers/nearby').query(here).set(passenger.auth).expect(200);
+    const mine = (res.body.drivers as { key: string; location: LatLng; heading: number; vehicleType: string }[]).filter(
+      (d) => Math.abs(d.location.latitude - (here.latitude + 0.0051)) < 0.0002,
+    );
+    expect(mine).toHaveLength(1);
+    expect(mine[0]).toMatchObject({ vehicleType: 'bike', heading: 93 });
+    expect(mine[0]!.key).not.toContain(bike.userId);
+    // Rounded to 4 decimals (~11 m).
+    expect(String(mine[0]!.location.latitude).split('.')[1]!.length).toBeLessThanOrEqual(4);
+    // Same key on the next poll, so the app can glide the marker.
+    const again = await http().get('/drivers/nearby').query(here).set(passenger.auth).expect(200);
+    expect(again.body.drivers.map((d: { key: string }) => d.key)).toContain(mine[0]!.key);
+
+    // Offline drivers disappear; outside Lahore there's nobody; drivers can't use it.
+    await http().post('/driver/offline').set(bike.auth).expect(200);
+    const after = await http().get('/drivers/nearby').query(here).set(passenger.auth).expect(200);
+    expect(after.body.drivers.map((d: { key: string }) => d.key)).not.toContain(mine[0]!.key);
+    const karachi = await http().get('/drivers/nearby').query({ latitude: 24.86, longitude: 67.0 }).set(passenger.auth);
+    expect(karachi.body).toEqual({ drivers: [] });
+    await http().get('/drivers/nearby').query(here).set(bike.auth).expect(403);
+    await http().get('/drivers/nearby').query({ latitude: 'x', longitude: 1 }).set(passenger.auth).expect(400);
   });
 
   it('tells the passenger "no driver" when the only driver declines', async () => {

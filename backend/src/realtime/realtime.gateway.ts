@@ -66,7 +66,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection {
         this.drivers.updateLocation(user.userId, parsed.data),
         this.tracking.onDriverLocation(user.userId, parsed.data),
       ]);
-      if (forward) this.toPassenger(forward.passengerId, SOCKET_EVENTS.rideDriverLocation, forward.position);
+      if (forward) {
+        this.toPassenger(forward.passengerId, SOCKET_EVENTS.rideDriverLocation, forward.position);
+        // The driver gets the same ETA, for "5 min to pickup" on their screen.
+        this.toDriver(user.userId, SOCKET_EVENTS.rideDriverLocation, forward.position);
+      }
     } catch (err) {
       this.logger.warn(`location update failed: ${(err as Error).message}`);
     }
