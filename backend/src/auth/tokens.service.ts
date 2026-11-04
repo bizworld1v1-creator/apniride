@@ -11,6 +11,8 @@ import { PG_POOL } from '../database/database.module.js';
 /** 1 hour: short enough to limit a leaked token, long enough to avoid constant refreshes on 3G. */
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 60;
 export const REFRESH_TOKEN_TTL_DAYS = 60;
+/** Admin panel sessions are shorter: a forgotten signed-in laptop shouldn't give access for two months. */
+export const ADMIN_REFRESH_TOKEN_TTL_DAYS = 7;
 /** After rotation the previous refresh token still works this long (lost responses on weak networks). */
 export const ROTATION_GRACE_SECONDS = 120;
 
@@ -42,7 +44,7 @@ export class TokensService {
       `INSERT INTO auth_sessions (user_id, role, refresh_token_hash, expires_at)
        VALUES ($1, $2, $3, now() + make_interval(days => $4))
        RETURNING id`,
-      [userId, role, sha256(refreshToken), REFRESH_TOKEN_TTL_DAYS],
+      [userId, role, sha256(refreshToken), role === 'admin' ? ADMIN_REFRESH_TOKEN_TTL_DAYS : REFRESH_TOKEN_TTL_DAYS],
     );
     return this.issue({ userId, role, sessionId: rows[0]!.id }, refreshToken);
   }
@@ -88,7 +90,7 @@ export class TokensService {
     try {
       const { payload } = await jwtVerify(token, this.key, { issuer: ISSUER, algorithms: ['HS256'] });
       const role = payload.role;
-      if (typeof payload.sub !== 'string' || typeof payload.sid !== 'string' || (role !== 'passenger' && role !== 'driver')) {
+      if (typeof payload.sub !== 'string' || typeof payload.sid !== 'string' || (role !== 'passenger' && role !== 'driver' && role !== 'admin')) {
         throw new Error('bad claims');
       }
       return { userId: payload.sub, role, sessionId: payload.sid };

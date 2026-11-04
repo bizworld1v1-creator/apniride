@@ -14,6 +14,7 @@ import { PG_POOL } from '../database/database.module.js';
 import { DriversService } from '../drivers/drivers.service.js';
 import { OnboardingService } from '../drivers/onboarding.service.js';
 import { RealtimeGateway } from '../realtime/realtime.gateway.js';
+import { AuditService } from './audit.service.js';
 
 /** Which statuses each admin action may start from. */
 const TRANSITIONS = {
@@ -43,6 +44,7 @@ export class DriverReviewService {
     private readonly onboarding: OnboardingService,
     private readonly drivers: DriversService,
     private readonly realtime: RealtimeGateway,
+    private readonly audit: AuditService,
   ) {}
 
   /** Pending applications oldest first (first come, first served); otherwise newest first. */
@@ -76,6 +78,7 @@ export class DriverReviewService {
       cnicGenderMatches: details && hint && details.gender !== 'other' ? hint === details.gender : null,
       reviewNote: row.review_note,
       reviewedAt: row.reviewed_at?.toISOString() ?? null,
+      history: await this.audit.history('driver', driverId),
     };
   }
 
@@ -83,7 +86,12 @@ export class DriverReviewService {
    * Moves the driver to the action's status. Repeating an action that already happened returns the driver
    * unchanged (double click in the admin panel). A reason is required for reject and suspend.
    */
-  async review(driverId: string, action: ReviewAction, reason: string | null): Promise<AdminDriverDetail> {
+  async review(
+    adminId: string,
+    driverId: string,
+    action: ReviewAction,
+    reason: string | null,
+  ): Promise<AdminDriverDetail> {
     const { from, to } = TRANSITIONS[action];
     const { rowCount } = await this.pool.query(
       `UPDATE drivers SET approval_status = $2, review_note = $3, reviewed_at = now(), updated_at = now()
@@ -99,6 +107,7 @@ export class DriverReviewService {
         `Can't ${action} a driver who is ${current.status}`,
       );
     }
+    await this.audit.record(adminId, `driver.${action}`, 'driver', driverId, reason ? { reason } : {});
     // A suspended driver stops getting offers at once. A ride already under way can still be finished.
     if (to === 'suspended') await this.drivers.goOffline(driverId);
     this.realtime.toDriver(driverId, SOCKET_EVENTS.driverReviewed, { status: to });

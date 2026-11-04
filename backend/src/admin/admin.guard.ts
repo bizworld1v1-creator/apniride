@@ -1,32 +1,37 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
-import { type CanActivate, type ExecutionContext, HttpStatus, Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import type { Request } from 'express';
+import { type CanActivate, type ExecutionContext, HttpStatus, Inject, Injectable } from '@nestjs/common';
+import type pg from 'pg';
+import type { AuthedRequest } from '../auth/auth.guard.js';
+import { TokensService } from '../auth/tokens.service.js';
 import { AppException } from '../common/app-exception.js';
-import type { Env } from '../config/env.js';
-
-const digest = (s: string) => createHash('sha256').update(s).digest();
+import { PG_POOL } from '../database/database.module.js';
 
 /**
- * Temporary admin auth: `X-Admin-Key: <ADMIN_API_KEY>`. Replace with admin accounts (sign-in, roles,
- * audit log) when the admin panel is built. With ADMIN_API_KEY unset the admin API doesn't exist (404).
+ * Requires an admin-panel access token (`Authorization: Bearer …`, signed in with role "admin") from an admin
+ * who is still enabled. Checked on every request, so disabling an admin locks them out at once.
  */
 @Injectable()
 export class AdminGuard implements CanActivate {
-  private readonly key: Buffer | null;
+  constructor(
+    private readonly tokens: TokensService,
+    @Inject(PG_POOL) private readonly pool: pg.Pool,
+  ) {}
 
-  constructor(config: ConfigService<Env, true>) {
-    const key = config.get('ADMIN_API_KEY', { infer: true });
-    this.key = key ? digest(key) : null;
-  }
-
-  canActivate(ctx: ExecutionContext): boolean {
-    if (!this.key) throw new AppException(HttpStatus.NOT_FOUND, 'not_found', 'Not found');
-    const header = ctx.switchToHttp().getRequest<Request>().headers['x-admin-key'];
-    // Compare hashes in constant time, so response timing can't reveal the key.
-    if (typeof header !== 'string' || !timingSafeEqual(digest(header), this.key)) {
-      throw new AppException(HttpStatus.UNAUTHORIZED, 'unauthorized', 'Invalid admin key');
+  async canActivate(ctx: ExecutionContext): Promise<boolean> {
+    const req = ctx.switchToHttp().getRequest<AuthedRequest>();
+    const [scheme, token] = req.headers.authorization?.split(' ') ?? [];
+    if (scheme !== 'Bearer' || !token) {
+      throw new AppException(HttpStatus.UNAUTHORIZED, 'unauthorized', 'Missing access token');
     }
+    const user = await this.tokens.verifyAccessToken(token);
+    if (user.role !== 'admin') throw notAdmin();
+    const { rowCount } = await this.pool.query(
+      'SELECT 1 FROM admins WHERE user_id = $1 AND disabled_at IS NULL',
+      [user.userId],
+    );
+    if (rowCount !== 1) throw notAdmin();
+    req.user = user;
     return true;
   }
 }
+
+const notAdmin = () => new AppException(HttpStatus.FORBIDDEN, 'not_admin', 'Admins only');

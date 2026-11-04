@@ -22,14 +22,15 @@ export class AuthController {
     private readonly tokens: TokensService,
   ) {}
 
-  /** Sends a 6-digit code by SMS. Same response whether or not the number has an account. */
+  /** Sends a 6-digit code by SMS. Same response whether or not the number has an account (or is an admin). */
   @Post('otp/request')
   @HttpCode(HttpStatus.OK)
-  request(
+  async request(
     @Body(new ZodValidationPipe(requestOtpBodySchema)) body: z.output<typeof requestOtpBodySchema>,
     @Ip() ip: string,
   ): Promise<RequestOtpResponse> {
-    return this.otp.request(body.phone, body.role, ip);
+    const deliver = body.role !== 'admin' || (await this.auth.activeAdminId(body.phone)) !== null;
+    return this.otp.request(body.phone, body.role, ip, deliver);
   }
 
   /** Exchanges a valid code for tokens. Creates the account on first sign-in. */

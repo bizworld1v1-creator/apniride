@@ -1,5 +1,5 @@
 import { HttpStatus, type PipeTransform } from '@nestjs/common';
-import { onboardingErrorCodeSchema } from '@apniride/shared';
+import { adminErrorCodeSchema, onboardingErrorCodeSchema } from '@apniride/shared';
 import type { z } from 'zod';
 import { AppException } from './app-exception.js';
 
@@ -10,6 +10,7 @@ const SURFACED_CODES = new Set<string>([
   'name_too_short',
   'name_too_long',
   ...onboardingErrorCodeSchema.options,
+  ...adminErrorCodeSchema.options,
 ]);
 
 /** Validates (and transforms, e.g. phone → E.164) a request body with a shared Zod schema. */

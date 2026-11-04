@@ -9,13 +9,15 @@ import {
 } from '@apniride/shared';
 import type { Response } from 'express';
 import type { z } from 'zod';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import type { AuthUser } from '../auth/tokens.service.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AdminGuard } from './admin.guard.js';
 import { DriverReviewService } from './driver-review.service.js';
 
 type Reason = z.output<typeof reviewNoteBodySchema>;
 
-/** Driver review for the admin panel (and `pnpm drivers` in the meantime). */
+/** Driver review for the admin panel. Every action is written to the audit log. */
 @Controller('admin/drivers')
 @UseGuards(AdminGuard)
 export class AdminDriversController {
@@ -49,25 +51,27 @@ export class AdminDriversController {
 
   @Post(':id/approve')
   @HttpCode(HttpStatus.OK)
-  approve(@Param('id', ParseUUIDPipe) id: string): Promise<AdminDriverDetail> {
-    return this.review.review(id, 'approve', null);
+  approve(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string): Promise<AdminDriverDetail> {
+    return this.review.review(me.userId, id, 'approve', null);
   }
 
   @Post(':id/reject')
   @HttpCode(HttpStatus.OK)
   reject(
+    @CurrentUser() me: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(reviewNoteBodySchema)) body: Reason,
   ): Promise<AdminDriverDetail> {
-    return this.review.review(id, 'reject', body.reason);
+    return this.review.review(me.userId, id, 'reject', body.reason);
   }
 
   @Post(':id/suspend')
   @HttpCode(HttpStatus.OK)
   suspend(
+    @CurrentUser() me: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(reviewNoteBodySchema)) body: Reason,
   ): Promise<AdminDriverDetail> {
-    return this.review.review(id, 'suspend', body.reason);
+    return this.review.review(me.userId, id, 'suspend', body.reason);
   }
 }

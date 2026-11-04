@@ -19,8 +19,8 @@ import { AppModule } from '../src/app.module.js';
 import { PG_POOL } from '../src/database/database.module.js';
 import { setupApp } from '../src/setup-app.js';
 
-// Needs `pnpm db:up`. ADMIN_API_KEY and UPLOAD_DIR come from vitest.config.e2e.ts.
-const ADMIN = { 'X-Admin-Key': process.env.ADMIN_API_KEY! };
+// Needs `pnpm db:up`. UPLOAD_DIR comes from vitest.config.e2e.ts.
+import { removeTestAdmins, signInAdmin } from './admin-helpers.js';
 // Raiwind, like the rides tests: far from where a real driver tests the app.
 const LOCATION = { latitude: 31.33, longitude: 74.25 };
 /** Only the first bytes matter: the server checks the JPEG signature. */
@@ -43,6 +43,8 @@ describe('Driver onboarding and admin review (e2e)', () => {
   let url: string;
   const sockets: Socket[] = [];
   const http = () => request(app.getHttpServer());
+  /** Authorization header of a signed-in admin. */
+  let ADMIN: Record<string, string>;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
@@ -51,9 +53,11 @@ describe('Driver onboarding and admin review (e2e)', () => {
     await setupApp(app);
     await app.listen(0, '127.0.0.1');
     url = await app.getUrl();
+    ADMIN = (await signInAdmin(app)).auth;
   });
 
   afterAll(async () => {
+    if (app) await removeTestAdmins(app);
     for (const s of sockets) s.disconnect();
     await app?.close();
   });
@@ -142,12 +146,10 @@ describe('Driver onboarding and admin review (e2e)', () => {
     expect(res.body.code).toBe('cnic_taken');
   });
 
-  it('protects the admin API with the admin key', async () => {
+  it('keeps the admin API for admins', async () => {
     await http().get('/admin/drivers').expect(401);
-    await http().get('/admin/drivers').set({ 'X-Admin-Key': 'wrong-key-wrong-key-wrong-key-wrong' }).expect(401);
-    // A driver token is not an admin key.
     const d = await signIn('driver');
-    await http().get('/admin/drivers').set(d.auth).expect(401);
+    expect((await http().get('/admin/drivers').set(d.auth).expect(403)).body.code).toBe('not_admin');
   });
 
   it('goes through submit → reject → fix → resubmit → approve → online → suspend', async () => {
@@ -206,6 +208,12 @@ describe('Driver onboarding and admin review (e2e)', () => {
       .send({ reason: 'CNIC photo is blurry' })
       .expect(200);
     expect(rejected.body.status).toBe('rejected');
+    // Audit trail: who did it and why.
+    expect(rejected.body.history[0]).toMatchObject({
+      action: 'driver.reject',
+      adminName: 'Test Admin',
+      details: { reason: 'CNIC photo is blurry' },
+    });
     expect(await event).toEqual({ status: 'rejected' });
     const afterReject = await http().get('/driver/onboarding').set(d.auth).expect(200);
     expect(afterReject.body).toMatchObject({ status: 'rejected', canEdit: true, reviewNote: 'CNIC photo is blurry' });

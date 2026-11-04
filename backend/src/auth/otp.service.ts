@@ -37,8 +37,12 @@ export class OtpService {
     this.maxPerIpPerHour = config.get('OTP_MAX_PER_IP_PER_HOUR', { infer: true });
   }
 
-  /** Generates, stores (hashed) and sends a code. `phone` must already be E.164. */
-  async request(phone: string, role: UserRole, ip: string): Promise<RequestOtpResponse> {
+  /**
+   * Generates, stores (hashed) and sends a code. `phone` must already be E.164.
+   * With deliver=false (admin sign-in for a number that isn't an admin) the limits still apply and the response
+   * looks the same, but no code exists and no SMS goes out: the admin list can't be probed.
+   */
+  async request(phone: string, role: UserRole, ip: string, deliver = true): Promise<RequestOtpResponse> {
     const id = this.phoneId(phone);
 
     // 1. Cooldown: atomically claim the "recently sent" slot.
@@ -52,6 +56,9 @@ export class OtpService {
     await this.enforceHourlyCap(`otp:hr:${id}`, OTP_LIMITS.maxPerPhonePerHour);
     await this.enforceHourlyCap(`otp:ip:${this.hmac(ip).slice(0, 32)}`, this.maxPerIpPerHour);
 
+    const response = { expiresInSeconds: OTP_LIMITS.ttlSeconds, resendInSeconds: OTP_LIMITS.resendSeconds };
+    if (!deliver) return response;
+
     // 3. Store the hash of a fresh code (replaces any previous code for this number).
     const code = randomInt(0, 10 ** OTP_LENGTH).toString().padStart(OTP_LENGTH, '0');
     const key = `otp:code:${id}`;
@@ -60,11 +67,7 @@ export class OtpService {
 
     await this.sms.send(phone, `ApniRide code: ${code}. Kisi ko na batayen. Do not share it.`);
 
-    return {
-      expiresInSeconds: OTP_LIMITS.ttlSeconds,
-      resendInSeconds: OTP_LIMITS.resendSeconds,
-      ...(this.devEcho ? { devCode: code } : {}),
-    };
+    return { ...response, ...(this.devEcho ? { devCode: code } : {}) };
   }
 
   /** Throws unless `code` is the current code for this phone + role. A code works only once. */

@@ -18,7 +18,8 @@
     "passenger": "pnpm --filter @apniride/passenger start",
     "driver": "pnpm --filter @apniride/driver start",
     "db:migrate": "pnpm --filter @apniride/backend migrate",
-    "drivers": "pnpm --silent --filter @apniride/backend drivers"
+    "admins": "pnpm --silent --filter @apniride/backend admins",
+    "admin": "pnpm --filter @apniride/admin dev"
   },
   "devDependencies": {
     "turbo": "^2.11.10"

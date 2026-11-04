@@ -95,6 +95,14 @@ export class FaresService {
     return rate?.avgSpeedKmh ?? 20;
   }
 
+  /**
+   * Forget cached rates after an admin edit. Only clears this server's cache; other API servers pick the
+   * change up within RATES_CACHE_MS (1 minute). Quotes already given keep their fare.
+   */
+  clearRatesCache(): void {
+    this.ratesCache.clear();
+  }
+
   private async ratesFor(city: CityCode): Promise<FareRate[]> {
     const cached = this.ratesCache.get(city);
     if (cached && Date.now() - cached.at < RATES_CACHE_MS) return cached.rates;

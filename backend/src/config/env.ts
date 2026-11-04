@@ -26,11 +26,6 @@ const envSchema = z
 
     /** Where driver document photos are stored (local disk). Relative paths are relative to backend/. */
     UPLOAD_DIR: z.string().min(1).default('uploads'),
-    /**
-     * Shared key for the admin review API (header X-Admin-Key), until the admin panel has real sign-in.
-     * Unset = admin API switched off. Generate with: openssl rand -base64 48
-     */
-    ADMIN_API_KEY: z.string().min(32, 'must be at least 32 characters').optional(),
     /** Seconds a driver has to accept an offer before it goes to the next driver. */
     OFFER_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(60).default(15),
     /** Give up and tell the passenger "no driver" after this long. */
