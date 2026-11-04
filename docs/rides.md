@@ -70,7 +70,7 @@ Driver (driver-app token):
 
 | | |
 | --- | --- |
-| `GET /driver/me`, `PUT /driver/me` `{ vehicleType }` | Profile. With `DRIVER_AUTO_APPROVE=true` (dev only) new drivers are approved straight away |
+| `GET /driver/me` | `{ vehicleType, approvalStatus, online }`. Registration and approval: see [drivers.md](drivers.md) |
 | `POST /driver/online` `{ location }`, `POST /driver/offline` | Start / stop receiving offers |
 | `GET /driver/current` | `{ offer, ride }`. Call on app start and after reconnecting |
 | `POST /driver/rides/:id/accept` · `decline` · `arrived` · `start` · `complete` · `cancel` | |

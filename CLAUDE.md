@@ -77,50 +77,51 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
   `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
   `npx expo export --platform android` in each app to confirm it bundles.
-- Design notes live in `docs/` (auth.md, fares.md, rides.md, running-on-devices.md). Keep them in sync with the code.
+- Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, running-on-devices.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-04, after rides chunk 2)
+## Progress (last updated 2026-11-04, after driver onboarding)
 
 ### Done ✅
 | Feature | Where | Notes |
 | --- | --- | --- |
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
-| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers |
+| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding |
 | Phone OTP sign-in (both apps) | `backend/src/auth`, `apps/*/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
 | Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
 | Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
-| Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard`, `VehiclePicker` | Vibrates on offer, Google Maps navigation link |
+| Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard` | Vibrates on offer, Google Maps navigation link |
 | Run on any device guide | `docs/running-on-devices.md`, `apps/*/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
 | Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `DriverMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
+| Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, driver `app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Admin API with `X-Admin-Key` + `pnpm drivers` CLI until the admin panel exists. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
 
-Tests: 33 shared + 30 backend unit, 15 backend e2e (all passing at the last commit).
-**Not yet tested by the owner on a real phone** for sign-in, fares, booking and tracking. They said they
-would test after chunk 2, so ask for their feedback first and fix any bugs before starting the next feature.
+Tests: 74 shared + 32 backend unit, 22 backend e2e (all passing at the last commit).
+The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
+**Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).
 
 ### Next up ▶️
-1. **First: the owner's phone-test feedback** on everything so far. Fix bugs before new features.
-2. Then (to be confirmed with the owner) **driver onboarding**: CNIC, licence, vehicle details + photos, document
-   upload, gender, and an approval status that the admin panel will set. It replaces `DRIVER_AUTO_APPROVE` and
-   unblocks the female-driver option.
+1. **First: the owner's phone test of driver onboarding** (register, take photos, `pnpm drivers approve`, go online).
+2. Then (to be confirmed with the owner) one of: **admin panel** (approve drivers with photos, view rides, edit fares;
+   needs admin sign-in to replace `ADMIN_API_KEY`), or the **female-driver option** (gender is now collected).
 
 ### Still missing ❌ (V1 scope, rough order)
-1. Driver onboarding: CNIC, licence, vehicle details + photos, document upload, gender (needed for the
-   female-driver option), admin approval. Replaces `DRIVER_AUTO_APPROVE`.
-2. Admin panel (`apps/admin` is a placeholder): approve drivers, view rides, handle complaints, edit fare rates
-3. Masked calling (phone numbers never shared)
-4. SOS button + share-trip link
-5. Female-driver option for passengers
-6. Ratings + complaints with tracked response time
-7. Per-city feature flags (CLAUDE.md requires them; not built yet)
-8. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
-9. Development build (EAS) for background location and an offer sound while the driver app is closed
+1. Admin panel (`apps/admin` is a placeholder): approve drivers, view rides, handle complaints, edit fare rates
+2. Masked calling (phone numbers never shared)
+3. SOS button + share-trip link
+4. Female-driver option for passengers
+5. Ratings + complaints with tracked response time
+6. Per-city feature flags (CLAUDE.md requires them; not built yet)
+7. Real SMS provider (implement `SmsSender` in `backend/src/auth/sms.sender.ts`)
+8. Development build (EAS) for background location and an offer sound while the driver app is closed
 
 ### Known limits / TODOs
 - Expo Go only: no background location; offers only vibrate while the driver app is open.
 - Road distance and ETA = straight line × 1.35 (no routing/traffic API yet).
 - Driver cancellations / declines have no penalty yet.
 - Auth screens are duplicated in both apps (`apps/*/src/app/sign-in.tsx` etc.).
+- Admin API auth is one shared `ADMIN_API_KEY` (stop-gap). Driver documents are on local disk (`backend/uploads/`);
+  production with several servers needs S3-compatible storage behind `FileStorage`.
+- Approved drivers can't change their vehicle in the app (needs a new review). Licence expiry is only checked at sign-up.
 
 ### Local setup reminders
 - Docker Desktop needs WSL 2. If it fails to start, run `wsl --update` as admin and reboot.
@@ -129,5 +130,5 @@ would test after chunk 2, so ask for their feedback first and fix any bugs befor
   `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.100.6"` before `pnpm passenger` (WSL adapters confuse Expo's IP pick).
 - **2026-11-04: the owner got the passenger app running on their phone via Expo Go** (first real-device test).
 - Dev backend: `pnpm db:up && pnpm db:migrate && pnpm backend`. The laptop's LAN IP was `192.168.100.6`.
-- `backend/.env` has dev-only flags: `OTP_DEV_ECHO=true`, `DRIVER_AUTO_APPROVE=true`. Never use them in production;
-  env validation refuses them when `NODE_ENV=production`.
+- `backend/.env` has the dev-only flag `OTP_DEV_ECHO=true` (refused when `NODE_ENV=production`) and a dev
+  `ADMIN_API_KEY`. To approve a test driver: `pnpm drivers list pending`, then `pnpm drivers approve <phone>`.
