@@ -12,6 +12,18 @@ import {
   type User,
   type VerifyOtpBody,
 } from './auth';
+import {
+  type AdminDriverDetail,
+  adminDriverDetailSchema,
+  adminDriverSummarySchema,
+  type AdminDriverSummary,
+  type DriverApprovalStatus,
+  type DriverDetailsBody,
+  type DriverDocumentType,
+  type DriverOnboarding,
+  driverOnboardingSchema,
+  type ReviewNoteBody,
+} from './drivers';
 import { type FareEstimateBody, type FareEstimateResponse, fareEstimateResponseSchema } from './fares';
 import { healthResponseSchema, type HealthResponse } from './health';
 import {
@@ -26,8 +38,13 @@ import {
   type GoOnlineBody,
   type Ride,
   rideSchema,
-  type UpdateDriverProfileBody,
 } from './rides';
+
+/**
+ * A file for a multipart upload: a Blob (web / Node), or what React Native's FormData accepts:
+ * { uri: 'file:///…', name: 'photo.jpg', type: 'image/jpeg' }.
+ */
+export type UploadFile = Blob | { uri: string; name: string; type: string };
 
 /**
  * Where the app keeps its tokens (e.g. memory + SecureStore).
@@ -75,6 +92,11 @@ interface RequestOptions {
   body?: unknown;
   /** Send the access token and refresh it on 401. Default true. */
   auth?: boolean;
+  /** Safe to repeat (e.g. replacing an upload), so retry like a GET. */
+  idempotent?: boolean;
+  timeoutMs?: number;
+  /** Extra headers, e.g. the admin key. */
+  headers?: Record<string, string>;
 }
 
 export function createApiClient(options: ApiClientOptions) {
@@ -102,23 +124,26 @@ export function createApiClient(options: ApiClientOptions) {
   /** One logical request, with retries for GET on network errors / 5xx. */
   async function send<T>(path: string, parse: (d: unknown) => T, opts: RequestOptions): Promise<T> {
     const method = opts.method ?? 'GET';
-    const maxAttempts = method === 'GET' ? retries + 1 : 1;
+    const maxAttempts = method === 'GET' || opts.idempotent ? retries + 1 : 1;
+    const isForm = typeof FormData !== 'undefined' && opts.body instanceof FormData;
     let lastError: unknown;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       if (attempt > 0) await sleep(500 * 2 ** (attempt - 1)); // 500ms, 1s, 2s…
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? timeoutMs);
       try {
         const token = opts.auth === false ? null : tokens?.getAccessToken();
         const res = await fetch(`${root}${path}`, {
           method,
           signal: controller.signal,
-          body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+          // FormData sets its own multipart Content-Type with the boundary.
+          body: opts.body === undefined ? undefined : isForm ? (opts.body as FormData) : JSON.stringify(opts.body),
           headers: {
             Accept: 'application/json',
-            ...(opts.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+            ...(opts.body === undefined || isForm ? {} : { 'Content-Type': 'application/json' }),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...opts.headers,
           },
         });
         if (!res.ok) {
@@ -243,8 +268,29 @@ export function createApiClient(options: ApiClientOptions) {
 
     driver: {
       profile: (): Promise<DriverProfile> => request('/driver/me', (d) => driverProfileSchema.parse(d)),
-      updateProfile: (body: UpdateDriverProfileBody): Promise<DriverProfile> =>
-        request('/driver/me', (d) => driverProfileSchema.parse(d), { method: 'PUT', body }),
+      onboarding: {
+        get: (): Promise<DriverOnboarding> =>
+          request('/driver/onboarding', (d) => driverOnboardingSchema.parse(d)),
+        saveDetails: (body: DriverDetailsBody): Promise<DriverOnboarding> =>
+          request('/driver/onboarding/details', (d) => driverOnboardingSchema.parse(d), {
+            method: 'PUT',
+            body,
+            idempotent: true,
+          }),
+        /** Replaces the photo of this type. Retried on network errors: re-uploading is harmless. */
+        uploadDocument: (type: DriverDocumentType, file: UploadFile): Promise<DriverOnboarding> => {
+          const form = new FormData();
+          form.append('file', file as Blob);
+          return request(`/driver/onboarding/documents/${type}`, (d) => driverOnboardingSchema.parse(d), {
+            method: 'PUT',
+            body: form,
+            idempotent: true,
+            timeoutMs: 60_000,
+          });
+        },
+        submit: (): Promise<DriverOnboarding> =>
+          request('/driver/onboarding/submit', (d) => driverOnboardingSchema.parse(d), { method: 'POST' }),
+      },
       goOnline: (body: GoOnlineBody): Promise<DriverProfile> =>
         request('/driver/online', (d) => driverProfileSchema.parse(d), { method: 'POST', body }),
       goOffline: (): Promise<DriverProfile> =>
@@ -263,6 +309,23 @@ export function createApiClient(options: ApiClientOptions) {
         request(`/driver/rides/${rideId}/complete`, (d) => rideSchema.parse(d), { method: 'POST' }),
       cancel: (rideId: string): Promise<Ride> =>
         request(`/driver/rides/${rideId}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
+    },
+
+    /** Driver review. Temporary: authenticated with the shared ADMIN_API_KEY until admins can sign in. */
+    admin: (adminKey: string) => {
+      const opts = { auth: false, headers: { 'X-Admin-Key': adminKey } } as const;
+      return {
+        drivers: (status?: DriverApprovalStatus): Promise<AdminDriverSummary[]> =>
+          request(`/admin/drivers${status ? `?status=${status}` : ''}`, (d) => adminDriverSummarySchema.array().parse(d), opts),
+        driver: (id: string): Promise<AdminDriverDetail> =>
+          request(`/admin/drivers/${id}`, (d) => adminDriverDetailSchema.parse(d), opts),
+        approve: (id: string): Promise<AdminDriverDetail> =>
+          request(`/admin/drivers/${id}/approve`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST' }),
+        reject: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
+          request(`/admin/drivers/${id}/reject`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST', body }),
+        suspend: (id: string, body: ReviewNoteBody): Promise<AdminDriverDetail> =>
+          request(`/admin/drivers/${id}/suspend`, (d) => adminDriverDetailSchema.parse(d), { ...opts, method: 'POST', body }),
+      };
     },
 
     me: {

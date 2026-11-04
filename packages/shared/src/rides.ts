@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { driverApprovalStatusSchema } from './drivers';
 import { vehicleTypeSchema } from './fares';
 import { cityCodeSchema, latLngSchema } from './geo';
 
@@ -57,19 +58,14 @@ export type CurrentRideResponse = z.infer<typeof currentRideResponseSchema>;
 // Drivers
 // ---------------------------------------------------------------------------
 
-export const driverApprovalStatusSchema = z.enum(['pending', 'approved', 'rejected', 'suspended']);
-export type DriverApprovalStatus = z.infer<typeof driverApprovalStatusSchema>;
-
 export const driverProfileSchema = z.object({
-  /** null until the driver has told us what they drive. */
+  /** null until the driver has saved their onboarding details. */
   vehicleType: vehicleTypeSchema.nullable(),
-  approvalStatus: driverApprovalStatusSchema.nullable(),
+  /** "incomplete" until they submit the onboarding application. Only "approved" drivers can go online. */
+  approvalStatus: driverApprovalStatusSchema,
   online: z.boolean(),
 });
 export type DriverProfile = z.infer<typeof driverProfileSchema>;
-
-export const updateDriverProfileBodySchema = z.object({ vehicleType: vehicleTypeSchema });
-export type UpdateDriverProfileBody = z.infer<typeof updateDriverProfileBodySchema>;
 
 export const goOnlineBodySchema = z.object({ location: latLngSchema });
 export type GoOnlineBody = z.infer<typeof goOnlineBodySchema>;
@@ -114,6 +110,8 @@ export const SOCKET_EVENTS = {
   driverLocation: 'driver:location',
   /** server → passenger: DriverPosition. Only for the passenger's own active ride. */
   rideDriverLocation: 'ride:driver_location',
+  /** server → driver: { status }. An admin approved, rejected or suspended this driver. */
+  driverReviewed: 'driver:reviewed',
 } as const;
 
 /** What the driver app sends. heading = compass degrees (0 = north), null if unknown. */
