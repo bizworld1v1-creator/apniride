@@ -91,7 +91,7 @@ the phone.
 | `ride:offer_cancelled` | server → driver | `{ rideId }`: expired or the passenger cancelled |
 | `ride:update` | server → passenger + driver | `Ride`, on every status change |
 | `driver:location` | driver → server | `{ latitude, longitude, heading? }` |
-| `ride:driver_location` | server → passenger | `DriverPosition`: `{ rideId, location, heading, etaMin, distanceKm, ageSeconds }` |
+| `ride:driver_location` | server → passenger + that ride's driver | `DriverPosition`: `{ rideId, location, heading, etaMin, distanceKm, ageSeconds }` (the driver uses it for "5 min to pickup") |
 
 **Weak networks:** events are only a fast path. After every (re)connect both apps re-read
 `/rides/current` or `/driver/current`, and if a ride ended while they were offline they fetch its final state.
@@ -111,7 +111,33 @@ Socket.IO's connection-state recovery also replays events missed during short dr
   is (the app shows "last updated N min ago" after 60 s instead of trusting a stale ETA).
 - **Privacy:** outside the passenger's own active ride, nothing is forwarded and the endpoint returns null.
   Another passenger gets 404.
-- The passenger app moves the marker in jumps without animation: cheaper on low-end phones.
+
+## Vehicle markers and smooth movement
+
+- Drivers show as **top-down car / bike images** (`apps/*/assets/vehicles/`, drawn in `design/vehicles/*.svg`,
+  rendered with `pnpm render:vehicles`). To use a designer's art: replace the SVGs (same size, front pointing up)
+  and re-render, or drop in PNGs at 1x/2x/3x (car 32×56 dp, bike 24×48 dp).
+- **Glide:** each new position is reached with the map's own animation (`animateMarkerToCoordinate`), lasting as
+  long as the gap since the previous update (0.4–6 s). No JavaScript runs per frame, so cheap phones stay smooth.
+  The marker trails the real car by one update, as in other ride apps.
+- **Jump** instead after a GPS glitch (> 1 km) or a long gap (> 60 s); **stay** for GPS wobble under 3 m.
+- **Turning:** the phone's compass heading, else the direction of the move (if ≥ 8 m), else the last one.
+  Google Maps (Android, iPhone builds with a key) rotates the image natively; on Apple Maps the image is rotated
+  in a small view.
+- The rules live in `planMarkerMove` (`packages/shared/src/tracking.ts`, unit-tested); both apps use the same
+  `VehicleMarker` component.
+- **Driver app:** their own car / bike replaces the blue dot (glides at most 0.8 s, since the camera follows them),
+  and the ride card shows "About 4 min · 1.3 km to pickup / to the destination".
+
+## Nearby drivers (before booking)
+
+`GET /drivers/nearby?latitude=&longitude=` (passenger token) → `{ drivers: [{ key, vehicleType, location, heading }] }`.
+
+- Up to 8 per vehicle type within 3 km, only drivers who are online, heard from in the last 90 s and not on a ride.
+- **Privacy:** no ids or names; `key` is a hash that changes every day (so the app can glide each marker, but
+  nobody can follow one driver from day to day); positions rounded to ~11 m.
+- The passenger app asks every 10 s for the area the map shows (snapped to ~100 m so small pans don't refetch),
+  only while the app is on screen and no ride is booked. About 1 KB per request.
 
 ## Privacy
 

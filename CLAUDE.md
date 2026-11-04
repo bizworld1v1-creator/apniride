@@ -79,7 +79,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
   `npx expo export --platform android` in each app to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-04, after the admin panel)
+## Progress (last updated 2026-11-05, after vehicle markers + smooth tracking)
 
 ### Done ✅
 | Feature | Where | Notes |
@@ -92,31 +92,30 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
 | Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard` | Vibrates on offer, Google Maps navigation link |
 | Run on any device guide | `docs/running-on-devices.md`, `apps/*/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
-| Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `DriverMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
+| Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `VehicleMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
 | Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, driver `app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Reviewed in the admin panel. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
+| Vehicle markers + smooth tracking | `apps/*/src/components/VehicleMarker.tsx`, `design/vehicles`, `packages/shared/src/tracking.ts`, `backend/src/drivers/nearby-drivers.*` | Top-down car / bike images that glide natively and turn with the heading; nearby drivers on the passenger map before booking (privacy-safe); driver sees own vehicle + ETA. See docs/rides.md |
 | Admin panel | `apps/admin`, `backend/src/admin`, `pnpm admins` | Phone-OTP sign-in for numbers on the `admins` list only; tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
 
-Tests: 74 shared + 32 backend unit, 29 backend e2e (all passing at the last commit). The admin panel was clicked
+Tests: 80 shared + 32 backend unit, 30 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
 The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
 **Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).
 
 ### Next up ▶️
-1. **First: the owner tests** driver onboarding on a phone and the admin panel (`pnpm admins add <their number>`,
-   `pnpm admin`), approving their own driver account there. Fix bugs before new features.
+1. **First: the owner tests** on real phones: driver onboarding, approving themselves in the admin panel
+   (`pnpm admins add <their number>`, `pnpm admin`), then a ride with the new vehicle markers (glide + turning,
+   nearby drivers before booking, driver ETA). The glide uses a native map command that hasn't run on a device
+   yet: check the marker doesn't snap back or freeze. Fix bugs before new features.
 2. Then (to be confirmed with the owner): the **female-driver option** (gender is collected), or masked calling /
    SOS + share-trip.
 
 ### Still missing ❌ (V1 scope, rough order)
-1. **Better live tracking.** Today the passenger sees their driver as an emoji badge (🚗 / 🏍️) that jumps every
-   ~5 s and ignores the heading the driver app already sends. Wanted (owner, 2026-11-04):
-   (a) **vehicle markers**: top-down, 3D-looking images of our own design (car, bike, later rickshaw) that
-   **rotate to the driver's heading** and glide between updates (cheap animation, must stay smooth on low-end
-   Android), on the passenger's ride map and for **nearby drivers before booking**;
-   (b) the **driver's own map**: route line + ETA to pickup / destination;
-   (c) **background tracking** for the driver (see 8).
-   Driver → passenger live location is NOT wanted: like inDrive, the driver sees the pickup pin only.
-   **Rickshaw** would be a new vehicle type (fares, onboarding, dispatch, apps), so it's a separate chunk.
+1. **Tracking leftovers.** (a) a **route line** on both maps (needs a routing API, e.g. Google Directions:
+   costs money per request); (b) **background tracking** for the driver (see 8); (c) designer-made marker art
+   (ours are placeholders that look decent). Driver → passenger live location is NOT wanted: like inDrive, the
+   driver sees the pickup pin only.
+   **Rickshaw** would be a new vehicle type (fares, onboarding, dispatch, apps, marker), so it's a separate chunk.
 2. Masked calling (phone numbers never shared)
 3. SOS button + share-trip link (family watches the ride live, also needed for Ammi Mode)
 4. Female-driver option for passengers
