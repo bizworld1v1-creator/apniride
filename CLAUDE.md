@@ -108,10 +108,15 @@ The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04
    SOS + share-trip.
 
 ### Still missing ❌ (V1 scope, rough order)
-1. **Two-way live tracking.** Today only passenger ← driver works (driver marker + ETA on the passenger map).
-   Missing: (a) **driver ← passenger**: the passenger's live location shared with their driver from accept until
-   pickup (helps find them; stop sharing at pickup, never outside the ride); (b) the **driver's own map** following
-   the trip route with ETA to pickup / destination; (c) **background tracking** for the driver (see 8).
+1. **Better live tracking.** Today the passenger sees their driver as an emoji badge (🚗 / 🏍️) that jumps every
+   ~5 s and ignores the heading the driver app already sends. Wanted (owner, 2026-11-04):
+   (a) **vehicle markers**: top-down, 3D-looking images of our own design (car, bike, later rickshaw) that
+   **rotate to the driver's heading** and glide between updates (cheap animation, must stay smooth on low-end
+   Android), on the passenger's ride map and for **nearby drivers before booking**;
+   (b) the **driver's own map**: route line + ETA to pickup / destination;
+   (c) **background tracking** for the driver (see 8).
+   Driver → passenger live location is NOT wanted: like inDrive, the driver sees the pickup pin only.
+   **Rickshaw** would be a new vehicle type (fares, onboarding, dispatch, apps), so it's a separate chunk.
 2. Masked calling (phone numbers never shared)
 3. SOS button + share-trip link (family watches the ride live, also needed for Ammi Mode)
 4. Female-driver option for passengers
