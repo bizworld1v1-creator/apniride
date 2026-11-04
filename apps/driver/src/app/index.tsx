@@ -1,7 +1,7 @@
-import { CITY_CENTERS, type LatLng } from '@apniride/shared';
+import { CITY_CENTERS, type DriverLocationUpdate, type LatLng } from '@apniride/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { type ReactNode, useCallback, useEffect, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
@@ -10,6 +10,7 @@ import { ActiveRideCard } from '@/components/ActiveRideCard';
 import { DriverStatusCard } from '@/components/DriverStatusCard';
 import { OfferCard } from '@/components/OfferCard';
 import { ServerStatus } from '@/components/ServerStatus';
+import { VehicleMarker } from '@/components/VehicleMarker';
 import { api, signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
@@ -52,7 +53,10 @@ export default function DriverHomeScreen() {
     onSuccess: (p) => queryClient.setQueryData(PROFILE_KEY, p),
   });
 
-  const follow = useCallback((p: LatLng) => {
+  // The driver's own car / bike on the map (instead of the blue dot), turning with the road.
+  const [me, setMe] = useState<DriverLocationUpdate | null>(null);
+  const follow = useCallback((p: DriverLocationUpdate) => {
+    setMe(p);
     mapRef.current?.animateCamera({ center: p }, { duration: 400 });
   }, []);
   // Keep sharing during a ride even if the driver went offline: the passenger is tracking them.
@@ -114,11 +118,20 @@ export default function DriverHomeScreen() {
         style={StyleSheet.absoluteFill}
         provider={MAP_PROVIDER}
         initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
-        showsUserLocation={online || onRide}
+        // Our vehicle marker replaces the blue dot once we know the vehicle and have a position.
+        showsUserLocation={(online || onRide) && !(me && p?.vehicleType)}
         toolbarEnabled={false}
         showsIndoors={false}
         showsBuildings={false}
       >
+        {me && p?.vehicleType && (online || onRide) ? (
+          <VehicleMarker
+            location={{ latitude: me.latitude, longitude: me.longitude }}
+            heading={me.heading}
+            vehicleType={p.vehicleType}
+            maxGlideMs={800}
+          />
+        ) : null}
         {shown ? (
           <>
             <Marker coordinate={shown.pickup} pinColor="green" tracksViewChanges={false} />

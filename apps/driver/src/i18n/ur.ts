@@ -101,6 +101,8 @@ export const ur: Translation = {
     goToPickup: 'پک اپ پر جائیں · {{name}}',
     waiting: '{{name}} گاڑی کی طرف آ رہے ہیں',
     driving: 'منزل کی طرف چلیں',
+    etaPickup: 'پک اپ تک تقریباً {{min}} منٹ · {{km}} کلومیٹر',
+    etaDropoff: 'منزل تک تقریباً {{min}} منٹ · {{km}} کلومیٹر',
     navigatePickup: 'پک اپ کا راستہ دیکھیں',
     navigateDropoff: 'منزل کا راستہ دیکھیں',
     arrivedButton: 'میں پہنچ گیا ہوں',

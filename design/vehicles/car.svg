@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="112" viewBox="0 0 64 112">
+  <!-- Top-down car, front pointing up (north). 32 x 56 dp marker. White/silver: most cars in Lahore are white. -->
+  <defs>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b8c0ca"/>
+      <stop offset="0.18" stop-color="#e9edf1"/>
+      <stop offset="0.5" stop-color="#ffffff"/>
+      <stop offset="0.82" stop-color="#e9edf1"/>
+      <stop offset="1" stop-color="#b8c0ca"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5b6b7f"/>
+      <stop offset="1" stop-color="#1f2937"/>
+    </linearGradient>
+    <linearGradient id="rearGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2937"/>
+      <stop offset="1" stop-color="#4b5a6d"/>
+    </linearGradient>
+    <linearGradient id="roof" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#dfe4ea"/>
+      <stop offset="0.5" stop-color="#fbfcfd"/>
+      <stop offset="1" stop-color="#dfe4ea"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-15%" width="160%" height="130%">
+      <feDropShadow dx="1.5" dy="3" stdDeviation="2.5" flood-color="#000" flood-opacity="0.38"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <!-- mirrors -->
+    <ellipse cx="11" cy="38" rx="4" ry="2.6" fill="#c3cad3"/>
+    <ellipse cx="53" cy="38" rx="4" ry="2.6" fill="#c3cad3"/>
+    <!-- body -->
+    <path d="M18 10 C22 5 42 5 46 10 C50 14 51 22 51 30 L51 88 C51 98 48 104 42 106 C36 107.5 28 107.5 22 106 C16 104 13 98 13 88 L13 30 C13 22 14 14 18 10 Z" fill="url(#body)" stroke="#9aa3ae" stroke-width="0.8"/>
+  </g>
+  <!-- hood crease -->
+  <path d="M24 12 Q32 9 40 12" fill="none" stroke="#c9d0d8" stroke-width="1"/>
+  <path d="M22 16 L23 30 M42 16 L41 30" stroke="#d3d9e0" stroke-width="0.8"/>
+  <!-- headlights -->
+  <rect x="16" y="9" width="8" height="3.4" rx="1.7" fill="#fff9d6" stroke="#d8cf9a" stroke-width="0.5" transform="rotate(-12 20 10.7)"/>
+  <rect x="40" y="9" width="8" height="3.4" rx="1.7" fill="#fff9d6" stroke="#d8cf9a" stroke-width="0.5" transform="rotate(12 44 10.7)"/>
+  <!-- windshield -->
+  <path d="M17.5 36 Q32 29 46.5 36 L44 47 Q32 44 20 47 Z" fill="url(#glass)"/>
+  <path d="M21 36.5 Q27 33.5 31 33.2 L29 37 Q25 37.5 22 39 Z" fill="#ffffff" opacity="0.25"/>
+  <!-- side windows -->
+  <path d="M16.5 49 L19.5 48 L19.5 76 L16.5 78 Z" fill="#2c3846"/>
+  <path d="M47.5 49 L44.5 48 L44.5 76 L47.5 78 Z" fill="#2c3846"/>
+  <!-- roof -->
+  <rect x="20" y="46.5" width="24" height="31" rx="4" fill="url(#roof)" stroke="#c6cdd5" stroke-width="0.6"/>
+  <!-- rear window -->
+  <path d="M20 78.5 Q32 81 44 78.5 L45.5 86.5 Q32 90 18.5 86.5 Z" fill="url(#rearGlass)"/>
+  <!-- boot line + taillights -->
+  <path d="M20 99 Q32 101.5 44 99" fill="none" stroke="#c9d0d8" stroke-width="0.9"/>
+  <rect x="15.5" y="101" width="8" height="3" rx="1.5" fill="#dc2626"/>
+  <rect x="40.5" y="101" width="8" height="3" rx="1.5" fill="#dc2626"/>
+</svg>

@@ -1,4 +1,4 @@
-import { type DriverLocationUpdate, type LatLng, SOCKET_EVENTS } from '@apniride/shared';
+import { type DriverLocationUpdate, SOCKET_EVENTS } from '@apniride/shared';
 import * as Location from 'expo-location';
 import { useEffect, useRef } from 'react';
 import { getSocket } from './socket';
@@ -20,7 +20,7 @@ const HEARTBEAT_MS = 30_000;
  * While `active` (online, or on a ride), sends the driver's position over the socket and calls onMove
  * for the map. During a ride the server forwards it to that ride's passenger for live tracking.
  */
-export function useLocationSharing(active: boolean, onMove: (p: LatLng) => void) {
+export function useLocationSharing(active: boolean, onMove: (p: DriverLocationUpdate) => void) {
   const onMoveRef = useRef(onMove);
   onMoveRef.current = onMove;
 

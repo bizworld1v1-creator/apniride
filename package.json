@@ -19,9 +19,11 @@
     "driver": "pnpm --filter @apniride/driver start",
     "db:migrate": "pnpm --filter @apniride/backend migrate",
     "admins": "pnpm --silent --filter @apniride/backend admins",
-    "admin": "pnpm --filter @apniride/admin dev"
+    "admin": "pnpm --filter @apniride/admin dev",
+    "render:vehicles": "node design/vehicles/render.mjs"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "turbo": "^2.11.10"
   }
 }

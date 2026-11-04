@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatRupees } from '@/components/OfferCard';
 import { api } from '@/lib/api';
-import { patchCurrent } from '@/lib/driver';
+import { patchCurrent, useOwnEta } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { colors } from '@/lib/theme';
 
@@ -18,6 +18,7 @@ function navigateTo(point: LatLng) {
 export function ActiveRideCard({ ride }: { ride: Ride }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { data: eta } = useOwnEta(ride.id);
   const passenger = ride.passenger.firstName || t('ride.passenger');
   const fare = t('offer.fare', { amount: formatRupees(ride.fare) });
 
@@ -73,6 +74,11 @@ export function ActiveRideCard({ ride }: { ride: Ride }) {
       <Text style={styles.sub}>
         {fare} · {t('offer.trip', { km: ride.distanceKm, min: ride.durationMin })}
       </Text>
+      {eta && ride.status !== 'arrived' ? (
+        <Text style={styles.eta}>
+          {t(ride.status === 'in_progress' ? 'ride.etaDropoff' : 'ride.etaPickup', { min: eta.etaMin, km: eta.distanceKm })}
+        </Text>
+      ) : null}
 
       <Pressable style={styles.navigate} onPress={() => navigateTo(target)} accessibilityRole="link">
         <Text style={styles.navigateText}>
@@ -104,6 +110,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 8 },
   title: { fontSize: 19, fontWeight: '700', color: colors.text },
   sub: { fontSize: 14, color: colors.muted, marginTop: 4 },
+  eta: { fontSize: 15, fontWeight: '600', color: colors.brand, marginTop: 4 },
   big: { fontSize: 30, fontWeight: '800', color: colors.text, marginVertical: 12 },
   navigate: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginVertical: 14 },
   navigateText: { fontSize: 16, fontWeight: '600', color: colors.text },

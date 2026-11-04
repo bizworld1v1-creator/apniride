@@ -5,14 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { DriverMarker } from '@/components/DriverMarker';
 import { FareSheet } from '@/components/FareSheet';
 import { RideStatusSheet } from '@/components/RideStatusSheet';
 import { ServerStatus } from '@/components/ServerStatus';
+import { VehicleMarker } from '@/components/VehicleMarker';
 import { signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { useDriverPosition } from '@/lib/driver-position';
 import { MAP_PROVIDER } from '@/lib/map-provider';
+import { useNearbyDrivers } from '@/lib/nearby-drivers';
 import { useCurrentRide } from '@/lib/ride';
 import { colors } from '@/lib/theme';
 
@@ -36,6 +37,9 @@ export default function HomeScreen() {
   const rideId = ride?.id;
   const { data: driverPosition } = useDriverPosition(ride);
   const hasDriverPosition = !!driverPosition;
+  // Where to look for nearby drivers: the area the passenger is looking at (updated when a pan ends).
+  const [lookingAt, setLookingAt] = useState<LatLng | null>(null);
+  const { data: nearby } = useNearbyDrivers(lookingAt ?? gpsPickup, !ride);
 
   // A booked ride takes over the screen; when it's dismissed, start fresh from "Where to?".
   useEffect(() => {
@@ -125,6 +129,8 @@ export default function HomeScreen() {
 
   const onRegionChangeComplete = (region: Region) => {
     centerRef.current = { latitude: region.latitude, longitude: region.longitude };
+    // Only matters before booking; the hook snaps it to ~100 m so small pans don't refetch.
+    if (!ride) setLookingAt(centerRef.current);
   };
 
   const choosing = step === 'pickup' || step === 'dropoff';
@@ -147,9 +153,21 @@ export default function HomeScreen() {
           <>
             <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
             <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor="red" tracksViewChanges={false} />
-            {driverPosition ? <DriverMarker position={driverPosition} vehicleType={ride.vehicleType} /> : null}
+            {driverPosition ? (
+              <VehicleMarker
+                location={driverPosition.location}
+                heading={driverPosition.heading}
+                vehicleType={ride.vehicleType}
+                zIndex={10}
+              />
+            ) : null}
           </>
         ) : null}
+        {!ride
+          ? nearby?.map((d) => (
+              <VehicleMarker key={d.key} location={d.location} heading={d.heading} vehicleType={d.vehicleType} zIndex={1} />
+            ))
+          : null}
         {!ride && pickup && step !== 'home' && step !== 'pickup' ? (
           <Marker coordinate={pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
         ) : null}

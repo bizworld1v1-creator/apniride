@@ -99,6 +99,8 @@ export const en = {
     goToPickup: 'Go to pickup · {{name}}',
     waiting: '{{name}} is coming to the car',
     driving: 'Drive to the destination',
+    etaPickup: 'About {{min}} min · {{km}} km to pickup',
+    etaDropoff: 'About {{min}} min · {{km}} km to the destination',
     navigatePickup: 'Navigate to pickup',
     navigateDropoff: 'Navigate to destination',
     arrivedButton: "I've arrived",

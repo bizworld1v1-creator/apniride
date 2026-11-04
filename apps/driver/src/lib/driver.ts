@@ -1,9 +1,24 @@
-import { type DriverCurrentResponse, isActiveRide, type Ride, type RideOffer } from '@apniride/shared';
+import { type DriverCurrentResponse, type DriverPosition, isActiveRide, type Ride, type RideOffer } from '@apniride/shared';
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 
 export const PROFILE_KEY = ['driver', 'profile'] as const;
 export const CURRENT_KEY = ['driver', 'current'] as const;
+const etaKey = (rideId: string) => ['driver', 'eta', rideId] as const;
+
+/** ETA + distance to the pickup (or the destination once on board). Pushed by the server after each location. */
+export function useOwnEta(rideId: string | undefined) {
+  return useQuery<DriverPosition | null>({
+    queryKey: etaKey(rideId ?? 'none'),
+    queryFn: () => null,
+    enabled: false,
+    staleTime: Infinity,
+  });
+}
+
+export function setOwnEta(queryClient: QueryClient, position: DriverPosition) {
+  queryClient.setQueryData(etaKey(position.rideId), position);
+}
 
 /** An offer plus the moment this phone received it (the countdown runs from here). */
 export type ReceivedOffer = RideOffer & { receivedAt: number };

@@ -1,8 +1,8 @@
-import { type Ride, type RideOffer, SOCKET_EVENTS } from '@apniride/shared';
+import { type DriverPosition, type Ride, type RideOffer, SOCKET_EVENTS } from '@apniride/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Vibration } from 'react-native';
-import { CURRENT_KEY, type DriverCurrent, patchCurrent, PROFILE_KEY, setOffer } from '@/lib/driver';
+import { CURRENT_KEY, type DriverCurrent, patchCurrent, PROFILE_KEY, setOffer, setOwnEta } from '@/lib/driver';
 import { ONBOARDING_KEY } from '@/lib/onboarding';
 import { disconnectSocket, getSocket } from '@/lib/socket';
 
@@ -27,6 +27,7 @@ export function RealtimeBridge() {
       patchCurrent(queryClient, { ride: ride.status === 'searching' ? null : ride });
       if (ride.status === 'cancelled') Vibration.vibrate(400);
     };
+    const onEta = (position: DriverPosition) => setOwnEta(queryClient, position);
     // Approved / rejected / suspended by an admin: refresh the home screen at once.
     const onReviewed = () => {
       void queryClient.invalidateQueries({ queryKey: PROFILE_KEY });
@@ -43,6 +44,7 @@ export function RealtimeBridge() {
     socket.on(SOCKET_EVENTS.rideOfferCancelled, onOfferCancelled);
     socket.on(SOCKET_EVENTS.rideUpdate, onRideUpdate);
     socket.on(SOCKET_EVENTS.driverReviewed, onReviewed);
+    socket.on(SOCKET_EVENTS.rideDriverLocation, onEta);
     socket.on('connect', onConnect);
     socket.connect();
     return () => {
@@ -50,6 +52,7 @@ export function RealtimeBridge() {
       socket.off(SOCKET_EVENTS.rideOfferCancelled, onOfferCancelled);
       socket.off(SOCKET_EVENTS.rideUpdate, onRideUpdate);
       socket.off(SOCKET_EVENTS.driverReviewed, onReviewed);
+      socket.off(SOCKET_EVENTS.rideDriverLocation, onEta);
       socket.off('connect', onConnect);
       disconnectSocket();
     };
