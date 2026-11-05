@@ -17,18 +17,26 @@ export class CameraDeniedError extends Error {}
 
 /**
  * Takes a photo (or picks one from the gallery), shrinks it and returns a file for upload.
- * null if the driver backed out.
+ * null if the person backed out. Shared by driver documents and the profile photo.
  */
-export async function pickDocumentPhoto(
-  type: DriverDocumentType,
-  source: 'camera' | 'gallery',
-): Promise<{ uri: string; name: string; type: string } | null> {
+export async function pickPhoto({
+  source,
+  front,
+  maxWidth = MAX_WIDTH,
+  name,
+}: {
+  source: 'camera' | 'gallery';
+  /** Front camera (selfie, profile photo). */
+  front: boolean;
+  maxWidth?: number;
+  name: string;
+}): Promise<{ uri: string; name: string; type: string } | null> {
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ['images'],
     quality: 0.8,
     allowsEditing: false,
     exif: false,
-    cameraType: type === 'selfie' ? ImagePicker.CameraType.front : ImagePicker.CameraType.back,
+    cameraType: front ? ImagePicker.CameraType.front : ImagePicker.CameraType.back,
   };
   let result: ImagePicker.ImagePickerResult;
   if (source === 'camera') {
@@ -42,8 +50,13 @@ export async function pickDocumentPhoto(
   if (!asset) return null;
 
   const context = ImageManipulator.manipulate(asset.uri);
-  if (asset.width > MAX_WIDTH) context.resize({ width: MAX_WIDTH });
+  if (asset.width > maxWidth) context.resize({ width: maxWidth });
   const image = await context.renderAsync();
   const saved = await image.saveAsync({ compress: 0.6, format: SaveFormat.JPEG });
-  return { uri: saved.uri, name: `${type}.jpg`, type: 'image/jpeg' };
+  return { uri: saved.uri, name: `${name}.jpg`, type: 'image/jpeg' };
+}
+
+/** A driver document photo (selfie with the front camera, everything else with the back one). */
+export function pickDocumentPhoto(type: DriverDocumentType, source: 'camera' | 'gallery') {
+  return pickPhoto({ source, front: type === 'selfie', name: type });
 }

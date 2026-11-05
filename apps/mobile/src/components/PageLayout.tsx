@@ -5,15 +5,15 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
 
-/** Plain scrolling page with a back link, for the registration screens. */
-export function OnboardingLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+/** Plain scrolling page with a back link (registration, profile, settings, saved places). */
+export function PageLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={touch.hitSlop} style={styles.back}>
-            <Text style={styles.backText}>‹ {t('driver.onboarding.back')}</Text>
+            <Text style={styles.backText}>‹ {t('common.back')}</Text>
           </Pressable>
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
@@ -54,7 +54,7 @@ export function Choice<T extends string>({
   );
 }
 
-export const onboardingStyles = StyleSheet.create({
+export const pageStyles = StyleSheet.create({
   section: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text, marginTop: space[2], marginBottom: space[2.5] },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3.5], borderWidth: borderWidth.thin, borderColor: colors.border },
   muted: { fontSize: fontSize.md, color: colors.muted },

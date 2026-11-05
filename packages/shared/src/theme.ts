@@ -95,6 +95,9 @@ const baseColors = {
   pickupPin: 'green',
   dropoffPin: 'red',
 
+  /** Dims the screen behind the side menu and other overlays (gray900 at 45%). */
+  overlay: 'rgba(17, 24, 39, 0.45)',
+
   /** Expo splash screen background. */
   splash: palette.white,
 };

@@ -1,9 +1,11 @@
-import { ApiError, onboardingErrorCodeSchema } from '@apniride/shared';
+import { accountErrorCodeSchema, ApiError, onboardingErrorCodeSchema } from '@apniride/shared';
 import type { TFunction } from 'i18next';
 
 /** Error codes with their own message in `errors.*` (both modes). Anything else shows the generic message. */
 const KNOWN = new Set<string>([
   ...onboardingErrorCodeSchema.options,
+  // Profile photo, saved places (invalid_cursor has no own text: it falls back to the generic message)
+  ...accountErrorCodeSchema.options.filter((c) => c !== 'invalid_cursor'),
   // Sign-in
   'invalid_phone',
   'invalid_code',

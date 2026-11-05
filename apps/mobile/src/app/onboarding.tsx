@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
 import { DocumentRow } from '@/components/DocumentRow';
-import { OnboardingLayout, onboardingStyles } from '@/components/OnboardingLayout';
+import { PageLayout, pageStyles } from '@/components/PageLayout';
 import { api } from '@/lib/api';
 import { PROFILE_KEY } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
@@ -28,7 +28,7 @@ export default function OnboardingScreen() {
 
   if (!data) {
     return (
-      <OnboardingLayout title={t('driver.onboarding.title')}>
+      <PageLayout title={t('driver.onboarding.title')}>
         {isPending ? (
           <ActivityIndicator color={colors.brand} />
         ) : (
@@ -37,7 +37,7 @@ export default function OnboardingScreen() {
             <PrimaryButton label={t('driver.onboarding.retry')} onPress={() => void refetch()} />
           </>
         )}
-      </OnboardingLayout>
+      </PageLayout>
     );
   }
 
@@ -46,22 +46,22 @@ export default function OnboardingScreen() {
   const submittedOn = data.submittedAt ? new Date(data.submittedAt).toLocaleDateString(i18n.language) : '';
 
   return (
-    <OnboardingLayout title={t('driver.onboarding.title')}>
+    <PageLayout title={t('driver.onboarding.title')}>
       {data.status === 'rejected' && data.reviewNote ? (
-        <View style={[onboardingStyles.banner, styles.rejected]}>
-          <Text style={[onboardingStyles.bannerText, styles.bold]}>{t('driver.status.rejectedTitle')}</Text>
-          <Text style={onboardingStyles.bannerText}>{t('driver.status.reason', { reason: data.reviewNote })}</Text>
+        <View style={[pageStyles.banner, styles.rejected]}>
+          <Text style={[pageStyles.bannerText, styles.bold]}>{t('driver.status.rejectedTitle')}</Text>
+          <Text style={pageStyles.bannerText}>{t('driver.status.reason', { reason: data.reviewNote })}</Text>
         </View>
       ) : null}
       {!canEdit ? (
-        <View style={[onboardingStyles.banner, styles.info]}>
-          <Text style={onboardingStyles.bannerText}>{t('driver.onboarding.submitted', { date: submittedOn })}</Text>
+        <View style={[pageStyles.banner, styles.info]}>
+          <Text style={pageStyles.bannerText}>{t('driver.onboarding.submitted', { date: submittedOn })}</Text>
         </View>
       ) : null}
 
-      <Text style={onboardingStyles.section}>{t('driver.onboarding.stepDetails')}</Text>
+      <Text style={pageStyles.section}>{t('driver.onboarding.stepDetails')}</Text>
       <Pressable
-        style={[onboardingStyles.card, styles.detailsRow]}
+        style={[pageStyles.card, styles.detailsRow]}
         onPress={() => router.push('/onboarding-details')}
         accessibilityRole="button"
       >
@@ -69,20 +69,20 @@ export default function OnboardingScreen() {
           {details ? (
             <>
               <Text style={styles.strong}>{formatCnic(details.cnic)}</Text>
-              <Text style={onboardingStyles.muted}>
+              <Text style={pageStyles.muted}>
                 {t(`driver.vehicle.${details.vehicle.type}`)} · {details.vehicle.make} {details.vehicle.model} ·{' '}
                 {details.vehicle.plate}
               </Text>
             </>
           ) : (
-            <Text style={[onboardingStyles.muted, styles.todo]}>{t('driver.onboarding.detailsMissing')}</Text>
+            <Text style={[pageStyles.muted, styles.todo]}>{t('driver.onboarding.detailsMissing')}</Text>
           )}
         </View>
         <Text style={styles.link}>{!canEdit ? '›' : details ? t('driver.onboarding.edit') : t('driver.onboarding.add')}</Text>
       </Pressable>
 
       <View style={authStyles.gap} />
-      <Text style={onboardingStyles.section}>{t('driver.onboarding.stepDocuments')}</Text>
+      <Text style={pageStyles.section}>{t('driver.onboarding.stepDocuments')}</Text>
       {details ? (
         DRIVER_DOCUMENT_TYPES.map((type) => (
           <DocumentRow
@@ -94,13 +94,13 @@ export default function OnboardingScreen() {
           />
         ))
       ) : (
-        <Text style={onboardingStyles.muted}>{t('driver.onboarding.detailsFirst')}</Text>
+        <Text style={pageStyles.muted}>{t('driver.onboarding.detailsFirst')}</Text>
       )}
 
       {canEdit ? (
         <>
           <View style={authStyles.gap} />
-          {!data.readyToSubmit ? <Text style={[onboardingStyles.muted, styles.center]}>{t('driver.onboarding.submitHint')}</Text> : null}
+          {!data.readyToSubmit ? <Text style={[pageStyles.muted, styles.center]}>{t('driver.onboarding.submitHint')}</Text> : null}
           <FieldError message={submit.isError ? errorMessage(t, submit.error) : null} />
           <View style={authStyles.gap} />
           <PrimaryButton
@@ -111,7 +111,7 @@ export default function OnboardingScreen() {
           />
         </>
       ) : null}
-    </OnboardingLayout>
+    </PageLayout>
   );
 }
 

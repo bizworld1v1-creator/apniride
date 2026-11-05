@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Vibration } from 'react-native';
 import type { Socket } from 'socket.io-client';
+import { EARNINGS_KEY, historyKey } from '@/lib/account';
 import { CURRENT_KEY, type DriverCurrent, patchCurrent, PROFILE_KEY, setOffer, setOwnEta } from '@/lib/driver';
 import { setDriverPosition } from '@/lib/driver-position';
 import { ONBOARDING_KEY } from '@/lib/onboarding';
@@ -12,10 +13,16 @@ import { disconnectSocket, getSocket } from '@/lib/socket';
 
 type Handlers = Record<string, (payload: never) => void>;
 
+const FINISHED = new Set<Ride['status']>(['completed', 'cancelled', 'no_driver']);
+
 /** Passenger mode: their ride and the driver's position. */
 function passengerHandlers(queryClient: QueryClient): Handlers {
   return {
-    [SOCKET_EVENTS.rideUpdate]: (ride: Ride) => setCurrentRide(queryClient, ride),
+    [SOCKET_EVENTS.rideUpdate]: (ride: Ride) => {
+      setCurrentRide(queryClient, ride);
+      // A finished ride belongs in the history list now.
+      if (FINISHED.has(ride.status)) void queryClient.invalidateQueries({ queryKey: historyKey('passenger') });
+    },
     [SOCKET_EVENTS.rideDriverLocation]: (p: DriverPosition) => setDriverPosition(queryClient, p),
     // After any (re)connect, catch up on what we may have missed while offline (ride + driver position).
     connect: () => void queryClient.invalidateQueries({ queryKey: ['ride'] }),
@@ -38,6 +45,10 @@ function driverHandlers(queryClient: QueryClient): Handlers {
       // Back to "searching" means this driver is no longer on it (they cancelled).
       patchCurrent(queryClient, { ride: ride.status === 'searching' ? null : ride });
       if (ride.status === 'cancelled') Vibration.vibrate(400);
+      if (FINISHED.has(ride.status)) {
+        void queryClient.invalidateQueries({ queryKey: historyKey('driver') });
+        void queryClient.invalidateQueries({ queryKey: EARNINGS_KEY });
+      }
     },
     [SOCKET_EVENTS.rideDriverLocation]: (position: DriverPosition) => setOwnEta(queryClient, position),
     // Approved / rejected / suspended by an admin: refresh the home screen at once.

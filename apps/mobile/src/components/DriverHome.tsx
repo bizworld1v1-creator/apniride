@@ -8,16 +8,16 @@ import MapView, { Marker } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActiveRideCard } from '@/components/ActiveRideCard';
 import { DriverStatusCard } from '@/components/DriverStatusCard';
-import { ModeSwitch } from '@/components/ModeSwitch';
+import { MenuButton } from '@/components/SideMenu';
 import { OfferCard } from '@/components/OfferCard';
 import { ServerStatus } from '@/components/ServerStatus';
 import { VehicleMarker } from '@/components/VehicleMarker';
-import { api, signOut } from '@/lib/api';
+import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { MAP_PROVIDER } from '@/lib/map-provider';
-import { colors, elevation, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
+import { colors, elevation, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
 import { useLocationSharing } from '@/lib/use-location-sharing';
 
 const DELTA = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
@@ -145,13 +145,12 @@ export function DriverHome() {
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
         <View style={styles.card}>
           <View style={styles.headerRow}>
+            {/* Go offline (and finish the ride) before switching mode or signing out, so a driver never
+                vanishes from dispatch by accident. */}
+            <MenuButton busy={online || onRide} />
             <Text style={styles.brand}>
               ApniRide <Text style={styles.badge}>· {t('mode.driverBadge')}</Text>
             </Text>
-            {/* Go offline before signing out, so a driver never vanishes mid-shift by accident. */}
-            <Pressable onPress={() => void signOut()} disabled={online || onRide} accessibilityRole="button" hitSlop={touch.hitSlop}>
-              <Text style={[styles.signOut, (online || onRide) && styles.signOutDisabled]}>{t('auth.signOut')}</Text>
-            </Pressable>
           </View>
           {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
           <View style={styles.statusRow}>
@@ -165,8 +164,6 @@ export function DriverHome() {
               </Text>
             ) : null}
           </View>
-          {/* Go offline (and finish the ride) before switching, so a driver never vanishes from dispatch. */}
-          <ModeSwitch blocked={online || onRide} />
           <ServerStatus />
         </View>
       </SafeAreaView>
@@ -184,10 +181,8 @@ const styles = StyleSheet.create({
   bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[4] },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3], elevation: elevation.low },
   badge: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.muted },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
   brand: { fontSize: fontSize.brand, fontWeight: fontWeight.bold, color: colors.brand },
-  signOut: { fontSize: fontSize.sm, color: colors.muted },
-  signOutDisabled: { opacity: opacity.faint },
   greeting: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text, marginTop: space[1] },
   statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space[0.5] },
   status: { fontSize: fontSize.base, fontWeight: fontWeight.semibold },

@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, TextInput, type TextInputProps, View } from 'react-native';
 import type { z } from 'zod';
 import { authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
-import { Choice, OnboardingLayout, onboardingStyles } from '@/components/OnboardingLayout';
+import { Choice, PageLayout, pageStyles } from '@/components/PageLayout';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { ONBOARDING_KEY, useOnboarding } from '@/lib/onboarding';
@@ -60,9 +60,9 @@ export default function OnboardingDetailsScreen() {
   const onboarding = useOnboarding();
   if (onboarding.isPending) {
     return (
-      <OnboardingLayout title={t('driver.details.title')}>
+      <PageLayout title={t('driver.details.title')}>
         <ActivityIndicator color={colors.brand} />
-      </OnboardingLayout>
+      </PageLayout>
     );
   }
   // Mount the form only once the saved details are here, so they become its starting values.
@@ -88,7 +88,7 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
   const onSubmit = handleSubmit((body) => save.mutate(body));
 
   return (
-    <OnboardingLayout title={t('driver.details.title')} subtitle={t('driver.details.subtitle')}>
+    <PageLayout title={t('driver.details.title')} subtitle={t('driver.details.subtitle')}>
       <Text style={authStyles.label}>{t('driver.details.gender')}</Text>
       <Controller
         control={control}
@@ -135,7 +135,7 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
         editable={editable}
       />
 
-      <Text style={onboardingStyles.section}>{t('driver.details.vehicleSection')}</Text>
+      <Text style={pageStyles.section}>{t('driver.details.vehicleSection')}</Text>
       <Text style={authStyles.label}>{t('driver.details.vehicleType')}</Text>
       <Controller
         control={control}
@@ -180,7 +180,7 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
       <FieldError message={save.isError ? errorMessage(t, save.error) : null} />
       <View style={authStyles.gap} />
       {editable ? <PrimaryButton label={t('driver.details.save')} onPress={() => void onSubmit()} loading={save.isPending} /> : null}
-    </OnboardingLayout>
+    </PageLayout>
   );
 }
 

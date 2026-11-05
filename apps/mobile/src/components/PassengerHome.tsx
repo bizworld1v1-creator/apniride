@@ -2,21 +2,21 @@ import { CITY_CENTERS, type LatLng } from '@apniride/shared';
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FareSheet } from '@/components/FareSheet';
-import { ModeSwitch } from '@/components/ModeSwitch';
+import { MenuButton } from '@/components/SideMenu';
 import { RideStatusSheet } from '@/components/RideStatusSheet';
 import { ServerStatus } from '@/components/ServerStatus';
 import { VehicleMarker } from '@/components/VehicleMarker';
-import { signOut } from '@/lib/api';
+import { placeIcon, usePlaces } from '@/lib/account';
 import { useAuth } from '@/lib/auth-store';
 import { useDriverPosition } from '@/lib/driver-position';
 import { MAP_PROVIDER } from '@/lib/map-provider';
 import { useNearbyDrivers } from '@/lib/nearby-drivers';
 import { useCurrentRide } from '@/lib/ride';
-import { colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
+import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
 
@@ -102,20 +102,28 @@ export function PassengerHome() {
     }
   };
 
+  const chooseDropoff = (point: LatLng) => {
+    if (!pickup) return;
+    setDropoff(point);
+    setStep('quote');
+    mapRef.current?.fitToCoordinates([pickup, point], {
+      edgePadding: { top: 120, right: 60, bottom: 380, left: 60 },
+      animated: true,
+    });
+  };
+
   const confirmPin = () => {
     const point = { ...centerRef.current };
     if (step === 'pickup') {
       setPickup(point);
       setStep('dropoff');
-    } else if (step === 'dropoff' && pickup) {
-      setDropoff(point);
-      setStep('quote');
-      mapRef.current?.fitToCoordinates([pickup, point], {
-        edgePadding: { top: 120, right: 60, bottom: 380, left: 60 },
-        animated: true,
-      });
+    } else if (step === 'dropoff') {
+      chooseDropoff(point);
     }
   };
+
+  // Saved places as one-tap destinations (cached, so they show instantly and offline).
+  const { data: places } = usePlaces(!ride);
 
   // When the driver first shows up (and again once on board), frame the driver and where they're heading.
   const phase = ride?.status === 'in_progress' ? 'to_dropoff' : 'to_pickup';
@@ -189,15 +197,13 @@ export function PassengerHome() {
         {step === 'home' ? (
           <View style={styles.card}>
             <View style={styles.headerRow}>
+              {/* Side menu: history, saved places, profile, settings, driver mode, sign out.
+                  No switching to driver mode while a ride is on (the server refuses too). */}
+              <MenuButton busy={!!ride} />
               <Text style={styles.brand}>ApniRide</Text>
-              <Pressable onPress={() => void signOut()} accessibilityRole="button" hitSlop={touch.hitSlop}>
-                <Text style={styles.signOut}>{t('auth.signOut')}</Text>
-              </Pressable>
             </View>
             {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
             <Text style={styles.tagline}>{t('tagline')}</Text>
-            {/* No switching to driver mode while a ride is on (the server refuses too). */}
-            <ModeSwitch blocked={!!ride} />
             <ServerStatus />
           </View>
         ) : (
@@ -217,6 +223,22 @@ export function PassengerHome() {
         ) : choosing ? (
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>{t(step === 'pickup' ? 'ride.setPickup' : 'ride.setDropoff')}</Text>
+            {step === 'dropoff' && places?.length ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                {places.map((place) => (
+                  <Pressable
+                    key={place.id}
+                    style={styles.chip}
+                    onPress={() => chooseDropoff(place.location)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.chipText} numberOfLines={1}>
+                      {placeIcon(place.kind)} {place.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : null}
             <Pressable style={styles.primary} onPress={confirmPin} accessibilityRole="button">
               <Text style={styles.primaryText}>
                 {t(step === 'pickup' ? 'ride.confirmPickup' : 'ride.confirmDropoff')}
@@ -236,9 +258,8 @@ const styles = StyleSheet.create({
   top: { position: 'absolute', top: 0, start: 0, end: 0, padding: space[3] },
   bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[4] },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3], elevation: elevation.low },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  headerRow: { flexDirection: 'row', alignItems: 'center' },
   brand: { fontSize: fontSize.brand, fontWeight: fontWeight.bold, color: colors.brand },
-  signOut: { fontSize: fontSize.sm, color: colors.muted },
   greeting: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text, marginTop: space[1] },
   tagline: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: space[0.5] },
   backButton: {
@@ -255,6 +276,16 @@ const styles = StyleSheet.create({
   pin: { fontSize: iconSize.xl, marginBottom: iconSize.xl },
   dot: { fontSize: iconSize.md },
   sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
+  chips: { gap: space[2], paddingBottom: space[3] },
+  chip: {
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
+    borderRadius: radius.pill,
+    paddingVertical: space[2],
+    paddingHorizontal: space[3.5],
+    maxWidth: 180,
+  },
+  chipText: { fontSize: fontSize.md, color: colors.text },
   sheetTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: space[3], textAlign: 'center' },
   primary: {
     backgroundColor: colors.brand,

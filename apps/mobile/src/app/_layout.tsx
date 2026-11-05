@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RealtimeBridge } from '@/components/RealtimeBridge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { loadLanguage } from '@/lib/language';
 import { useMode } from '@/lib/mode';
 
 // Keep the splash screen up until we know whether the user is signed in (no flash of the sign-in screen).
@@ -29,7 +30,8 @@ export default function RootLayout() {
   const mode = useMode();
 
   useEffect(() => {
-    void useAuth.getState().hydrate();
+    // Saved language first (still behind the splash screen), so no English flash for Urdu users.
+    void loadLanguage().finally(() => useAuth.getState().hydrate());
   }, []);
 
   useEffect(() => {
@@ -58,6 +60,13 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn && hasName}>
             <Stack.Screen name="index" />
+            {/* Side menu screens (both modes; saved places are only linked in passenger mode). */}
+            <Stack.Screen name="history/index" />
+            <Stack.Screen name="history/[id]" />
+            <Stack.Screen name="places/index" />
+            <Stack.Screen name="places/pick" />
+            <Stack.Screen name="profile" />
+            <Stack.Screen name="settings" />
           </Stack.Protected>
           {/* Driver registration: only reachable in driver mode. */}
           <Stack.Protected guard={signedIn && hasName && mode === 'driver'}>
