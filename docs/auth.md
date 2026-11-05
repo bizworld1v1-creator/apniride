@@ -1,7 +1,9 @@
 # Phone OTP sign-in
 
 Passengers and drivers sign in with a Pakistani mobile number and a 6-digit SMS code. There are no passwords.
-One number can be both a passenger and a driver. The apps send `role: "passenger"` or `role: "driver"`.
+One number can be both a passenger and a driver. There is **one mobile app with two modes** (like inDrive):
+it signs in to the mode used last on that phone (`role: "passenger"` by default, or `"driver"`), and the
+"Driver mode" / "Passenger mode" button switches without a new code (see *Switching mode* below).
 
 ## Flow
 
@@ -25,6 +27,7 @@ App                                   API                                  Redis
 | `POST /auth/otp/request` | – | `{ phone, role }`. The phone can be typed any common way (`0300…`, `+92 300…`, `92300…`) and is normalised to E.164 (`+923001234567`). |
 | `POST /auth/otp/verify` | – | `{ phone, role, code }` → session. Creates the account on first sign-in. |
 | `POST /auth/refresh` | – | `{ refreshToken }` → new `{ accessToken, refreshToken }` |
+| `POST /auth/switch-role` | Bearer | `{ role, refreshToken }` → a new session in the other mode. See below. |
 | `POST /auth/logout` | – | `{ refreshToken }` → 204. Idempotent. |
 | `GET /me`, `PATCH /me` | Bearer | Profile. `PATCH` takes `{ name }` (2–60 characters). |
 
@@ -33,6 +36,23 @@ Errors always look like `{ statusCode, code, message, retryAfterSeconds? }`. The
 `invalid_refresh_token`, `unauthorized`, …) into English or Urdu. 429 responses also set a `Retry-After` header.
 
 Schemas and the typed client live in `packages/shared/src/auth.ts` and `api-client.ts`.
+
+## Switching mode (`POST /auth/switch-role`)
+
+Every session (and access token) still has exactly **one** role, so all passenger/driver route checks stay as they
+were (`assertRole` → `wrong_app` 403). Switching swaps the phone's session:
+
+1. Needs the access token **and** the session's refresh token (proves it is the device that owns the session).
+2. Refused with **409 `go_offline_first`** if the driver is online, and **409 `active_ride_exists`** if the user has
+   a ride that is searching / accepted / arrived / in progress (as passenger or driver). **400 `same_role`** if
+   already in that mode; admins get **403 `wrong_app`**.
+3. Adds the role to `user_roles` if new (`isNewUser: true` the first time someone opens driver mode), opens a new
+   session for the new role and revokes the old one.
+4. The app stores the new tokens, clears its query cache and reconnects the socket, which puts it in the new
+   mode's room (`passenger:<id>` or `driver:<id>`).
+
+The old access token keeps working until it expires (at most 1 hour), as after a logout.
+The last used mode is kept on the phone (`apniride.mode` in SecureStore) even after signing out.
 
 ## Limits (`backend/src/auth/otp.service.ts`)
 
@@ -68,4 +88,3 @@ Schemas and the typed client live in `packages/shared/src/auth.ts` and `api-clie
   Consider WhatsApp OTP as a cheaper fallback, and an Android SMS Retriever hash in the message for one-tap autofill.
 - `trust proxy` for correct client IPs behind a load balancer (the per-IP cap currently uses `req.ip`).
 - Revoking all sessions for a user (e.g. "sign out of all devices", or blocking a driver).
-- Auth screens are duplicated in both apps. Move them into a shared RN package if they drift.

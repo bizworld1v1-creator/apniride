@@ -29,8 +29,10 @@ Points per ride → mobile load, petrol, Daraz vouchers.
 
 ## Tech stack (decided – use this)
 - **Monorepo:** Turborepo + pnpm workspaces
-- **apps/passenger, apps/driver:** Expo (latest SDK) + TypeScript, Expo Router, EAS Build + EAS Update (OTA),
-  react-native-maps (Google Maps on both Android and iOS), expo-location (background location in the driver app),
+- **apps/mobile:** ONE app for passengers and drivers, like inDrive (owner decision 2026-11-06): passenger mode and
+  driver mode, switched in the app without a new OTP (`POST /auth/switch-role`). Expo (latest SDK) + TypeScript,
+  Expo Router, EAS Build + EAS Update (OTA), react-native-maps (Google Maps on both Android and iOS), expo-location
+  (background location in driver mode),
   TanStack Query, Zustand, React Hook Form + Zod, i18next (English + Urdu, RTL), Sentry
 - **apps/admin:** Next.js + TypeScript (placeholder for now)
 - **backend:** NestJS + TypeScript, PostgreSQL + PostGIS, Redis, Socket.IO (Redis adapter), BullMQ
@@ -46,8 +48,7 @@ Points per ride → mobile load, petrol, Daraz vouchers.
 
 ## Repo layout
 ```
-/apps/passenger    Expo passenger app
-/apps/driver       Expo driver app
+/apps/mobile       Expo app: passenger mode + driver mode
 /apps/admin        Next.js admin panel (placeholder)
 /backend           NestJS API + Socket.IO server
 /packages/shared   Shared types, Zod schemas, API client
@@ -70,48 +71,54 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Write tests for fare calculation and matching logic.
 - UI text must support English and Urdu (RTL).
 - **One theme:** colours, font sizes/weights, spacing, corners, shadows, borders, opacity and tap sizes come only
-  from `packages/shared/src/theme.ts` (both apps, the
-  admin CSS and the app icon/splash). Never hard-code them in a component. See docs/theme.md.
+  from `packages/shared/src/theme.ts` (the mobile app,
+  the admin CSS and the app icon/splash). Never hard-code them in a component. See docs/theme.md.
 
 ## How we work
-- **One feature per chunk.** Build it end to end (backend + both apps + tests + docs), commit, push, then
+- **One feature per chunk.** Build it end to end (backend + app (both modes) + admin if needed + tests + docs), commit, push, then
   **stop and ask** the owner before starting the next one.
 - **After every chunk, update the Progress section below** (move the item to Done, set "Next up").
 - Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
   `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
-  `npx expo export --platform android` in each app to confirm it bundles.
+  `npx expo export --platform android` in `apps/mobile` to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, theme.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-06, after the unified theme + text/spacing tokens)
+## Progress (last updated 2026-11-06, after merging into one app with two modes)
 
 ### Done ✅
 | Feature | Where | Notes |
 | --- | --- | --- |
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
 | SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log |
-| Phone OTP sign-in (both apps) | `backend/src/auth`, `apps/*/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
+| Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
 | Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
-| Passenger booking UI | `apps/passenger/src/app/index.tsx`, `RideStatusSheet` | Live status, cancel, "pay cash" |
-| Driver ride UI | `apps/driver/src/app/index.tsx`, `OfferCard`, `ActiveRideCard` | Vibrates on offer, Google Maps navigation link |
-| Run on any device guide | `docs/running-on-devices.md`, `apps/*/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
+| Passenger booking UI | `apps/mobile/src/components/PassengerHome.tsx`, `FareSheet`, `RideStatusSheet` | Live status, cancel, "pay cash" |
+| Driver ride UI | `apps/mobile/src/components/DriverHome.tsx`, `OfferCard`, `ActiveRideCard` | Vibrates on offer, Google Maps navigation link |
+| Run on any device guide | `docs/running-on-devices.md`, `apps/mobile/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
 | Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `VehicleMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
-| Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, driver `app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Reviewed in the admin panel. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
-| Vehicle markers + smooth tracking | `apps/*/src/components/VehicleMarker.tsx`, `design/vehicles`, `packages/shared/src/tracking.ts`, `backend/src/drivers/nearby-drivers.*` | Top-down car / bike images that glide natively and turn with the heading; nearby drivers on the passenger map before booking (privacy-safe); driver sees own vehicle + ETA. See docs/rides.md |
+| Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, `apps/mobile/src/app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Reviewed in the admin panel. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
+| Vehicle markers + smooth tracking | `apps/mobile/src/components/VehicleMarker.tsx`, `design/vehicles`, `packages/shared/src/tracking.ts`, `backend/src/drivers/nearby-drivers.*` | Top-down car / bike images that glide natively and turn with the heading; nearby drivers on the passenger map before booking (privacy-safe); driver sees own vehicle + ETA. See docs/rides.md |
 | Admin panel | `apps/admin`, `backend/src/admin`, `pnpm admins` | Phone-OTP sign-in for numbers on the `admins` list only; tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
-| Unified theme | `packages/shared/src/theme.ts`, `apps/*/src/lib/theme.ts`, admin `layout.tsx` + `globals.css` | One file for every colour, font size/weight, spacing step (`space[n]` = n × 4 px), corner, shadow, border, opacity and tap size in all three apps (admin gets CSS variables). Per-app brand colour (passenger teal, driver/admin amber). Looks exactly as before. See docs/theme.md |
+| Unified theme | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/theme.ts`, admin `layout.tsx` + `globals.css` | One file for every colour, font size/weight, spacing step (`space[n]` = n × 4 px), corner, shadow, border, opacity and tap size (admin gets CSS variables). Brand: mobile app teal (both modes), admin amber. See docs/theme.md |
+| One app, two modes (like inDrive) | `apps/mobile` (`app/index.tsx`, `lib/mode.ts`, `ModeSwitch`, `RealtimeBridge`), `backend/src/auth` (`switch-role`) | `apps/passenger` + `apps/driver` merged into `apps/mobile` (`pnpm mobile`, package `pk.apniride.app`). "Driver mode" / "Passenger mode" button on the home card swaps the session without a new OTP; refused while online (`go_offline_first`) or with an active ride (`active_ride_exists`). Signs in to the last used mode. Driver texts under `driver.*` in i18n. A full ride test now needs two devices. See docs/auth.md |
 
-Tests: 89 shared + 32 backend unit, 30 backend e2e (all passing at the last commit). The admin panel was clicked
+Tests: 89 shared + 32 backend unit, 31 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
 The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
 **Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).
 
 ### Next up ▶️
-1. **First: the owner tests** on real phones: driver onboarding, approving themselves in the admin panel
+1. **First: the owner tests** the merged app on real phones: switching to driver mode and back (no new code),
+   the "Driver mode" button greyed out while online / on a ride, signing out and back in (lands in the last mode).
+   Then, as before: driver onboarding, approving themselves in the admin panel
    (`pnpm admins add <their number>`, `pnpm admin`), then a ride with the new vehicle markers (glide + turning,
    nearby drivers before booking, driver ETA). The glide uses a native map command that hasn't run on a device
    yet: check the marker doesn't snap back or freeze. Fix bugs before new features.
-2. Then (to be confirmed with the owner): the next **free** item from "Still missing", most likely the
+2. Then: **ride history + settings like inDrive** (owner asked 2026-11-06). Confirm the scope first: ride history
+   (both modes, driver earnings), profile settings, app settings (language, sign out, help), saved places; and move
+   the mode switch into a side/settings menu like inDrive.
+3. After that (to be confirmed): the next **free** item from "Still missing", most likely the
    **female-driver option**. Paid items wait (see the paid table).
 
 ### Still missing ❌
@@ -123,7 +130,7 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
    web page showing the ride live, served by our own server)
 3. Ratings + complaints with tracked response time (+ complaints page in the admin panel)
 4. Per-city feature flags (required by the engineering rules; every new feature switchable per city)
-5. Android development build for background location + an offer sound while the driver app is closed (local or
+5. Android development build for background location + an offer sound while the app is closed in driver mode (local or
    EAS free tier). Without it, tracking pauses when the driver opens Google Maps or locks the phone.
    Driver → passenger live location is NOT wanted: like inDrive, the driver sees the pickup pin only.
 
@@ -153,10 +160,11 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
 | NADRA CNIC / licence verification | paid government API | stronger driver checks |
 
 ### Known limits / TODOs
-- Expo Go only: no background location; offers only vibrate while the driver app is open.
+- Expo Go only: no background location; offers only vibrate while the app is open in driver mode.
+- One phone is in one mode at a time: testing a whole ride needs two devices (e.g. phone + Android emulator) with
+  two numbers.
 - Road distance and ETA = straight line × 1.35 (no routing/traffic API yet).
 - Driver cancellations / declines have no penalty yet.
-- Auth screens are duplicated in both apps (`apps/*/src/app/sign-in.tsx` etc.).
 - Admin panel: no roles (every admin can do everything), English only, admins added only by `pnpm admins`.
 - Driver documents are on local disk (`backend/uploads/`); production with several servers needs S3-compatible
   storage behind `FileStorage`.
@@ -165,8 +173,8 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
 ### Local setup reminders
 - Docker Desktop needs WSL 2. If it fails to start, run `wsl --update` as admin and reboot.
 - Phone can't reach the laptop: Windows had **Block rules for node.exe** (from a cancelled firewall popup); they were
-  disabled on 2026-11-04. Allow rule "ApniRide dev" opens TCP 3000/8081/8082 on Private networks. Use
-  `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.100.6"` before `pnpm passenger` (WSL adapters confuse Expo's IP pick).
+  disabled on 2026-11-04. Allow rule "ApniRide dev" opens TCP 3000/8081/8082 on Private networks (8082 is no longer used). Use
+  `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.100.6"` before `pnpm mobile` (WSL adapters confuse Expo's IP pick).
 - **2026-11-04: the owner got the passenger app running on their phone via Expo Go** (first real-device test).
 - Dev backend: `pnpm db:up && pnpm db:migrate && pnpm backend`. The laptop's LAN IP was `192.168.100.6`.
 - `backend/.env` has the dev-only flag `OTP_DEV_ECHO=true` (refused when `NODE_ENV=production`).

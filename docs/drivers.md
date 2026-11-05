@@ -22,7 +22,7 @@ incomplete ──submit──► pending ──approve──► approved ──s
 | `suspended` | no | no | the reason + "contact support" (sent offline at once; a ride already under way can be finished) |
 
 The admin's reason (`review_note`) is shown to the driver for `rejected` and `suspended`, and cleared when they
-resubmit. When an admin acts, the driver app gets a `driver:reviewed` socket event and refreshes immediately.
+resubmit. When an admin acts, the app (in driver mode) gets a `driver:reviewed` socket event and refreshes immediately.
 
 ## What the driver provides
 
@@ -69,7 +69,7 @@ In the **admin panel** ([admin.md](admin.md)): Drivers → *Waiting for review* 
 compare the photos with the details, then Approve or Reject with a reason. Approved drivers can be suspended
 (with a reason) and reinstated later. Every decision is in the audit log with the admin's name.
 
-To approve yourself for phone testing: register in the driver app, send it for review, then approve yourself
+To approve yourself for phone testing: open **Driver mode** in the app, register, send it for review, then approve yourself
 in the panel.
 
 **CNIC gender hint:** by NADRA convention the last CNIC digit is odd for men and even for women. A mismatch

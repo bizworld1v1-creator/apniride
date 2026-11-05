@@ -53,7 +53,7 @@ for disputes and acceptance-rate stats.
 | `drv:offer:<id>` | The ride this driver is being offered |
 | `drv:ride:<id>` | The ride this driver is doing (busy) |
 
-The driver app sends its location over Socket.IO every 5 s / 25 m while online, plus every 30 s when parked.
+In driver mode the app sends its location over Socket.IO every 5 s / 25 m while online, plus every 30 s when parked.
 
 ## API
 
@@ -99,7 +99,7 @@ Socket.IO's connection-state recovery also replays events missed during short dr
 
 ## Live tracking (`backend/src/drivers/tracking.service.ts`)
 
-- The driver app sends its position every 5 s / 25 m (and every 30 s when parked) while **online or on a ride**.
+- In driver mode the app sends its position every 5 s / 25 m (and every 30 s when parked) while **online or on a ride**.
 - Every position is saved as `drv:loc:<driverId>` (3 min TTL). If the driver is on a ride (`drv:ride:<id>`),
   it is forwarded to **that ride's passenger only**, as `ride:driver_location`, with an ETA:
   - `accepted` / `arrived`: to the **pickup**
@@ -126,7 +126,7 @@ Socket.IO's connection-state recovery also replays events missed during short dr
   in a small view.
 - The rules live in `planMarkerMove` (`packages/shared/src/tracking.ts`, unit-tested); both apps use the same
   `VehicleMarker` component.
-- **Driver app:** their own car / bike replaces the blue dot (glides at most 0.8 s, since the camera follows them),
+- **Driver mode:** their own car / bike replaces the blue dot (glides at most 0.8 s, since the camera follows them),
   and the ride card shows "About 4 min · 1.3 km to pickup / to the destination".
 
 ## Nearby drivers (before booking)
@@ -136,7 +136,7 @@ Socket.IO's connection-state recovery also replays events missed during short dr
 - Up to 8 per vehicle type within 3 km, only drivers who are online, heard from in the last 90 s and not on a ride.
 - **Privacy:** no ids or names; `key` is a hash that changes every day (so the app can glide each marker, but
   nobody can follow one driver from day to day); positions rounded to ~11 m.
-- The passenger app asks every 10 s for the area the map shows (snapped to ~100 m so small pans don't refetch),
+- In passenger mode the app asks every 10 s for the area the map shows (snapped to ~100 m so small pans don't refetch),
   only while the app is on screen and no ride is booked. About 1 KB per request.
 
 ## Privacy
@@ -149,5 +149,5 @@ Apps get **first names only** and never a phone number. Masked calling comes as 
 - Masked calling, SOS and share-trip.
 - Female-driver option (needs driver gender from onboarding).
 - Penalties for driver cancellations and declines; ratings.
-- Background location in the driver app (needs a development build, not Expo Go).
+- Background location in driver mode (needs a development build, not Expo Go).
 - A notification sound for offers. Today they vibrate, and only while the app is open.

@@ -1,7 +1,8 @@
 # Theme (colours, text, spacing, corners, shadows)
 
 Everything visual that we may want to restyle lives in **one file**: `packages/shared/src/theme.ts`.
-Change it there and the passenger app, driver app, admin panel and app icon/splash backgrounds all follow.
+Change it there and the mobile app (passenger + driver mode), the admin panel and the app icon/splash backgrounds all
+follow.
 
 ## How it is built
 
@@ -9,7 +10,7 @@ Change it there and the passenger app, driver app, admin panel and app icon/spla
 | --- | --- | --- | --- |
 | `palette` | Raw colours, never used directly by screens | `teal700: '#0E7490'` | none |
 | `baseColors` (roles) | What a colour is *for*, shared by every app | `surface`, `text`, `muted`, `success`, `pickupPin` | `--surface`, `--text-secondary` |
-| `brands` | Per-app brand colours | passenger = teal, driver + admin = amber | `--brand`, `--brand-soft` |
+| `brands` | Per-app brand colours | mobile app = teal, admin = amber | `--brand`, `--brand-soft` |
 | `fontSize` | Text sizes, small to large | `sm 13`, `base 15` (body), `xl 17` (buttons), `heading 24` | `--font-size-base` |
 | `fontWeight` | `regular 400`, `medium 500`, `semibold 600`, `bold 700`, `extraBold 800` | `fontWeight.semibold` | `--font-weight-semibold` |
 | `fontFamily` | `app` (phone system font for now), `web` (admin) | | `--font-family` |
@@ -26,10 +27,10 @@ Change it there and the passenger app, driver app, admin panel and app icon/spla
 
 ## Who reads it
 
-- **Passenger / driver apps:** `apps/*/src/lib/theme.ts` calls `getTheme('passenger' | 'driver')`. Components import
+- **Mobile app:** `apps/mobile/src/lib/theme.ts` calls `getTheme('mobile')` (one brand for both modes). Components import
   only what they need, e.g. `import { colors, fontSize, space } from '@/lib/theme'`, and write
   `{ fontSize: fontSize.base, fontWeight: fontWeight.semibold, padding: space[4] }`.
-- **Expo config:** `apps/*/app.config.ts` imports `../../packages/shared/src/theme.ts` (with the `.ts` extension,
+- **Expo config:** `apps/mobile/app.config.ts` imports `../../packages/shared/src/theme.ts` (with the `.ts` extension,
   because Expo's config loader runs in plain Node, which strips the types itself; needs Node 22.18+). It sets the
   Android adaptive-icon background and the splash background. These only change in a new build, not in Expo Go
   or an OTA update.
@@ -38,7 +39,7 @@ Change it there and the passenger app, driver app, admin panel and app icon/spla
 
 ## Recipes
 
-- **New brand colour for the passenger app:** change `brands.passenger.brand` (and `brandSoft`, the light
+- **New brand colour for the mobile app:** change `brands.mobile.brand` (and `brandSoft`, the light
   background of a selected option).
 - **One colour everywhere** (e.g. a different green): change it in `palette`.
 - **Bigger or smaller text:** change the numbers in `fontSize` (e.g. `base` for all body text).

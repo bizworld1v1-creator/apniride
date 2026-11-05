@@ -1,7 +1,8 @@
 # Running ApniRide on any device
 
-The apps are Expo (React Native) apps. They run on **Android phones, iPhones, the Android emulator and the iOS
-simulator**. They **don't run in a web browser**, because the map library (react-native-maps) has no web version.
+ApniRide is **one Expo (React Native) app** with a passenger mode and a driver mode (switch with the **Driver mode**
+/ **Passenger mode** button on the home screen). It runs on **Android phones, iPhones, the Android emulator and the iOS
+simulator**. It **doesn't run in a web browser**, because the map library (react-native-maps) has no web version.
 
 Every option needs the **backend** running somewhere the device can reach (section 1).
 
@@ -18,7 +19,7 @@ Every option needs the **backend** running somewhere the device can reach (secti
 
 > **Lahore only.** Fares and going online only work inside the Lahore service area (35 km around Liberty
 > Market). On an emulator or simulator, set its GPS to Lahore (see 4 and 5). Testers outside Lahore can still
-> try the passenger app: deny location access and place the pickup pin on the map by hand, somewhere in Lahore.
+> try passenger mode: deny location access and place the pickup pin on the map by hand, somewhere in Lahore.
 
 ---
 
@@ -34,15 +35,15 @@ pnpm backend      # API + Socket.IO on port 3000
 
 Check http://localhost:3000/health → `"status":"ok"`.
 
-The apps find the backend automatically: they use the **same computer that runs Metro**, on port 3000
-(e.g. `http://192.168.100.6:3000`). To use a different backend, put `EXPO_PUBLIC_API_URL` in the app's `.env`
+The app finds the backend automatically: it uses the **same computer that runs Metro**, on port 3000
+(e.g. `http://192.168.100.6:3000`). To use a different backend, put `EXPO_PUBLIC_API_URL` in `apps/mobile/.env`
 (section 6).
 
-**Windows Firewall** (once). Phones must be allowed to reach ports 3000, 8081 and 8082. Click **Allow** when
+**Windows Firewall** (once). Phones must be allowed to reach ports 3000 and 8081. Click **Allow** when
 Windows asks about Node.js, or run this in an **Administrator** PowerShell:
 
 ```powershell
-New-NetFirewallRule -DisplayName "ApniRide dev" -Direction Inbound -Protocol TCP -LocalPort 3000,8081,8082 -Action Allow -Profile Private
+New-NetFirewallRule -DisplayName "ApniRide dev" -Direction Inbound -Protocol TCP -LocalPort 3000,8081 -Action Allow -Profile Private
 ```
 
 Also set your Wi-Fi to a **Private** network (Settings → Network → Wi-Fi → your network → Private).
@@ -71,46 +72,45 @@ Find the PC's IP with `ipconfig` (Windows) or `ipconfig getifaddr en0` (Mac).
 
 1. Play Store → install **Expo Go** (keep it updated: it must support Expo **SDK 58**).
 2. Phone and PC on the **same Wi-Fi**.
-3. On the PC: `pnpm passenger` (passenger app, port 8081) or `pnpm driver` (driver app, port 8082).
+3. On the PC: `pnpm mobile` (port 8081).
    If the PC also has WSL/Docker/Hyper-V adapters, tell Expo the Wi-Fi IP so the QR code uses it:
-   PowerShell `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.x.x"; pnpm passenger`.
-   For both apps, run them in two terminals.
+   PowerShell `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.x.x"; pnpm mobile`.
 4. Expo Go → **Scan QR code** → scan the QR in the terminal. The first load takes about a minute.
 
-Works fully: maps (Google), location, sign-in, booking and tracking. Shake the phone for the dev menu, or press
+Works fully: maps (Google), location, sign-in, booking, tracking and driver mode (while the app is open). Shake the phone for the dev menu, or press
 `r` in the terminal to reload.
 
 ## 3. iPhone (Expo Go)
 
 1. App Store → install **Expo Go**.
-2. Same Wi-Fi as the PC. Run `pnpm passenger` / `pnpm driver` as above.
+2. Same Wi-Fi as the PC. Run `pnpm mobile` as above.
 3. Scan the QR with the **iPhone Camera app** (not inside Expo Go) → tap the banner → it opens in Expo Go.
 4. Allow **Local Network** access when iOS asks. Without it the app can't reach Metro or the backend
    (Settings → Privacy & Security → Local Network → Expo Go).
 
 On iPhone the map is **Apple Maps** (Google Maps on iOS needs our own build with a key; see
-`apps/*/src/lib/map-provider.ts`). Everything else is the same. No Mac is needed for this.
+`apps/mobile/src/lib/map-provider.ts`). Everything else is the same. No Mac is needed for this.
 
 ## 4. Android emulator (Windows / Mac / Linux)
 
 1. Install **Android Studio** → **Device Manager** → **Create device** → pick a phone → choose a system image
    **with "Google Play"** (needed for Google Maps) → Finish → ▶ start it.
-2. Run `pnpm passenger` (or `pnpm driver`), then press **`a`** in the terminal. Expo installs Expo Go in the
+2. Run `pnpm mobile`, then press **`a`** in the terminal. Expo installs Expo Go in the
    emulator and opens the app.
 3. **Put the emulator in Lahore:** click **⋯ (Extended controls)** → **Location** → search "Liberty Market
    Lahore" or enter `31.5104, 74.3416` → **Set location**. Otherwise the emulator thinks it's in California and you get
    "outside service area".
-4. If the app says "Server unreachable", create `apps/<app>/.env` with
+4. If the app says "Server unreachable", create `apps/mobile/.env` with
    `EXPO_PUBLIC_API_URL=http://10.0.2.2:3000` (10.0.2.2 = "the PC" from inside the emulator) and restart with
-   `pnpm --filter @apniride/passenger start --clear`.
+   `pnpm --filter @apniride/mobile start --clear`.
 
-Tip: run the **driver app on the emulator** and the **passenger app on your phone** to test a whole ride with one
-phone. Set the emulator's location close to where your phone is.
+Tip: use **driver mode on the emulator** and **passenger mode on your phone** (two different numbers) to test a
+whole ride with one phone. Set the emulator's location close to where your phone is.
 
 ## 5. iOS simulator (Mac only)
 
 1. Install **Xcode** from the App Store and open it once (it installs the simulators).
-2. `pnpm passenger`, then press **`i`**.
+2. `pnpm mobile`, then press **`i`**.
 3. **Put the simulator in Lahore:** simulator menu **Features → Location → Custom Location…** →
    latitude `31.5104`, longitude `74.3416`.
 
@@ -124,12 +124,11 @@ You need two tunnels: one for **Metro** (the app code) and one for the **backend
    ```
    It prints a public URL like `https://random-words.trycloudflare.com`. Free, no account. It changes every time
    you restart it.
-2. **Point the app at it.** Create `apps/passenger/.env` (and/or `apps/driver/.env`). These files are gitignored:
+2. **Point the app at it.** Create `apps/mobile/.env` (gitignored):
    ```
    EXPO_PUBLIC_API_URL=https://random-words.trycloudflare.com
    ```
-3. **Metro tunnel.** Start the app with `pnpm --filter @apniride/passenger start:tunnel --clear`
-   (driver: `@apniride/driver`). The first time, Expo asks to install `@expo/ngrok`; say yes.
+3. **Metro tunnel.** Start the app with `pnpm --filter @apniride/mobile start:tunnel --clear`. The first time, Expo asks to install `@expo/ngrok`; say yes.
 4. Scan the new QR code. It works on any network.
 
 When you're back on the same Wi-Fi, **delete the `.env` line** (or the file) and restart with `--clear` so the app
@@ -145,21 +144,21 @@ APK in Expo's cloud. No Android Studio is needed.
   section 6, which only works while your PC is on.
 - A **Google Maps Android API key**. Expo Go has its own, but our APK needs ours or the map is blank.
   Google Cloud Console → enable "Maps SDK for Android" → create an API key → restrict it to the app's package
-  (`pk.apniride.passenger` / `pk.apniride.driver`) and the build's SHA-1 (shown on expo.dev → project →
+  (`pk.apniride.app`) and the build's SHA-1 (shown on expo.dev → project →
   Credentials).
 
 **Build:**
 ```bash
 npm install -g eas-cli
 eas login                                        # free Expo account
-cd apps/passenger
-eas init                                         # once per app
+cd apps/mobile
+eas init                                         # once
 eas env:create --name EXPO_PUBLIC_API_URL --value https://your-backend.example.com --environment preview --visibility plaintext
 eas env:create --name GOOGLE_MAPS_ANDROID_API_KEY --value <your key> --environment preview --visibility sensitive
 pnpm build:preview                               # ≈ 10–20 min in the cloud
 ```
 When it finishes you get a **link + QR code**. Testers open it on their Android phone → download → install
-(Android asks to allow "install unknown apps" once). Repeat in `apps/driver` for the driver app.
+(Android asks to allow "install unknown apps" once). The same APK is used by passengers and drivers.
 
 After that, JS-only changes can be pushed to installed apps without a new build: `pnpm update`
 (EAS Update; run `eas update:configure` once first).
@@ -180,7 +179,8 @@ After that, JS-only changes can be pushed to installed apps without a new build:
    ```
 4. Then section 1 (backend) and any of sections 2–7.
 
-`backend/.env.example` has working dev values (code shown in the app instead of SMS, drivers auto-approved).
+`backend/.env.example` has working dev values (code shown in the app instead of SMS). Drivers are approved in the
+admin panel (docs/admin.md).
 Generate your own `JWT_SECRET` / `OTP_SECRET` for anything shared:
 `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`.
 
@@ -188,11 +188,12 @@ Generate your own `JWT_SECRET` / `OTP_SECRET` for anything shared:
 
 ## Testing a whole ride: device combinations
 
-The driver must be **within 5 km of the pickup**, and both apps need to reach the same backend.
+One phone is in one mode at a time, so a whole ride needs **two devices** with **two different numbers** (one in
+passenger mode, one an approved driver in driver mode). The driver must be **within 5 km of the pickup**, and both
+devices need to reach the same backend.
 
-| Passenger app on | Driver app on | Notes |
+| Passenger mode on | Driver mode on | Notes |
 | --- | --- | --- |
-| Phone | Same phone | Run both in Expo Go and switch between them. The same number is fine in development |
 | Phone A | Phone B | Both on the same Wi-Fi (or both via tunnels, section 6) |
 | Phone | Android emulator | Set the emulator's location near the phone (section 4) |
 | Emulator | Emulator / simulator | Give both a Lahore location a few hundred metres apart |
@@ -204,9 +205,10 @@ The driver must be **within 5 km of the pickup**, and both apps need to reach th
 | Expo Go stuck on loading / phone browser spins on `:8081/status` | Windows Firewall. Check for **Node.js Block rules** (section 1). Test: turn the firewall off for 1 minute; if it then works, it's the firewall (turn it back on!) |
 | Scanned the QR with the camera and got a web page / "Web Bundling failed" | Scan from **inside Expo Go** (Android) or use Expo Go → Enter URL manually → `exp://<PC IP>:8081`. The app doesn't run in a browser |
 | QR scans but "Could not connect to development server" | Same Wi-Fi? Firewall (section 1)? Office/hotel Wi-Fi often blocks devices from seeing each other: use tunnels (section 6) |
-| "Server unreachable" / "No internet connection" in the app | Open `http://<PC IP>:3000/health` on the phone. Fails → firewall/network. Works → check `EXPO_PUBLIC_API_URL` in `apps/<app>/.env` and restart with `--clear` |
+| "Server unreachable" / "No internet connection" in the app | Open `http://<PC IP>:3000/health` on the phone. Fails → firewall/network. Works → check `EXPO_PUBLIC_API_URL` in `apps/mobile/.env` and restart with `--clear` |
 | "Sorry, we only serve Lahore for now" / driver "outside our service area" | Device GPS isn't in Lahore. Emulator: set the location. Passenger: place the pickup pin in Lahore by hand |
 | "Project is incompatible with this version of Expo Go" | Update Expo Go from the Play Store / App Store |
 | Map is blank in an EAS-built APK | Missing or restricted Google Maps key (section 7) |
+| "Driver mode" button greyed out / "Go offline first" | Go offline and finish the current ride, then switch. Passengers can't switch while a ride is going on |
 | Driver never gets the ride | Same vehicle type (bike/car) as the booking? Driver online and within 5 km of the pickup? |
-| The PC's IP changed (new Wi-Fi) | Nothing to do: the apps detect it from Metro. Just rescan the QR |
+| The PC's IP changed (new Wi-Fi) | Nothing to do: the app detects it from Metro. Just rescan the QR |
