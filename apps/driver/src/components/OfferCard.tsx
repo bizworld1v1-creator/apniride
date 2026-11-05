@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { api } from '@/lib/api';
 import { patchCurrent, type ReceivedOffer } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
-import { colors, elevation, radius } from '@/lib/theme';
+import { borderWidth, colors, elevation, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
 
 export const formatRupees = (n: number) => n.toLocaleString('en-PK');
 
@@ -93,20 +93,20 @@ function useSecondsLeft(offer: ReceivedOffer) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.high, overflow: 'hidden' },
-  bar: { height: 6, backgroundColor: colors.surfaceMuted, borderRadius: 3, marginBottom: 12, overflow: 'hidden' },
+  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.high, overflow: 'hidden' },
+  bar: { height: 6, backgroundColor: colors.surfaceMuted, borderRadius: 3, marginBottom: space[3], overflow: 'hidden' },
   barFill: { height: 6, backgroundColor: colors.brand },
-  label: { fontSize: 14, color: colors.muted, fontWeight: '600' },
-  fare: { fontSize: 36, fontWeight: '800', color: colors.text, marginTop: 4 },
-  cash: { fontSize: 13, color: colors.muted },
-  rows: { marginTop: 12, gap: 4 },
-  row: { fontSize: 16, color: colors.text },
-  error: { color: colors.error, fontSize: 14, marginTop: 10, textAlign: 'center' },
-  buttons: { flexDirection: 'row', marginTop: 16, gap: 10 },
-  button: { flex: 1, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', minHeight: 56 },
-  decline: { borderWidth: 1, borderColor: colors.border },
-  declineText: { fontSize: 17, fontWeight: '600', color: colors.text },
+  label: { fontSize: fontSize.md, color: colors.muted, fontWeight: fontWeight.semibold },
+  fare: { fontSize: fontSize.amountLarge, fontWeight: fontWeight.extraBold, color: colors.text, marginTop: space[1] },
+  cash: { fontSize: fontSize.sm, color: colors.muted },
+  rows: { marginTop: space[3], gap: space[1] },
+  row: { fontSize: fontSize.lg, color: colors.text },
+  error: { color: colors.error, fontSize: fontSize.md, marginTop: space[2.5], textAlign: 'center' },
+  buttons: { flexDirection: 'row', marginTop: space[4], gap: space[2.5] },
+  button: { flex: 1, borderRadius: radius.lg, paddingVertical: space[4], alignItems: 'center', justifyContent: 'center', minHeight: touch.buttonLarge },
+  decline: { borderWidth: borderWidth.thin, borderColor: colors.border },
+  declineText: { fontSize: fontSize.xl, fontWeight: fontWeight.semibold, color: colors.text },
   accept: { backgroundColor: colors.success, flex: 2 },
-  acceptText: { fontSize: 18, fontWeight: '700', color: colors.onColor },
-  dim: { opacity: 0.7 },
+  acceptText: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.onColor },
+  dim: { opacity: opacity.dim },
 });

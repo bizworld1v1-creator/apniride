@@ -10,7 +10,7 @@ import { api } from '@/lib/api';
 import { PROFILE_KEY } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { ONBOARDING_KEY, useOnboarding } from '@/lib/onboarding';
-import { colors } from '@/lib/theme';
+import { colors, fontSize, fontWeight, space } from '@/lib/theme';
 
 /** Registration overview: details, document photos, send for review. */
 export default function OnboardingScreen() {
@@ -117,12 +117,12 @@ export default function OnboardingScreen() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  detailsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  strong: { fontSize: 16, fontWeight: '600', color: colors.text },
-  link: { fontSize: 15, fontWeight: '600', color: colors.brand },
-  todo: { color: colors.brand, fontWeight: '600' },
+  detailsRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  strong: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
+  link: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.brand },
+  todo: { color: colors.brand, fontWeight: fontWeight.semibold },
   center: { textAlign: 'center' },
-  bold: { fontWeight: '700', marginBottom: 4 },
+  bold: { fontWeight: fontWeight.bold, marginBottom: space[1] },
   rejected: { backgroundColor: colors.errorSoft },
   info: { backgroundColor: colors.infoSoft },
 });

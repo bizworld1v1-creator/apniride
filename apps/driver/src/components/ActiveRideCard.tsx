@@ -6,7 +6,7 @@ import { formatRupees } from '@/components/OfferCard';
 import { api } from '@/lib/api';
 import { patchCurrent, useOwnEta } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
-import { colors, elevation, radius } from '@/lib/theme';
+import { borderWidth, colors, elevation, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
 
 /** Opens Google Maps turn-by-turn navigation (free, already on every Android phone). */
 function navigateTo(point: LatLng) {
@@ -98,7 +98,7 @@ export function ActiveRideCard({ ride }: { ride: Ride }) {
       </Pressable>
 
       {ride.status !== 'in_progress' ? (
-        <Pressable onPress={confirmCancel} disabled={cancel.isPending} hitSlop={8} accessibilityRole="button">
+        <Pressable onPress={confirmCancel} disabled={cancel.isPending} hitSlop={touch.hitSlop} accessibilityRole="button">
           <Text style={styles.cancel}>{t('ride.cancel')}</Text>
         </Pressable>
       ) : null}
@@ -107,16 +107,16 @@ export function ActiveRideCard({ ride }: { ride: Ride }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.high },
-  title: { fontSize: 19, fontWeight: '700', color: colors.text },
-  sub: { fontSize: 14, color: colors.muted, marginTop: 4 },
-  eta: { fontSize: 15, fontWeight: '600', color: colors.brand, marginTop: 4 },
-  big: { fontSize: 30, fontWeight: '800', color: colors.text, marginVertical: 12 },
-  navigate: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', marginVertical: 14 },
-  navigateText: { fontSize: 16, fontWeight: '600', color: colors.text },
-  error: { color: colors.error, fontSize: 14, marginBottom: 10, textAlign: 'center' },
-  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
-  primaryText: { color: colors.brandText, fontSize: 18, fontWeight: '700' },
-  dim: { opacity: 0.7 },
-  cancel: { color: colors.error, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingTop: 14 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.high },
+  title: { fontSize: fontSize.title, fontWeight: fontWeight.bold, color: colors.text },
+  sub: { fontSize: fontSize.md, color: colors.muted, marginTop: space[1] },
+  eta: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.brand, marginTop: space[1] },
+  big: { fontSize: fontSize.amount, fontWeight: fontWeight.extraBold, color: colors.text, marginVertical: space[3] },
+  navigate: { borderWidth: borderWidth.thin, borderColor: colors.border, borderRadius: radius.lg, paddingVertical: space[3], alignItems: 'center', marginVertical: space[3.5] },
+  navigateText: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
+  error: { color: colors.error, fontSize: fontSize.md, marginBottom: space[2.5], textAlign: 'center' },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: space[4], alignItems: 'center', minHeight: touch.buttonLarge, justifyContent: 'center' },
+  primaryText: { color: colors.brandText, fontSize: fontSize.xxl, fontWeight: fontWeight.bold },
+  dim: { opacity: opacity.dim },
+  cancel: { color: colors.error, fontSize: fontSize.base, fontWeight: fontWeight.semibold, textAlign: 'center', paddingTop: space[3.5] },
 });

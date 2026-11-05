@@ -8,7 +8,7 @@ import { AuthLayout, authStyles, DevCodeBanner, FieldError, PrimaryButton, TextL
 import { api, APP_ROLE } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { errorMessage } from '@/lib/errors';
-import { colors } from '@/lib/theme';
+import { colors, fontSize, letterSpacing } from '@/lib/theme';
 
 /** Seconds left until `deadline`, ticking once per second (only this screen re-renders). */
 function useCountdown(deadline: number) {
@@ -102,8 +102,8 @@ export default function VerifyScreen() {
 
 const styles = StyleSheet.create({
   code: {
-    fontSize: 28,
-    letterSpacing: 12,
+    fontSize: fontSize.code,
+    letterSpacing: letterSpacing.code,
     textAlign: 'center',
     writingDirection: 'ltr',
     fontVariant: ['tabular-nums'],

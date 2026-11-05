@@ -19,7 +19,7 @@ import { Choice, OnboardingLayout, onboardingStyles } from '@/components/Onboard
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { ONBOARDING_KEY, useOnboarding } from '@/lib/onboarding';
-import { colors } from '@/lib/theme';
+import { colors, space } from '@/lib/theme';
 
 type FormIn = z.input<typeof driverDetailsBodySchema>;
 type FormOut = z.output<typeof driverDetailsBodySchema>;
@@ -203,7 +203,7 @@ function Field({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <View style={{ marginBottom: 14 }}>
+        <View style={{ marginBottom: space[3.5] }}>
           <Text style={authStyles.label}>{label}</Text>
           <TextInput
             style={[authStyles.input, fieldState.error && authStyles.inputError]}

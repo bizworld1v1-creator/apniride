@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { api } from '@/lib/api';
-import { colors, radius } from '@/lib/theme';
+import { colors, fontSize, radius, space } from '@/lib/theme';
 
 /** Small pill that shows whether the backend (and its DB/Redis) is reachable. */
 export function ServerStatus() {
@@ -25,7 +25,7 @@ export function ServerStatus() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  dot: { width: 8, height: 8, borderRadius: radius.xs, marginEnd: 6 },
-  text: { fontSize: 12, color: colors.textTertiary },
+  row: { flexDirection: 'row', alignItems: 'center', marginTop: space[2] },
+  dot: { width: 8, height: 8, borderRadius: radius.xs, marginEnd: space[1.5] },
+  text: { fontSize: fontSize.xs, color: colors.textTertiary },
 });

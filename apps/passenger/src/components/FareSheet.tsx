@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { setCurrentRide } from '@/lib/ride';
-import { colors, elevation, radius } from '@/lib/theme';
+import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, opacity, radius, space, touch } from '@/lib/theme';
 
 const ICONS: Record<VehicleType, string> = { bike: '🏍️', car: '🚗' };
 
@@ -100,7 +100,7 @@ export function FareSheet({
           </Pressable>
         </>
       )}
-      <Pressable onPress={onChangeDestination} hitSlop={8} accessibilityRole="button">
+      <Pressable onPress={onChangeDestination} hitSlop={touch.hitSlop} accessibilityRole="button">
         <Text style={styles.link}>{t('ride.changeDestination')}</Text>
       </Pressable>
     </View>
@@ -129,31 +129,31 @@ function OptionRow({ option, selected, onPress }: { option: FareOption; selected
 }
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
-  center: { alignItems: 'center', paddingVertical: 16 },
-  distance: { fontSize: 13, color: colors.muted, marginBottom: 8 },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
+  center: { alignItems: 'center', paddingVertical: space[4] },
+  distance: { fontSize: fontSize.sm, color: colors.muted, marginBottom: space[2] },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: space[3],
     borderRadius: radius.lg,
-    borderWidth: 2,
+    borderWidth: borderWidth.thick,
     borderColor: 'transparent',
-    marginBottom: 6,
+    marginBottom: space[1.5],
     backgroundColor: colors.background,
   },
   optionSelected: { borderColor: colors.brand, backgroundColor: colors.brandSoft },
-  icon: { fontSize: 28, marginEnd: 12 },
+  icon: { fontSize: iconSize.lg, marginEnd: space[3] },
   optionText: { flex: 1 },
-  optionTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
-  fare: { fontSize: 18, fontWeight: '700', color: colors.text },
-  muted: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  fixed: { fontSize: 13, color: colors.muted, marginVertical: 8, textAlign: 'center' },
-  error: { fontSize: 15, color: colors.error, textAlign: 'center', marginBottom: 12 },
-  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center' },
-  disabled: { opacity: 0.5 },
-  primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
-  secondary: { borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 24 },
-  secondaryText: { color: colors.brand, fontSize: 15, fontWeight: '600' },
-  link: { color: colors.brand, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingTop: 12 },
+  optionTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
+  fare: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.text },
+  muted: { fontSize: fontSize.sm, color: colors.muted, marginTop: space[0.5] },
+  fixed: { fontSize: fontSize.sm, color: colors.muted, marginVertical: space[2], textAlign: 'center' },
+  error: { fontSize: fontSize.base, color: colors.error, textAlign: 'center', marginBottom: space[3] },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: space[4], alignItems: 'center' },
+  disabled: { opacity: opacity.disabled },
+  primaryText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
+  secondary: { borderWidth: borderWidth.thin, borderColor: colors.brand, borderRadius: radius.md, paddingVertical: space[2.5], paddingHorizontal: space[6] },
+  secondaryText: { color: colors.brand, fontSize: fontSize.base, fontWeight: fontWeight.semibold },
+  link: { color: colors.brand, fontSize: fontSize.base, fontWeight: fontWeight.semibold, textAlign: 'center', paddingTop: space[3] },
 });

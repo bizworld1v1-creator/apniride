@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { type ReceivedPosition, useAgeSeconds } from '@/lib/driver-position';
 import { errorMessage } from '@/lib/errors';
 import { setCurrentRide } from '@/lib/ride';
-import { colors, elevation, radius } from '@/lib/theme';
+import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, radius, space } from '@/lib/theme';
 
 const ICONS = { bike: '🏍️', car: '🚗' } as const;
 
@@ -112,32 +112,32 @@ export function RideStatusSheet({ ride, driverPosition }: { ride: Ride; driverPo
 }
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
-  spinner: { marginEnd: 10 },
-  title: { flex: 1, fontSize: 18, fontWeight: '700', color: colors.text },
-  body: { fontSize: 15, color: colors.muted, marginTop: 6 },
-  stale: { fontSize: 13, color: colors.warningStrong, marginTop: 4 },
+  spinner: { marginEnd: space[2.5] },
+  title: { flex: 1, fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.text },
+  body: { fontSize: fontSize.base, color: colors.muted, marginTop: space[1.5] },
+  stale: { fontSize: fontSize.sm, color: colors.warningStrong, marginTop: space[1] },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background,
     borderRadius: radius.lg,
-    padding: 12,
-    marginVertical: 14,
+    padding: space[3],
+    marginVertical: space[3.5],
   },
-  icon: { fontSize: 24, marginEnd: 10 },
-  summaryText: { flex: 1, fontSize: 15, color: colors.text },
-  fare: { fontSize: 17, fontWeight: '700', color: colors.text },
-  error: { color: colors.error, fontSize: 14, marginBottom: 8, textAlign: 'center' },
-  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center' },
-  primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
+  icon: { fontSize: iconSize.md, marginEnd: space[2.5] },
+  summaryText: { flex: 1, fontSize: fontSize.base, color: colors.text },
+  fare: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text },
+  error: { color: colors.error, fontSize: fontSize.md, marginBottom: space[2], textAlign: 'center' },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: space[4], alignItems: 'center' },
+  primaryText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
   secondary: {
-    borderWidth: 1,
+    borderWidth: borderWidth.thin,
     borderColor: colors.error,
     borderRadius: radius.lg,
-    paddingVertical: 14,
+    paddingVertical: space[3.5],
     alignItems: 'center',
   },
-  secondaryText: { color: colors.error, fontSize: 16, fontWeight: '600' },
+  secondaryText: { color: colors.error, fontSize: fontSize.lg, fontWeight: fontWeight.semibold },
 });

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { PrimaryButton, TextLink } from '@/components/AuthLayout';
 import { useOnboarding } from '@/lib/onboarding';
-import { colors, elevation, radius } from '@/lib/theme';
+import { colors, elevation, fontSize, fontWeight, radius, space } from '@/lib/theme';
 
 /** Home-screen card for a driver who can't go online yet: register, wait for review, fix, or suspended. */
 export function DriverStatusCard({ status }: { status: Exclude<DriverApprovalStatus, 'approved'> }) {
@@ -46,8 +46,8 @@ export function DriverStatusCard({ status }: { status: Exclude<DriverApprovalSta
 }
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
-  title: { fontSize: 18, fontWeight: '700', color: colors.text, marginBottom: 6 },
-  body: { fontSize: 15, color: colors.muted, marginBottom: 14 },
-  reason: { fontSize: 15, color: colors.error, marginBottom: 14 },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
+  title: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.text, marginBottom: space[1.5] },
+  body: { fontSize: fontSize.base, color: colors.muted, marginBottom: space[3.5] },
+  reason: { fontSize: fontSize.base, color: colors.error, marginBottom: space[3.5] },
 });

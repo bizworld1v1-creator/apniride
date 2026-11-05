@@ -16,7 +16,7 @@ import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { MAP_PROVIDER } from '@/lib/map-provider';
-import { colors, elevation, radius } from '@/lib/theme';
+import { colors, elevation, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
 import { useLocationSharing } from '@/lib/use-location-sharing';
 
 const DELTA = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
@@ -145,7 +145,7 @@ export default function DriverHomeScreen() {
           <View style={styles.headerRow}>
             <Text style={styles.brand}>{t('appName')}</Text>
             {/* Go offline before signing out, so a driver never vanishes mid-shift by accident. */}
-            <Pressable onPress={() => void signOut()} disabled={online || onRide} accessibilityRole="button" hitSlop={8}>
+            <Pressable onPress={() => void signOut()} disabled={online || onRide} accessibilityRole="button" hitSlop={touch.hitSlop}>
               <Text style={[styles.signOut, (online || onRide) && styles.signOutDisabled]}>{t('auth.signOut')}</Text>
             </Pressable>
           </View>
@@ -174,37 +174,37 @@ export default function DriverHomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: 12 },
-  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: 16 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, elevation: elevation.low },
+  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: space[3] },
+  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[4] },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3], elevation: elevation.low },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brand: { fontSize: 20, fontWeight: '700', color: colors.brand },
-  signOut: { fontSize: 13, color: colors.muted },
-  signOutDisabled: { opacity: 0.4 },
-  greeting: { fontSize: 15, fontWeight: '600', color: colors.text, marginTop: 4 },
-  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  status: { fontSize: 15, fontWeight: '600' },
-  vehicle: { fontSize: 13, color: colors.muted },
+  brand: { fontSize: fontSize.brand, fontWeight: fontWeight.bold, color: colors.brand },
+  signOut: { fontSize: fontSize.sm, color: colors.muted },
+  signOutDisabled: { opacity: opacity.faint },
+  greeting: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text, marginTop: space[1] },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: space[0.5] },
+  status: { fontSize: fontSize.base, fontWeight: fontWeight.semibold },
+  vehicle: { fontSize: fontSize.sm, color: colors.muted },
   waiting: {
     alignSelf: 'center',
     backgroundColor: colors.surface,
     color: colors.text,
-    fontSize: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    fontSize: fontSize.md,
+    paddingHorizontal: space[3.5],
+    paddingVertical: space[1.5],
     borderRadius: radius.xl,
-    marginBottom: 10,
+    marginBottom: space[2.5],
     elevation: elevation.low,
   },
   toggleError: {
     backgroundColor: colors.errorSoft,
     color: colors.error,
-    fontSize: 14,
-    padding: 10,
+    fontSize: fontSize.md,
+    padding: space[2.5],
     borderRadius: radius.md,
-    marginBottom: 10,
+    marginBottom: space[2.5],
     textAlign: 'center',
   },
-  toggle: { borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', elevation: elevation.low, minHeight: 56, justifyContent: 'center' },
-  toggleText: { color: colors.onColor, fontSize: 17, fontWeight: '600' },
+  toggle: { borderRadius: radius.lg, paddingVertical: space[4], alignItems: 'center', elevation: elevation.low, minHeight: touch.buttonLarge, justifyContent: 'center' },
+  toggleText: { color: colors.onColor, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
 });

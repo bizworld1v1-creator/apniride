@@ -15,7 +15,7 @@ import { useDriverPosition } from '@/lib/driver-position';
 import { MAP_PROVIDER } from '@/lib/map-provider';
 import { useNearbyDrivers } from '@/lib/nearby-drivers';
 import { useCurrentRide } from '@/lib/ride';
-import { colors, elevation, radius } from '@/lib/theme';
+import { colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
 
@@ -188,7 +188,7 @@ export default function HomeScreen() {
           <View style={styles.card}>
             <View style={styles.headerRow}>
               <Text style={styles.brand}>ApniRide</Text>
-              <Pressable onPress={() => void signOut()} accessibilityRole="button" hitSlop={8}>
+              <Pressable onPress={() => void signOut()} accessibilityRole="button" hitSlop={touch.hitSlop}>
                 <Text style={styles.signOut}>{t('auth.signOut')}</Text>
               </Pressable>
             </View>
@@ -197,7 +197,7 @@ export default function HomeScreen() {
             <ServerStatus />
           </View>
         ) : (
-          <Pressable style={styles.backButton} onPress={goBack} accessibilityRole="button" hitSlop={8}>
+          <Pressable style={styles.backButton} onPress={goBack} accessibilityRole="button" hitSlop={touch.hitSlop}>
             <Text style={styles.backText}>← {t('ride.back')}</Text>
           </Pressable>
         )}
@@ -229,35 +229,35 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: 12 },
-  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: 16 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, elevation: elevation.low },
+  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: space[3] },
+  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[4] },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3], elevation: elevation.low },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  brand: { fontSize: 20, fontWeight: '700', color: colors.brand },
-  signOut: { fontSize: 13, color: colors.muted },
-  greeting: { fontSize: 15, fontWeight: '600', color: colors.text, marginTop: 4 },
-  tagline: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  brand: { fontSize: fontSize.brand, fontWeight: fontWeight.bold, color: colors.brand },
+  signOut: { fontSize: fontSize.sm, color: colors.muted },
+  greeting: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text, marginTop: space[1] },
+  tagline: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: space[0.5] },
   backButton: {
     alignSelf: 'flex-start',
     backgroundColor: colors.surface,
     borderRadius: radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: space[2],
+    paddingHorizontal: space[3.5],
     elevation: elevation.low,
   },
-  backText: { fontSize: 15, fontWeight: '600', color: colors.text },
+  backText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text },
   // The emoji's tip sits on the exact map centre.
   pinWrap: { position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, alignItems: 'center', justifyContent: 'center' },
-  pin: { fontSize: 36, marginBottom: 36 },
-  dot: { fontSize: 24 },
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
-  sheetTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 12, textAlign: 'center' },
+  pin: { fontSize: iconSize.xl, marginBottom: iconSize.xl },
+  dot: { fontSize: iconSize.md },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
+  sheetTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: space[3], textAlign: 'center' },
   primary: {
     backgroundColor: colors.brand,
     borderRadius: radius.lg,
-    paddingVertical: 16,
+    paddingVertical: space[4],
     alignItems: 'center',
     elevation: elevation.low,
   },
-  primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
+  primaryText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
 });

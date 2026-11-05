@@ -125,6 +125,120 @@ export const elevation = {
   high: 8,
 } as const;
 
+/** Text sizes (px). Low-end phones often have large system font scaling on, so don't go much smaller than `xs`. */
+export const fontSize = {
+  xs: 12,
+  sm: 13,
+  md: 14,
+  /** Normal body text. */
+  base: 15,
+  lg: 16,
+  /** Button labels. */
+  xl: 17,
+  xxl: 18,
+  /** Card titles (driver ride card). */
+  title: 19,
+  /** App name in the map header. */
+  brand: 20,
+  /** App name on the sign-in screens. */
+  brandLarge: 22,
+  /** Screen titles. */
+  heading: 24,
+  /** OTP code input. */
+  code: 28,
+  /** Fare on the driver's active ride card. */
+  amount: 30,
+  /** Big numbers on the admin dashboard. */
+  stat: 32,
+  /** Fare on the driver's offer card. */
+  amountLarge: 36,
+} as const;
+
+/** Font weights. Strings, because React Native only accepts them as strings. */
+export const fontWeight = {
+  regular: '400',
+  medium: '500',
+  semibold: '600',
+  bold: '700',
+  extraBold: '800',
+} as const;
+
+/**
+ * Font families. The apps use the phone's system font (fast, has Urdu glyphs, no download). To use a custom font,
+ * load it with expo-font and set `app` here, then use `fontFamily.app` in the shared text styles.
+ */
+export const fontFamily = {
+  app: undefined as string | undefined,
+  web: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+} as const;
+
+/** Extra letter spacing (px). */
+export const letterSpacing = {
+  /** Spread-out digits of the OTP code input. */
+  code: 12,
+} as const;
+
+/** Emoji / icon sizes (px). */
+export const iconSize = {
+  md: 24,
+  lg: 28,
+  xl: 36,
+} as const;
+
+/**
+ * Spacing for padding, margin and gap. Every step is a multiple of `SPACE_UNIT`:
+ * `space[4]` = 4 × 4 = 16 px. Change `SPACE_UNIT` to make every screen tighter or roomier at once.
+ */
+export const SPACE_UNIT = 4;
+const step = (n: number) => n * SPACE_UNIT;
+export const space = {
+  0.5: step(0.5),
+  0.75: step(0.75),
+  1: step(1),
+  1.5: step(1.5),
+  2: step(2),
+  2.5: step(2.5),
+  3: step(3),
+  3.5: step(3.5),
+  4: step(4),
+  4.5: step(4.5),
+  5: step(5),
+  6: step(6),
+  7: step(7),
+  10: step(10),
+  12: step(12),
+  20: step(20),
+} as const;
+
+/** Border thickness (px). */
+export const borderWidth = {
+  thin: 1,
+  /** Selected option outline. */
+  thick: 2,
+} as const;
+
+/** Tap targets (px). Big buttons matter: drivers tap while the car is moving. */
+export const touch = {
+  /** Smallest row of tappable buttons. */
+  min: 40,
+  /** Main button on the sign-in screens. */
+  button: 54,
+  /** Main button on the driver's ride screens. */
+  buttonLarge: 56,
+  /** Extra invisible tap area around small text links. */
+  hitSlop: 8,
+} as const;
+
+/** See-through levels. */
+export const opacity = {
+  /** Something greyed out that still shows. */
+  dim: 0.7,
+  /** Disabled button. */
+  disabled: 0.5,
+  /** Disabled small link. */
+  faint: 0.4,
+} as const;
+
 export function getTheme(app: AppName) {
   const brand = brands[app];
   const colors = {
@@ -136,7 +250,20 @@ export function getTheme(app: AppName) {
     brandText: baseColors.onColor,
     appIconBackground: brand.appIconBackground,
   };
-  return { colors, radius, elevation };
+  return {
+    colors,
+    radius,
+    elevation,
+    fontSize,
+    fontWeight,
+    fontFamily,
+    letterSpacing,
+    iconSize,
+    space,
+    borderWidth,
+    touch,
+    opacity,
+  };
 }
 
 export type Theme = ReturnType<typeof getTheme>;
@@ -147,12 +274,25 @@ export function cssVariableName(role: string): string {
   return `--${role.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
 }
 
+/** CSS variable for a spacing step: `space[0.5]` → `--space-0-5`, `space[4]` → `--space-4`. */
+export function spaceVariableName(stepKey: string | number): string {
+  return `--space-${String(stepKey).replace('.', '-')}`;
+}
+
 /** The theme as a `:root { … }` CSS block, for the admin panel (and any future web page). */
 export function themeCssVariables(app: AppName): string {
-  const { colors, radius: r } = getTheme(app);
+  const t = getTheme(app);
+  const px = (prefix: string, values: Record<string, number>) =>
+    Object.entries(values).map(([key, value]) => `${prefix}${cssVariableName(key).slice(2)}: ${value}px;`);
   const lines = [
-    ...Object.entries(colors).map(([role, value]) => `${cssVariableName(role)}: ${value};`),
-    ...Object.entries(r).map(([size, value]) => `--radius-${size}: ${value}px;`),
+    ...Object.entries(t.colors).map(([role, value]) => `${cssVariableName(role)}: ${value};`),
+    ...px('--radius-', t.radius),
+    ...px('--font-size-', t.fontSize),
+    ...Object.entries(t.fontWeight).map(([key, value]) => `--font-weight${cssVariableName(key).slice(1)}: ${value};`),
+    `--font-family: ${t.fontFamily.web};`,
+    ...Object.entries(t.space).map(([key, value]) => `${spaceVariableName(key)}: ${value}px;`),
+    ...px('--border-width-', t.borderWidth),
+    ...Object.entries(t.opacity).map(([key, value]) => `--opacity${cssVariableName(key).slice(1)}: ${value};`),
   ];
   return `:root {\n  ${lines.join('\n  ')}\n}\n`;
 }

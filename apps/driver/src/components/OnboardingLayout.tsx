@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius } from '@/lib/theme';
+import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
 
 /** Plain scrolling page with a back link, for the registration screens. */
 export function OnboardingLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
@@ -12,7 +12,7 @@ export function OnboardingLayout({ title, subtitle, children }: { title: string;
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={8} style={styles.back}>
+          <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={touch.hitSlop} style={styles.back}>
             <Text style={styles.backText}>‹ {t('onboarding.back')}</Text>
           </Pressable>
           <Text style={styles.title}>{title}</Text>
@@ -55,34 +55,34 @@ export function Choice<T extends string>({
 }
 
 export const onboardingStyles = StyleSheet.create({
-  section: { fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 10 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.border },
-  muted: { fontSize: 14, color: colors.muted },
-  banner: { borderRadius: radius.lg, padding: 12, marginBottom: 16 },
-  bannerText: { fontSize: 14, color: colors.text },
+  section: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text, marginTop: space[2], marginBottom: space[2.5] },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3.5], borderWidth: borderWidth.thin, borderColor: colors.border },
+  muted: { fontSize: fontSize.md, color: colors.muted },
+  banner: { borderRadius: radius.lg, padding: space[3], marginBottom: space[4] },
+  bannerText: { fontSize: fontSize.md, color: colors.text },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
-  back: { alignSelf: 'flex-start', marginBottom: 12 },
-  backText: { fontSize: 16, color: colors.brand, fontWeight: '600' },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: 15, color: colors.muted, marginTop: 6 },
-  body: { marginTop: 20 },
-  choices: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  content: { padding: space[5], paddingBottom: space[10] },
+  back: { alignSelf: 'flex-start', marginBottom: space[3] },
+  backText: { fontSize: fontSize.lg, color: colors.brand, fontWeight: fontWeight.semibold },
+  title: { fontSize: fontSize.heading, fontWeight: fontWeight.bold, color: colors.text },
+  subtitle: { fontSize: fontSize.base, color: colors.muted, marginTop: space[1.5] },
+  body: { marginTop: space[5] },
+  choices: { flexDirection: 'row', gap: space[2], flexWrap: 'wrap' },
   choice: {
     flexGrow: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    paddingVertical: space[3],
+    paddingHorizontal: space[3],
     borderRadius: radius.md,
-    borderWidth: 2,
+    borderWidth: borderWidth.thick,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     alignItems: 'center',
   },
   choiceSelected: { borderColor: colors.brand, backgroundColor: colors.brandSoft },
-  choiceText: { fontSize: 15, color: colors.text },
-  choiceTextSelected: { fontWeight: '700', color: colors.brand },
+  choiceText: { fontSize: fontSize.base, color: colors.text },
+  choiceTextSelected: { fontWeight: fontWeight.bold, color: colors.brand },
 });

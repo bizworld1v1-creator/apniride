@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { AuthLayout, authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
 import { api, APP_ROLE } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
-import { colors, radius } from '@/lib/theme';
+import { borderWidth, colors, fontSize, radius, space } from '@/lib/theme';
 
 const formSchema = z.object({ phone: pkMobileSchema });
 type FormIn = z.input<typeof formSchema>;
@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', direction: 'ltr', alignItems: 'stretch' },
   prefix: {
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1,
+    paddingHorizontal: space[3],
+    borderWidth: borderWidth.thin,
     borderColor: colors.border,
     borderRadius: radius.md,
-    marginRight: 8,
+    marginRight: space[2],
     backgroundColor: colors.surface,
   },
-  prefixText: { fontSize: 17, color: colors.text },
+  prefixText: { fontSize: fontSize.xl, color: colors.text },
   phoneInput: { flex: 1, textAlign: 'left', writingDirection: 'ltr' },
 });

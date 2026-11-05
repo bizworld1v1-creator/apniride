@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius } from '@/lib/theme';
+import { borderWidth, colors, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
 
 /** Plain, light layout for the sign-in screens (no images or animations – fast on low-end phones). */
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
@@ -55,7 +55,7 @@ export function PrimaryButton({
 
 export function TextLink({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" hitSlop={8}>
+    <Pressable onPress={onPress} disabled={disabled} accessibilityRole="button" hitSlop={touch.hitSlop}>
       <Text style={[styles.link, disabled && styles.linkDisabled]}>{label}</Text>
     </Pressable>
   );
@@ -80,41 +80,41 @@ export function DevCodeBanner({ code, label }: { code?: string | null; label: st
 
 export const authStyles = StyleSheet.create({
   input: {
-    borderWidth: 1,
+    borderWidth: borderWidth.thin,
     borderColor: colors.border,
     borderRadius: radius.md,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 18,
+    paddingHorizontal: space[3.5],
+    paddingVertical: space[3],
+    fontSize: fontSize.xxl,
     color: colors.text,
     backgroundColor: colors.surface,
   },
   inputError: { borderColor: colors.error },
-  label: { fontSize: 14, color: colors.muted, marginBottom: 6 },
+  label: { fontSize: fontSize.md, color: colors.muted, marginBottom: space[1.5] },
   gap: { height: 16 },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
-  content: { padding: 24, paddingTop: 48 },
-  brand: { fontSize: 22, fontWeight: '700', color: colors.brand, marginBottom: 24 },
-  title: { fontSize: 24, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: 15, color: colors.muted, marginTop: 6 },
-  body: { marginTop: 28 },
+  content: { padding: space[6], paddingTop: space[12] },
+  brand: { fontSize: fontSize.brandLarge, fontWeight: fontWeight.bold, color: colors.brand, marginBottom: space[6] },
+  title: { fontSize: fontSize.heading, fontWeight: fontWeight.bold, color: colors.text },
+  subtitle: { fontSize: fontSize.base, color: colors.muted, marginTop: space[1.5] },
+  body: { marginTop: space[7] },
   button: {
     backgroundColor: colors.brand,
     borderRadius: radius.lg,
-    paddingVertical: 16,
+    paddingVertical: space[4],
     alignItems: 'center',
-    minHeight: 54,
+    minHeight: touch.button,
     justifyContent: 'center',
   },
-  buttonDisabled: { opacity: 0.5 },
-  buttonText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
-  link: { color: colors.brand, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingVertical: 8 },
-  linkDisabled: { color: colors.muted, fontWeight: '400' },
-  error: { color: colors.error, fontSize: 14, marginTop: 8 },
-  dev: { backgroundColor: colors.devBg, borderRadius: radius.sm, padding: 10, marginBottom: 16 },
-  devText: { color: colors.devText, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  buttonDisabled: { opacity: opacity.disabled },
+  buttonText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
+  link: { color: colors.brand, fontSize: fontSize.base, fontWeight: fontWeight.semibold, textAlign: 'center', paddingVertical: space[2] },
+  linkDisabled: { color: colors.muted, fontWeight: fontWeight.regular },
+  error: { color: colors.error, fontSize: fontSize.md, marginTop: space[2] },
+  dev: { backgroundColor: colors.devBg, borderRadius: radius.sm, padding: space[2.5], marginBottom: space[4] },
+  devText: { color: colors.devText, fontSize: fontSize.md, fontWeight: fontWeight.semibold, textAlign: 'center' },
 });

@@ -5,7 +5,7 @@ import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'rea
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { CameraDeniedError, ONBOARDING_KEY, pickDocumentPhoto } from '@/lib/onboarding';
-import { colors, radius } from '@/lib/theme';
+import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
 
 /** One document: what to photograph, whether it's done, and camera / gallery buttons. */
 export function DocumentRow({
@@ -85,26 +85,26 @@ function Button({ label, onPress, primary }: { label: string; onPress: () => voi
 }
 
 const styles = StyleSheet.create({
-  row: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.border, marginBottom: 10 },
-  top: { flexDirection: 'row', gap: 12 },
+  row: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3.5], borderWidth: borderWidth.thin, borderColor: colors.border, marginBottom: space[2.5] },
+  top: { flexDirection: 'row', gap: space[3] },
   flex: { flex: 1 },
   thumb: { width: 56, height: 56, borderRadius: radius.sm, backgroundColor: colors.border },
-  name: { fontSize: 16, fontWeight: '600', color: colors.text },
-  hint: { fontSize: 13, color: colors.muted, marginTop: 2 },
-  state: { fontSize: 13, marginTop: 6, color: colors.muted, fontWeight: '600' },
+  name: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
+  hint: { fontSize: fontSize.sm, color: colors.muted, marginTop: space[0.5] },
+  state: { fontSize: fontSize.sm, marginTop: space[1.5], color: colors.muted, fontWeight: fontWeight.semibold },
   done: { color: colors.success },
   todo: { color: colors.brand },
-  error: { color: colors.error, fontSize: 13, marginTop: 8 },
-  buttons: { flexDirection: 'row', gap: 8, marginTop: 10, minHeight: 40, alignItems: 'center' },
+  error: { color: colors.error, fontSize: fontSize.sm, marginTop: space[2] },
+  buttons: { flexDirection: 'row', gap: space[2], marginTop: space[2.5], minHeight: touch.min, alignItems: 'center' },
   button: {
     flex: 1,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: borderWidth.thin,
     borderColor: colors.brand,
-    paddingVertical: 10,
+    paddingVertical: space[2.5],
     alignItems: 'center',
   },
   buttonPrimary: { backgroundColor: colors.brand },
-  buttonText: { color: colors.brand, fontSize: 15, fontWeight: '600' },
+  buttonText: { color: colors.brand, fontSize: fontSize.base, fontWeight: fontWeight.semibold },
   buttonTextPrimary: { color: colors.brandText },
 });
