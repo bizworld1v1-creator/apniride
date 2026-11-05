@@ -4,6 +4,7 @@ import {
   authTokensSchema,
   requestOtpResponseSchema,
   userSchema,
+  type AppMode,
   type AuthSession,
   type AuthTokens,
   type RequestOtpBody,
@@ -247,6 +248,13 @@ export function createApiClient(options: ApiClientOptions) {
           method: 'POST',
           body,
           auth: false,
+        }),
+
+      /** Switches this phone between passenger and driver mode (no new OTP). Returns the new session to store. */
+      switchRole: (role: AppMode): Promise<AuthSession> =>
+        request('/auth/switch-role', (d) => authSessionSchema.parse(d), {
+          method: 'POST',
+          body: { role, refreshToken: tokens?.getRefreshToken() ?? '' },
         }),
 
       /** Revokes the refresh token on the server. Safe to call when offline (errors ignored). */

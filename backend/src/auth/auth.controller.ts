@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Ip, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Ip, Post, UseGuards } from '@nestjs/common';
 import {
   type AuthSession,
   type AuthTokens,
@@ -6,13 +6,17 @@ import {
   refreshBodySchema,
   type RequestOtpResponse,
   requestOtpBodySchema,
+  type SwitchRoleBody,
+  switchRoleBodySchema,
   verifyOtpBodySchema,
 } from '@apniride/shared';
 import type { z } from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { AuthGuard } from './auth.guard.js';
 import { AuthService } from './auth.service.js';
+import { CurrentUser } from './current-user.decorator.js';
 import { OtpService } from './otp.service.js';
-import { TokensService } from './tokens.service.js';
+import { type AuthUser, TokensService } from './tokens.service.js';
 
 @Controller('auth')
 export class AuthController {
@@ -46,6 +50,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   refresh(@Body(new ZodValidationPipe(refreshBodySchema)) body: RefreshBody): Promise<AuthTokens> {
     return this.tokens.refresh(body.refreshToken);
+  }
+
+  /** Passenger ↔ driver mode in the mobile app. Returns a new session; the old one stops working. */
+  @Post('switch-role')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard)
+  switchRole(
+    @CurrentUser() me: AuthUser,
+    @Body(new ZodValidationPipe(switchRoleBodySchema)) body: SwitchRoleBody,
+  ): Promise<AuthSession> {
+    return this.auth.switchRole(me, body.role, body.refreshToken);
   }
 
   @Post('logout')

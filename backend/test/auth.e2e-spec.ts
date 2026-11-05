@@ -79,4 +79,65 @@ describe('Phone OTP auth (e2e)', () => {
     const after = await http().post('/auth/refresh').send({ refreshToken: r2.refreshToken }).expect(401);
     expect(after.body.code).toBe('invalid_refresh_token');
   });
+
+  it('switches the one mobile app between passenger and driver mode without a new OTP', async () => {
+    const switcher = `0301${Math.floor(1_000_000 + Math.random() * 8_999_999)}`;
+    const otp = requestOtpResponseSchema.parse(
+      (await http().post('/auth/otp/request').send({ phone: switcher, role: 'passenger' }).expect(200)).body,
+    );
+    const passenger = authSessionSchema.parse(
+      (await http().post('/auth/otp/verify').send({ phone: switcher, role: 'passenger', code: otp.devCode }).expect(200))
+        .body,
+    );
+    const asPassenger = { Authorization: `Bearer ${passenger.accessToken}` };
+
+    // Driver routes refuse a passenger session.
+    const wrong = await http().get('/driver/me').set(asPassenger).expect(403);
+    expect(wrong.body.code).toBe('wrong_app');
+
+    // Needs a signed-in session, the right refresh token, and a different mode.
+    await http().post('/auth/switch-role').send({ role: 'driver', refreshToken: passenger.refreshToken }).expect(401);
+    const badToken = await http()
+      .post('/auth/switch-role')
+      .set(asPassenger)
+      .send({ role: 'driver', refreshToken: 'x'.repeat(43) })
+      .expect(401);
+    expect(badToken.body.code).toBe('invalid_refresh_token');
+    const same = await http()
+      .post('/auth/switch-role')
+      .set(asPassenger)
+      .send({ role: 'passenger', refreshToken: passenger.refreshToken })
+      .expect(400);
+    expect(same.body.code).toBe('same_role');
+
+    // Passenger → driver: first time in driver mode, same account and name.
+    const driver = authSessionSchema.parse(
+      (
+        await http()
+          .post('/auth/switch-role')
+          .set(asPassenger)
+          .send({ role: 'driver', refreshToken: passenger.refreshToken })
+          .expect(200)
+      ).body,
+    );
+    expect(driver.user).toMatchObject({ id: passenger.user.id, role: 'driver' });
+    expect(driver.isNewUser).toBe(true);
+    await http().get('/driver/me').set({ Authorization: `Bearer ${driver.accessToken}` }).expect(200);
+    // The passenger session is over.
+    const old = await http().post('/auth/refresh').send({ refreshToken: passenger.refreshToken }).expect(401);
+    expect(old.body.code).toBe('invalid_refresh_token');
+
+    // Driver → passenger again: not new any more.
+    const back = authSessionSchema.parse(
+      (
+        await http()
+          .post('/auth/switch-role')
+          .set({ Authorization: `Bearer ${driver.accessToken}` })
+          .send({ role: 'passenger', refreshToken: driver.refreshToken })
+          .expect(200)
+      ).body,
+    );
+    expect(back.user.role).toBe('passenger');
+    expect(back.isNewUser).toBe(false);
+  });
 });

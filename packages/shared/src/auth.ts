@@ -114,6 +114,17 @@ export type AuthSession = z.infer<typeof authSessionSchema>;
 export const refreshBodySchema = z.object({ refreshToken: z.string().min(20) });
 export type RefreshBody = z.infer<typeof refreshBodySchema>;
 
+/** The two modes of the one mobile app. One account can use both (like inDrive's "Driver mode"). */
+export const appModeSchema = z.enum(['passenger', 'driver']);
+export type AppMode = z.infer<typeof appModeSchema>;
+
+/**
+ * Switches the signed-in phone to the other mode without a new OTP: the server ends this session and starts one
+ * for the new mode. Refused while the user has an active ride or (as a driver) is online.
+ */
+export const switchRoleBodySchema = refreshBodySchema.extend({ role: appModeSchema });
+export type SwitchRoleBody = z.infer<typeof switchRoleBodySchema>;
+
 export const updateProfileBodySchema = z.object({
   name: z.string().trim().min(2, 'name_too_short').max(60, 'name_too_long'),
 });
@@ -130,6 +141,14 @@ export const authErrorCodeSchema = z.enum([
   'invalid_refresh_token',
   'unauthorized',
   'validation_failed',
+  /** The route belongs to the other mode (e.g. a driver route with a passenger session). */
+  'wrong_app',
+  /** switch-role to the mode the session already has. */
+  'same_role',
+  /** switch-role from driver mode while online. */
+  'go_offline_first',
+  /** switch-role (or booking) while a ride is still going on. */
+  'active_ride_exists',
 ]);
 export type AuthErrorCode = z.infer<typeof authErrorCodeSchema>;
 

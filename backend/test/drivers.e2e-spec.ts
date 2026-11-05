@@ -72,7 +72,7 @@ describe('Driver onboarding and admin review (e2e)', () => {
     );
     const auth = { Authorization: `Bearer ${session.accessToken}` };
     await http().patch('/me').set(auth).send({ name }).expect(200);
-    return { id: session.user.id, auth, token: session.accessToken };
+    return { id: session.user.id, auth, token: session.accessToken, refreshToken: session.refreshToken };
   }
 
   const upload = (auth: Record<string, string>, type: DriverDocumentType, data = JPEG, filename = 'photo.jpg') =>
@@ -232,6 +232,14 @@ describe('Driver onboarding and admin review (e2e)', () => {
     await http().post(`/admin/drivers/${d.id}/approve`).set(ADMIN).expect(200);
     const online = await http().post('/driver/online').set(d.auth).send({ location: LOCATION }).expect(200);
     expect(online.body).toMatchObject({ online: true, vehicleType: 'bike', approvalStatus: 'approved' });
+
+    // Can't slip out of dispatch by switching to passenger mode while online.
+    const switchOnline = await http()
+      .post('/auth/switch-role')
+      .set(d.auth)
+      .send({ role: 'passenger', refreshToken: d.refreshToken })
+      .expect(409);
+    expect(switchOnline.body.code).toBe('go_offline_first');
 
     // Suspend: offline at once and can't come back online.
     await http().post(`/admin/drivers/${d.id}/suspend`).set(ADMIN).send({ reason: 'Passenger complaint' }).expect(200);

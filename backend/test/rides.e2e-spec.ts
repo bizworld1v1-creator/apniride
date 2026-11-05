@@ -34,6 +34,7 @@ const DROPOFF: LatLng = spot(0.025, 0.01);
 interface Actor {
   userId: string;
   auth: { Authorization: string };
+  refreshToken: string;
   socket: Socket;
 }
 
@@ -79,7 +80,7 @@ describe('Booking and dispatch (e2e)', () => {
       socket.once('connect', resolve);
       socket.once('connect_error', reject);
     });
-    return { userId: session.user.id, auth, socket };
+    return { userId: session.user.id, auth, refreshToken: session.refreshToken, socket };
   }
 
   async function onlineDriver(vehicleType: VehicleType, at: LatLng): Promise<Actor> {
@@ -162,6 +163,13 @@ describe('Booking and dispatch (e2e)', () => {
 
     const ride = await book(passenger, 'car', pickup);
     expect(ride.status).toBe('searching');
+    // No switching to driver mode in the middle of a ride.
+    const switchMidRide = await http()
+      .post('/auth/switch-role')
+      .set(passenger.auth)
+      .send({ role: 'driver', refreshToken: passenger.refreshToken })
+      .expect(409);
+    expect(switchMidRide.body.code).toBe('active_ride_exists');
 
     const offer = await offerFor(driver, ride.id);
     expect(offer).toMatchObject({ fare: ride.fare, vehicleType: 'car', passengerFirstName: 'Ayesha' });

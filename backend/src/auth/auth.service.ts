@@ -1,15 +1,19 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { type AuthSession, maskPhone, type UserRole } from '@apniride/shared';
+import { type AppMode, type AuthSession, maskPhone, type UserRole } from '@apniride/shared';
+import type { Redis } from 'ioredis';
 import type pg from 'pg';
 import { AppException } from '../common/app-exception.js';
 import { PG_POOL } from '../database/database.module.js';
+import { driverKeys } from '../drivers/drivers.service.js';
+import { REDIS } from '../redis/redis.module.js';
 import { OtpService } from './otp.service.js';
-import { TokensService } from './tokens.service.js';
+import { type AuthUser, TokensService } from './tokens.service.js';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(PG_POOL) private readonly pool: pg.Pool,
+    @Inject(REDIS) private readonly redis: Redis,
     private readonly otp: OtpService,
     private readonly tokens: TokensService,
   ) {}
@@ -51,6 +55,54 @@ export class AuthService {
       ...tokens,
       isNewUser,
       user: { id: user.id, role, name: user.name, phoneMasked: maskPhone(phone) },
+    };
+  }
+
+  /**
+   * Passenger ↔ driver mode in the one mobile app, without a new OTP (the phone number was already verified).
+   * Ends the current session and opens one for the other mode, so every route keeps checking a single role.
+   */
+  async switchRole(me: AuthUser, role: AppMode, refreshToken: string): Promise<AuthSession> {
+    if (me.role === 'admin') {
+      throw new AppException(HttpStatus.FORBIDDEN, 'wrong_app', 'Admin sessions cannot switch mode');
+    }
+    if (me.role === role) throw new AppException(HttpStatus.BAD_REQUEST, 'same_role', `Already in ${role} mode`);
+    // The refresh token proves this is the device that owns the session (an access token alone is not enough).
+    if (!(await this.tokens.sessionHasRefreshToken(me.sessionId, refreshToken))) {
+      throw new AppException(HttpStatus.UNAUTHORIZED, 'invalid_refresh_token', 'Please sign in again');
+    }
+    // A driver must not vanish from dispatch by switching: going offline is a deliberate step.
+    if (me.role === 'driver' && (await this.redis.exists(driverKeys.online(me.userId))) === 1) {
+      throw new AppException(HttpStatus.CONFLICT, 'go_offline_first', 'Go offline before switching to passenger mode');
+    }
+    const { rowCount: activeRides } = await this.pool.query(
+      `SELECT 1 FROM rides
+        WHERE (passenger_id = $1 OR driver_id = $1) AND status IN ('searching', 'accepted', 'arrived', 'in_progress')
+        LIMIT 1`,
+      [me.userId],
+    );
+    if (activeRides) {
+      throw new AppException(HttpStatus.CONFLICT, 'active_ride_exists', 'Finish or cancel the current ride first');
+    }
+
+    const roleInsert = await this.pool.query(
+      'INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [me.userId, role],
+    );
+    const { rows } = await this.pool.query<{ name: string | null; phone: string }>(
+      'SELECT name, phone FROM users WHERE id = $1',
+      [me.userId],
+    );
+    const user = rows[0];
+    if (!user) throw new AppException(HttpStatus.UNAUTHORIZED, 'unauthorized', 'Account not found');
+
+    const tokens = await this.tokens.createSession(me.userId, role);
+    await this.tokens.revokeSession(me.sessionId);
+    return {
+      ...tokens,
+      // First time in this mode, e.g. a passenger who opens driver mode to register.
+      isNewUser: roleInsert.rowCount === 1,
+      user: { id: me.userId, role, name: user.name, phoneMasked: maskPhone(user.phone) },
     };
   }
 

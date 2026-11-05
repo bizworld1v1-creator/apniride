@@ -86,6 +86,26 @@ export class TokensService {
     );
   }
 
+  /** True if this refresh token (current, or previous within the grace window) belongs to that live session. */
+  async sessionHasRefreshToken(sessionId: string, refreshToken: string): Promise<boolean> {
+    const hash = sha256(refreshToken);
+    const { rowCount } = await this.pool.query(
+      `SELECT 1 FROM auth_sessions
+        WHERE id = $1 AND revoked_at IS NULL AND expires_at > now()
+          AND (refresh_token_hash = $2
+               OR (prev_refresh_token_hash = $2 AND rotated_at > now() - make_interval(secs => $3)))`,
+      [sessionId, hash, ROTATION_GRACE_SECONDS],
+    );
+    return rowCount === 1;
+  }
+
+  /** Ends one session by id (used when the phone switches mode and gets a new session). */
+  async revokeSession(sessionId: string): Promise<void> {
+    await this.pool.query('UPDATE auth_sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [
+      sessionId,
+    ]);
+  }
+
   async verifyAccessToken(token: string): Promise<AuthUser> {
     try {
       const { payload } = await jwtVerify(token, this.key, { issuer: ISSUER, algorithms: ['HS256'] });
