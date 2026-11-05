@@ -20,12 +20,12 @@ describe('theme', () => {
   });
 
   it('every app gets the same roles, only the brand differs', () => {
-    const passenger = getTheme('passenger').colors;
-    const driver = getTheme('driver').colors;
-    expect(Object.keys(passenger).sort()).toEqual(Object.keys(driver).sort());
-    expect(passenger.brand).toBe(brands.passenger.brand);
-    expect(driver.brand).toBe(brands.driver.brand);
-    expect(passenger.text).toBe(driver.text);
+    const mobile = getTheme('mobile').colors;
+    const admin = getTheme('admin').colors;
+    expect(Object.keys(mobile).sort()).toEqual(Object.keys(admin).sort());
+    expect(mobile.brand).toBe(brands.mobile.brand);
+    expect(admin.brand).toBe(brands.admin.brand);
+    expect(mobile.text).toBe(admin.text);
   });
 
   it('names CSS variables in kebab-case', () => {

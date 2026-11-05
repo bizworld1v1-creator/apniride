@@ -10,7 +10,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '../..');
 /** Marker size in dp (points); the SVGs are drawn at 2x this. */
 const SIZES = { car: [32, 56], bike: [24, 48] };
-const APPS = ['apps/passenger', 'apps/driver'];
+const APPS = ['apps/mobile'];
 
 for (const [name, [width]] of Object.entries(SIZES)) {
   const svg = await readFile(path.join(here, `${name}.svg`));

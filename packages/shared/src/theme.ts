@@ -1,7 +1,7 @@
 /**
  * ApniRide theme: the ONE place to change how every app looks.
  *
- * Used by the passenger app, the driver app (both via `src/lib/theme.ts`), the admin panel (as CSS variables,
+ * Used by the mobile app (passenger + driver mode, via `src/lib/theme.ts`), the admin panel (as CSS variables,
  * see `themeCssVariables`) and the Expo app configs (icon + splash background).
  *
  * To restyle:
@@ -99,10 +99,9 @@ const baseColors = {
   splash: palette.white,
 };
 
-/** Per-app brand colours. The passenger and driver apps are told apart by colour. */
+/** Per-app brand colours. The mobile app has one brand for both modes; driver mode shows a "Driver mode" label. */
 export const brands = {
-  passenger: { brand: palette.teal700, brandSoft: palette.cyan50, appIconBackground: palette.sky50 },
-  driver: { brand: palette.amber700, brandSoft: palette.amber50, appIconBackground: palette.amber100 },
+  mobile: { brand: palette.teal700, brandSoft: palette.cyan50, appIconBackground: palette.sky50 },
   admin: { brand: palette.amber700, brandSoft: palette.amber50, appIconBackground: palette.amber100 },
 } as const;
 
