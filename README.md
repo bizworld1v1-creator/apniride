@@ -157,6 +157,7 @@ pnpm start:dev-client                       # then open the installed dev build 
 - [x] Monorepo (Turborepo + pnpm)
 - [x] Backend skeleton with `/health` (Postgres + PostGIS, Redis)
 - [x] One mobile app with passenger + driver mode (switch without a new code)
+- [x] Side menu: ride history (+ driver earnings), saved places, profile (photo, delete account), settings (see [docs/account.md](docs/account.md))
 - [x] Admin panel (see [docs/admin.md](docs/admin.md))
 - [x] Phone OTP signup – passenger + driver (dev SMS only; see [docs/auth.md](docs/auth.md))
 - [x] Fixed fare estimate: bike + car (AC), per-city rates, 10-min quotes (see [docs/fares.md](docs/fares.md))

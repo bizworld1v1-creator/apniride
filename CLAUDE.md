@@ -81,15 +81,15 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
   `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
   `npx expo export --platform android` in `apps/mobile` to confirm it bundles.
-- Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, theme.md). Keep them in sync with the code.
+- Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, theme.md, account.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-06, after merging into one app with two modes)
+## Progress (last updated 2026-11-06, after the side menu: history, profile, settings, saved places)
 
 ### Done ✅
 | Feature | Where | Notes |
 | --- | --- | --- |
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
-| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log |
+| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log, 0006 profile photo + account deletion + saved places + history indexes |
 | Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
 | Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
@@ -102,23 +102,25 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Admin panel | `apps/admin`, `backend/src/admin`, `pnpm admins` | Phone-OTP sign-in for numbers on the `admins` list only; tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
 | Unified theme | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/theme.ts`, admin `layout.tsx` + `globals.css` | One file for every colour, font size/weight, spacing step (`space[n]` = n × 4 px), corner, shadow, border, opacity and tap size (admin gets CSS variables). Brand: mobile app teal (both modes), admin amber. See docs/theme.md |
 | One app, two modes (like inDrive) | `apps/mobile` (`app/index.tsx`, `lib/mode.ts`, `ModeSwitch`, `RealtimeBridge`), `backend/src/auth` (`switch-role`) | `apps/passenger` + `apps/driver` merged into `apps/mobile` (`pnpm mobile`, package `pk.apniride.app`). "Driver mode" / "Passenger mode" button on the home card swaps the session without a new OTP; refused while online (`go_offline_first`) or with an active ride (`active_ride_exists`). Signs in to the last used mode. Driver texts under `driver.*` in i18n. A full ride test now needs two devices. See docs/auth.md |
+| Side menu (like inDrive) | `apps/mobile/src/components/SideMenu.tsx`, `app/history/*`, `app/places/*`, `app/profile.tsx`, `app/settings.tsx`, `lib/account.ts`, `lib/language.ts`, `backend/src/users`, `backend/src/rides/history.service.ts` | ☰ on the home card: ride history (20 per page; driver mode adds cash today / 7 days / all time), saved places (Home / Work / up to 20, one-tap destinations when booking), profile (photo, name, delete account), settings (language incl. RTL after restart, help, 15 / 1122), mode switch, sign out (blocked while online / on a ride). No addresses (no geocoding). See docs/account.md |
 
-Tests: 89 shared + 32 backend unit, 31 backend e2e (all passing at the last commit). The admin panel was clicked
+Tests: 89 shared + 32 backend unit, 35 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
 The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
 **Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).
 
 ### Next up ▶️
 1. **First: the owner tests** the merged app on real phones: switching to driver mode and back (no new code),
-   the "Driver mode" button greyed out while online / on a ride, signing out and back in (lands in the last mode).
+   the "Driver mode" button greyed out while online / on a ride, signing out and back in (lands in the last mode),
+   and the new side menu: ride history + earnings, saved places as destinations, profile photo (camera + gallery),
+   language switch to Urdu (layout flips after reopening the app), deleting a test account.
    Then, as before: driver onboarding, approving themselves in the admin panel
    (`pnpm admins add <their number>`, `pnpm admin`), then a ride with the new vehicle markers (glide + turning,
    nearby drivers before booking, driver ETA). The glide uses a native map command that hasn't run on a device
    yet: check the marker doesn't snap back or freeze. Fix bugs before new features.
-2. Then: **ride history + settings like inDrive** (owner asked 2026-11-06). Confirm the scope first: ride history
-   (both modes, driver earnings), profile settings, app settings (language, sign out, help), saved places; and move
-   the mode switch into a side/settings menu like inDrive.
-3. After that (to be confirmed): the next **free** item from "Still missing", most likely the
+2. **Owner decision needed:** what account deletion keeps (docs/account.md: rides without the number, and the
+   driver's CNIC/licence row so a removed driver can't re-register). Needed for the privacy policy.
+3. Then (to be confirmed): the next **free** item from "Still missing", most likely the
    **female-driver option**. Paid items wait (see the paid table).
 
 ### Still missing ❌
@@ -164,6 +166,8 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
 - One phone is in one mode at a time: testing a whole ride needs two devices (e.g. phone + Android emulator) with
   two numbers.
 - Road distance and ETA = straight line × 1.35 (no routing/traffic API yet).
+- No addresses anywhere (no geocoding API): saved places and ride history show pins and user-given names.
+- The profile photo is only shown to the user themself (not yet to the other person on a ride).
 - Driver cancellations / declines have no penalty yet.
 - Admin panel: no roles (every admin can do everything), English only, admins added only by `pnpm admins`.
 - Driver documents are on local disk (`backend/uploads/`); production with several servers needs S3-compatible
