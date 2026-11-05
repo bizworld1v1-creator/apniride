@@ -1,4 +1,8 @@
 import type { ExpoConfig } from 'expo/config';
+// Relative import: the config runs in Node before Metro, so it reads the theme source directly.
+import { getTheme } from '../../packages/shared/src/theme.ts';
+
+const { colors } = getTheme('driver');
 
 // Google Maps keys are only needed for real builds (EAS). Expo Go works without them.
 // Put them in apps/driver/.env (gitignored) or as EAS environment variables.
@@ -21,7 +25,7 @@ const config: ExpoConfig = {
   android: {
     package: 'pk.apniride.driver',
     adaptiveIcon: {
-      backgroundColor: '#FEF3C7',
+      backgroundColor: colors.appIconBackground,
       foregroundImage: './assets/android-icon-foreground.png',
       backgroundImage: './assets/android-icon-background.png',
       monochromeImage: './assets/android-icon-monochrome.png',
@@ -32,7 +36,7 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-status-bar',
     'expo-secure-store',
-    ['expo-splash-screen', { backgroundColor: '#FFFFFF', image: './assets/splash-icon.png', imageWidth: 120 }],
+    ['expo-splash-screen', { backgroundColor: colors.splash, image: './assets/splash-icon.png', imageWidth: 120 }],
     ['expo-localization', { supportsRTL: true }],
     [
       'expo-location',

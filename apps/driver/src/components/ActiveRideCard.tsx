@@ -6,7 +6,7 @@ import { formatRupees } from '@/components/OfferCard';
 import { api } from '@/lib/api';
 import { patchCurrent, useOwnEta } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 
 /** Opens Google Maps turn-by-turn navigation (free, already on every Android phone). */
 function navigateTo(point: LatLng) {
@@ -94,7 +94,7 @@ export function ActiveRideCard({ ride }: { ride: Ride }) {
         disabled={step.isPending || cancel.isPending}
         accessibilityRole="button"
       >
-        {step.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>{action}</Text>}
+        {step.isPending ? <ActivityIndicator color={colors.onColor} /> : <Text style={styles.primaryText}>{action}</Text>}
       </Pressable>
 
       {ride.status !== 'in_progress' ? (
@@ -107,15 +107,15 @@ export function ActiveRideCard({ ride }: { ride: Ride }) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 8 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.high },
   title: { fontSize: 19, fontWeight: '700', color: colors.text },
   sub: { fontSize: 14, color: colors.muted, marginTop: 4 },
   eta: { fontSize: 15, fontWeight: '600', color: colors.brand, marginTop: 4 },
   big: { fontSize: 30, fontWeight: '800', color: colors.text, marginVertical: 12 },
-  navigate: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginVertical: 14 },
+  navigate: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.lg, paddingVertical: 12, alignItems: 'center', marginVertical: 14 },
   navigateText: { fontSize: 16, fontWeight: '600', color: colors.text },
   error: { color: colors.error, fontSize: 14, marginBottom: 10, textAlign: 'center' },
-  primary: { backgroundColor: colors.brand, borderRadius: 12, paddingVertical: 16, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', minHeight: 56, justifyContent: 'center' },
   primaryText: { color: colors.brandText, fontSize: 18, fontWeight: '700' },
   dim: { opacity: 0.7 },
   cancel: { color: colors.error, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingTop: 14 },

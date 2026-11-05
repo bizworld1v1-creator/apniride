@@ -69,6 +69,8 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Commit small, descriptive commits. Never commit secrets – use `.env` files (gitignored).
 - Write tests for fare calculation and matching logic.
 - UI text must support English and Urdu (RTL).
+- **One theme:** colours, corner sizes and shadows come only from `packages/shared/src/theme.ts` (both apps, the
+  admin CSS and the app icon/splash). Never hard-code them in a component. See docs/theme.md.
 
 ## How we work
 - **One feature per chunk.** Build it end to end (backend + both apps + tests + docs), commit, push, then
@@ -77,9 +79,9 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 - Before declaring a chunk done: `pnpm typecheck`, `pnpm test`, `pnpm lint`, and
   `pnpm --filter @apniride/backend test:e2e` (needs `pnpm db:up`). Also run
   `npx expo export --platform android` in each app to confirm it bundles.
-- Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md). Keep them in sync with the code.
+- Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, theme.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-05, after vehicle markers + smooth tracking)
+## Progress (last updated 2026-11-06, after the unified theme)
 
 ### Done ✅
 | Feature | Where | Notes |
@@ -96,8 +98,9 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, driver `app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Reviewed in the admin panel. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
 | Vehicle markers + smooth tracking | `apps/*/src/components/VehicleMarker.tsx`, `design/vehicles`, `packages/shared/src/tracking.ts`, `backend/src/drivers/nearby-drivers.*` | Top-down car / bike images that glide natively and turn with the heading; nearby drivers on the passenger map before booking (privacy-safe); driver sees own vehicle + ETA. See docs/rides.md |
 | Admin panel | `apps/admin`, `backend/src/admin`, `pnpm admins` | Phone-OTP sign-in for numbers on the `admins` list only; tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
+| Unified theme | `packages/shared/src/theme.ts`, `apps/*/src/lib/theme.ts`, admin `layout.tsx` + `globals.css` | One file for every colour, corner size and shadow in all three apps (admin gets CSS variables). Per-app brand colour (passenger teal, driver/admin amber). Looks exactly as before. Font sizes not themed yet. See docs/theme.md |
 
-Tests: 80 shared + 32 backend unit, 30 backend e2e (all passing at the last commit). The admin panel was clicked
+Tests: 84 shared + 32 backend unit, 30 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
 The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
 **Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).

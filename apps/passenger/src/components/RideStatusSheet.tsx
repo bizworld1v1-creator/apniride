@@ -7,7 +7,7 @@ import { api } from '@/lib/api';
 import { type ReceivedPosition, useAgeSeconds } from '@/lib/driver-position';
 import { errorMessage } from '@/lib/errors';
 import { setCurrentRide } from '@/lib/ride';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 
 const ICONS = { bike: '🏍️', car: '🚗' } as const;
 
@@ -112,17 +112,17 @@ export function RideStatusSheet({ ride, driverPosition }: { ride: Ride; driverPo
 }
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 6 },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
   titleRow: { flexDirection: 'row', alignItems: 'center' },
   spinner: { marginEnd: 10 },
   title: { flex: 1, fontSize: 18, fontWeight: '700', color: colors.text },
   body: { fontSize: 15, color: colors.muted, marginTop: 6 },
-  stale: { fontSize: 13, color: '#B45309', marginTop: 4 },
+  stale: { fontSize: 13, color: colors.warningStrong, marginTop: 4 },
   summary: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
     padding: 12,
     marginVertical: 14,
   },
@@ -130,12 +130,12 @@ const styles = StyleSheet.create({
   summaryText: { flex: 1, fontSize: 15, color: colors.text },
   fare: { fontSize: 17, fontWeight: '700', color: colors.text },
   error: { color: colors.error, fontSize: 14, marginBottom: 8, textAlign: 'center' },
-  primary: { backgroundColor: colors.brand, borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center' },
   primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
   secondary: {
     borderWidth: 1,
     borderColor: colors.error,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     paddingVertical: 14,
     alignItems: 'center',
   },

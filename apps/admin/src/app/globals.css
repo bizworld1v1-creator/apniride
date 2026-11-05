@@ -1,15 +1,10 @@
-/* Plain, fast CSS: the admin panel is used on office laptops and sometimes on a phone. */
+/* Plain, fast CSS: the admin panel is used on office laptops and sometimes on a phone.
+   Colours and corner sizes are CSS variables made from the shared theme (packages/shared/src/theme.ts),
+   injected in layout.tsx. Never hard-code a colour here: use a var(--…) or add a role to the theme. */
 :root {
-  --brand: #b45309;
-  --text: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --bg: #f9fafb;
-  --good: #16a34a;
-  --bad: #dc2626;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--text);
-  background: var(--bg);
+  background: var(--background);
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -19,8 +14,8 @@ h2 { font-size: 18px; margin: 24px 0 10px; }
 h3 { font-size: 15px; margin: 18px 0 6px; }
 
 .topbar {
-  display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: #fff;
-  border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  display: flex; align-items: center; gap: 24px; padding: 12px 24px; background: var(--surface);
+  border-bottom: 1px solid var(--border-light); flex-wrap: wrap;
 }
 .topbar nav { display: flex; gap: 16px; }
 .topbar nav a { text-decoration: none; font-weight: 600; }
@@ -29,59 +24,59 @@ h3 { font-size: 15px; margin: 18px 0 6px; }
 .page { padding: 16px 24px 48px; max-width: 1100px; }
 
 .muted { color: var(--muted); font-size: 14px; }
-.error { color: var(--bad); font-weight: 600; }
-.ok { color: var(--good); font-weight: 600; }
-.warn { color: var(--bad); font-size: 13px; margin-top: 4px; }
-.dev { background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 8px; font-weight: 600; }
-.note { background: #fef2f2; padding: 10px 14px; border-radius: 8px; }
+.error { color: var(--error); font-weight: 600; }
+.ok { color: var(--success); font-weight: 600; }
+.warn { color: var(--error); font-size: 13px; margin-top: 4px; }
+.dev { background: var(--dev-bg); color: var(--dev-text); padding: 8px 12px; border-radius: var(--radius-sm); font-weight: 600; }
+.note { background: var(--error-soft); padding: 10px 14px; border-radius: var(--radius-sm); }
 .row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .stack { display: flex; flex-direction: column; gap: 12px; }
 
-table { border-collapse: collapse; width: 100%; background: #fff; border: 1px solid var(--border); }
-th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 14px; }
+table { border-collapse: collapse; width: 100%; background: var(--surface); border: 1px solid var(--border-light); }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border-light); vertical-align: top; font-size: 14px; }
 tbody th { width: 40%; color: var(--muted); font-weight: 500; }
 
 label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 label.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); }
-input, textarea { font: inherit; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; color: var(--text); }
+input, textarea { font: inherit; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); }
 button {
-  font: inherit; font-weight: 600; padding: 10px 18px; border-radius: 8px; border: 0; cursor: pointer;
-  background: var(--brand); color: #fff; align-self: flex-start;
+  font: inherit; font-weight: 600; padding: 10px 18px; border-radius: var(--radius-sm); border: 0; cursor: pointer;
+  background: var(--brand); color: var(--on-color); align-self: flex-start;
 }
 button:disabled { opacity: 0.5; cursor: default; }
-button.good { background: var(--good); }
-button.bad { background: var(--bad); }
+button.good { background: var(--success); }
+button.bad { background: var(--error); }
 button.link { background: none; color: var(--brand); padding: 0; }
 
-.login { max-width: 380px; margin: 80px auto; padding: 24px; background: #fff; border-radius: 12px; border: 1px solid var(--border); }
+.login { max-width: 380px; margin: 80px auto; padding: 24px; background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border-light); }
 .login h1 { color: var(--brand); }
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .tile {
-  display: flex; flex-direction: column; gap: 4px; padding: 16px; background: #fff; border-radius: 12px;
-  border: 1px solid var(--border); color: var(--muted); text-decoration: none;
+  display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--surface); border-radius: var(--radius-lg);
+  border: 1px solid var(--border-light); color: var(--muted); text-decoration: none;
 }
 .tile .big { font-size: 32px; font-weight: 700; color: var(--text); }
-.tile.attention { border-color: var(--brand); background: #fffbeb; }
+.tile.attention { border-color: var(--brand); background: var(--brand-soft); }
 
 .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
-.tabs a { padding: 6px 12px; border-radius: 16px; text-decoration: none; background: #fff; border: 1px solid var(--border); font-size: 14px; }
-.tabs a.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+.tabs a { padding: 6px 12px; border-radius: var(--radius-xl); text-decoration: none; background: var(--surface); border: 1px solid var(--border-light); font-size: 14px; }
+.tabs a.active { background: var(--brand); color: var(--on-color); border-color: var(--brand); }
 
-.badge { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 10px; background: #e5e7eb; color: var(--text); }
-.badge.pending, .badge.searching { background: #fef3c7; color: #92400e; }
-.badge.approved, .badge.completed, .badge.in_progress { background: #dcfce7; color: #166534; }
-.badge.rejected, .badge.suspended, .badge.cancelled, .badge.no_driver { background: #fee2e2; color: #991b1b; }
+.badge { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: var(--radius-md); background: var(--border-light); color: var(--text); }
+.badge.pending, .badge.searching { background: var(--warning-soft); color: var(--warning-text); }
+.badge.approved, .badge.completed, .badge.in_progress { background: var(--success-soft); color: var(--success-text); }
+.badge.rejected, .badge.suspended, .badge.cancelled, .badge.no_driver { background: var(--error-soft-strong); color: var(--error-text); }
 
 .columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
 .history { padding-left: 18px; font-size: 14px; }
 
 .photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.photos figure { margin: 0; background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
-.photos img { width: 100%; height: 180px; object-fit: contain; background: #f3f4f6; border-radius: 6px; display: block; }
-.photos .missing { height: 180px; display: flex; align-items: center; justify-content: center; color: var(--muted); background: #f3f4f6; border-radius: 6px; font-size: 14px; }
+.photos figure { margin: 0; background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 8px; }
+.photos img { width: 100%; height: 180px; object-fit: contain; background: var(--surface-muted); border-radius: 6px; display: block; }
+.photos .missing { height: 180px; display: flex; align-items: center; justify-content: center; color: var(--muted); background: var(--surface-muted); border-radius: 6px; font-size: 14px; }
 .photos figcaption { font-size: 14px; margin-top: 6px; font-weight: 600; }
 
-.card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 16px; }
 .card h2 { margin-top: 0; display: flex; gap: 8px; align-items: center; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }

@@ -16,7 +16,7 @@ import { useAuth } from '@/lib/auth-store';
 import { PROFILE_KEY, useDriverCurrent, useDriverProfile } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { MAP_PROVIDER } from '@/lib/map-provider';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 import { useLocationSharing } from '@/lib/use-location-sharing';
 
 const DELTA = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
@@ -95,14 +95,14 @@ export default function DriverHomeScreen() {
         {online ? <Text style={styles.waiting}>{t('waitingForRides')}</Text> : null}
         {toggleError ? <Text style={styles.toggleError}>{toggleError}</Text> : null}
         <Pressable
-          style={[styles.toggle, { backgroundColor: online ? '#DC2626' : '#16A34A' }]}
+          style={[styles.toggle, { backgroundColor: online ? colors.error : colors.success }]}
           onPress={() => toggle.mutate()}
           disabled={toggle.isPending}
           accessibilityRole="switch"
           accessibilityState={{ checked: online, busy: toggle.isPending }}
         >
           {toggle.isPending ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.onColor} />
           ) : (
             <Text style={styles.toggleText}>{online ? t('goOffline') : t('goOnline')}</Text>
           )}
@@ -134,8 +134,8 @@ export default function DriverHomeScreen() {
         ) : null}
         {shown ? (
           <>
-            <Marker coordinate={shown.pickup} pinColor="green" tracksViewChanges={false} />
-            <Marker coordinate={shown.dropoff} pinColor="red" tracksViewChanges={false} />
+            <Marker coordinate={shown.pickup} pinColor={colors.pickupPin} tracksViewChanges={false} />
+            <Marker coordinate={shown.dropoff} pinColor={colors.dropoffPin} tracksViewChanges={false} />
           </>
         ) : null}
       </MapView>
@@ -151,7 +151,7 @@ export default function DriverHomeScreen() {
           </View>
           {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
           <View style={styles.statusRow}>
-            <Text style={[styles.status, { color: online ? '#16A34A' : colors.muted }]}>
+            <Text style={[styles.status, { color: online ? colors.success : colors.muted }]}>
               {online ? t('online') : t('offline')}
             </Text>
             {/* Part of the reviewed application now: changing vehicle means a new review (admin, later). */}
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   top: { position: 'absolute', top: 0, start: 0, end: 0, padding: 12 },
   bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: 16 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 3 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, elevation: elevation.low },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 20, fontWeight: '700', color: colors.brand },
   signOut: { fontSize: 13, color: colors.muted },
@@ -187,24 +187,24 @@ const styles = StyleSheet.create({
   vehicle: { fontSize: 13, color: colors.muted },
   waiting: {
     alignSelf: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     color: colors.text,
     fontSize: 14,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: radius.xl,
     marginBottom: 10,
-    elevation: 3,
+    elevation: elevation.low,
   },
   toggleError: {
-    backgroundColor: '#FEF2F2',
+    backgroundColor: colors.errorSoft,
     color: colors.error,
     fontSize: 14,
     padding: 10,
-    borderRadius: 10,
+    borderRadius: radius.md,
     marginBottom: 10,
     textAlign: 'center',
   },
-  toggle: { borderRadius: 12, paddingVertical: 16, alignItems: 'center', elevation: 3, minHeight: 56, justifyContent: 'center' },
-  toggleText: { color: '#FFFFFF', fontSize: 17, fontWeight: '600' },
+  toggle: { borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', elevation: elevation.low, minHeight: 56, justifyContent: 'center' },
+  toggleText: { color: colors.onColor, fontSize: 17, fontWeight: '600' },
 });

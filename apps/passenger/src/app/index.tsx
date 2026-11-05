@@ -15,7 +15,7 @@ import { useDriverPosition } from '@/lib/driver-position';
 import { MAP_PROVIDER } from '@/lib/map-provider';
 import { useNearbyDrivers } from '@/lib/nearby-drivers';
 import { useCurrentRide } from '@/lib/ride';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
 
@@ -151,8 +151,8 @@ export default function HomeScreen() {
       >
         {ride ? (
           <>
-            <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
-            <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor="red" tracksViewChanges={false} />
+            <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
+            <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor={colors.dropoffPin} tracksViewChanges={false} />
             {driverPosition ? (
               <VehicleMarker
                 location={driverPosition.location}
@@ -169,10 +169,10 @@ export default function HomeScreen() {
             ))
           : null}
         {!ride && pickup && step !== 'home' && step !== 'pickup' ? (
-          <Marker coordinate={pickup} title={t('ride.pickup')} pinColor="green" tracksViewChanges={false} />
+          <Marker coordinate={pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
         ) : null}
         {dropoff && step === 'quote' ? (
-          <Marker coordinate={dropoff} title={t('ride.dropoff')} pinColor="red" tracksViewChanges={false} />
+          <Marker coordinate={dropoff} title={t('ride.dropoff')} pinColor={colors.dropoffPin} tracksViewChanges={false} />
         ) : null}
       </MapView>
 
@@ -231,33 +231,33 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   top: { position: 'absolute', top: 0, start: 0, end: 0, padding: 12 },
   bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: 16 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, elevation: 3 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: 12, elevation: elevation.low },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   brand: { fontSize: 20, fontWeight: '700', color: colors.brand },
   signOut: { fontSize: 13, color: colors.muted },
   greeting: { fontSize: 15, fontWeight: '600', color: colors.text, marginTop: 4 },
-  tagline: { fontSize: 13, color: '#374151', marginTop: 2 },
+  tagline: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
   backButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
     paddingVertical: 8,
     paddingHorizontal: 14,
-    elevation: 3,
+    elevation: elevation.low,
   },
   backText: { fontSize: 15, fontWeight: '600', color: colors.text },
   // The emoji's tip sits on the exact map centre.
   pinWrap: { position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, alignItems: 'center', justifyContent: 'center' },
   pin: { fontSize: 36, marginBottom: 36 },
   dot: { fontSize: 24 },
-  sheet: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 6 },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
   sheetTitle: { fontSize: 16, fontWeight: '600', color: colors.text, marginBottom: 12, textAlign: 'center' },
   primary: {
     backgroundColor: colors.brand,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     paddingVertical: 16,
     alignItems: 'center',
-    elevation: 3,
+    elevation: elevation.low,
   },
   primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
 });

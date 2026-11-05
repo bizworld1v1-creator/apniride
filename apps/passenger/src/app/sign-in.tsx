@@ -9,7 +9,7 @@ import { z } from 'zod';
 import { AuthLayout, authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
 import { api, APP_ROLE } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
-import { colors } from '@/lib/theme';
+import { colors, radius } from '@/lib/theme';
 
 const formSchema = z.object({ phone: pkMobileSchema });
 type FormIn = z.input<typeof formSchema>;
@@ -81,9 +81,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     marginRight: 8,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   prefixText: { fontSize: 17, color: colors.text },
   phoneInput: { flex: 1, textAlign: 'left', writingDirection: 'ltr' },

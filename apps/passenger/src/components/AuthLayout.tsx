@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/lib/theme';
+import { colors, radius } from '@/lib/theme';
 
 /** Plain, light layout for the sign-in screens (no images or animations – fast on low-end phones). */
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
@@ -82,12 +82,12 @@ export const authStyles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 10,
+    borderRadius: radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 18,
     color: colors.text,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
   },
   inputError: { borderColor: colors.error },
   label: { fontSize: 14, color: colors.muted, marginBottom: 6 },
@@ -95,7 +95,7 @@ export const authStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F9FAFB' },
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   content: { padding: 24, paddingTop: 48 },
   brand: { fontSize: 22, fontWeight: '700', color: colors.brand, marginBottom: 24 },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   body: { marginTop: 28 },
   button: {
     backgroundColor: colors.brand,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     paddingVertical: 16,
     alignItems: 'center',
     minHeight: 54,
@@ -115,6 +115,6 @@ const styles = StyleSheet.create({
   link: { color: colors.brand, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingVertical: 8 },
   linkDisabled: { color: colors.muted, fontWeight: '400' },
   error: { color: colors.error, fontSize: 14, marginTop: 8 },
-  dev: { backgroundColor: colors.devBg, borderRadius: 8, padding: 10, marginBottom: 16 },
+  dev: { backgroundColor: colors.devBg, borderRadius: radius.sm, padding: 10, marginBottom: 16 },
   devText: { color: colors.devText, fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

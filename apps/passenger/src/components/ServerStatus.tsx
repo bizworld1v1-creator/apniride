@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { api } from '@/lib/api';
+import { colors, radius } from '@/lib/theme';
 
 /** Small pill that shows whether the backend (and its DB/Redis) is reachable. */
 export function ServerStatus() {
@@ -13,7 +14,7 @@ export function ServerStatus() {
   });
 
   const state = isPending ? 'checking' : isError ? 'offline' : data.status === 'ok' ? 'ok' : 'degraded';
-  const color = { checking: '#9CA3AF', ok: '#16A34A', degraded: '#F59E0B', offline: '#DC2626' }[state];
+  const color = { checking: colors.neutral, ok: colors.success, degraded: colors.warning, offline: colors.error }[state];
 
   return (
     <View style={styles.row}>
@@ -25,6 +26,6 @@ export function ServerStatus() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  dot: { width: 8, height: 8, borderRadius: 4, marginEnd: 6 },
-  text: { fontSize: 12, color: '#4B5563' },
+  dot: { width: 8, height: 8, borderRadius: radius.xs, marginEnd: 6 },
+  text: { fontSize: 12, color: colors.textTertiary },
 });

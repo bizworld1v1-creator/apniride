@@ -123,6 +123,6 @@ const styles = StyleSheet.create({
   todo: { color: colors.brand, fontWeight: '600' },
   center: { textAlign: 'center' },
   bold: { fontWeight: '700', marginBottom: 4 },
-  rejected: { backgroundColor: '#FEF2F2' },
-  info: { backgroundColor: '#EFF6FF' },
+  rejected: { backgroundColor: colors.errorSoft },
+  info: { backgroundColor: colors.infoSoft },
 });

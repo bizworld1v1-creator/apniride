@@ -5,7 +5,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { api } from '@/lib/api';
 import { patchCurrent, type ReceivedOffer } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 
 export const formatRupees = (n: number) => n.toLocaleString('en-PK');
 
@@ -70,7 +70,7 @@ export function OfferCard({ offer }: { offer: ReceivedOffer }) {
           accessibilityRole="button"
         >
           {accept.isPending ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.onColor} />
           ) : (
             <Text style={styles.acceptText}>{t('offer.accept')}</Text>
           )}
@@ -93,8 +93,8 @@ function useSecondsLeft(offer: ReceivedOffer) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 8, overflow: 'hidden' },
-  bar: { height: 6, backgroundColor: '#F3F4F6', borderRadius: 3, marginBottom: 12, overflow: 'hidden' },
+  card: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.high, overflow: 'hidden' },
+  bar: { height: 6, backgroundColor: colors.surfaceMuted, borderRadius: 3, marginBottom: 12, overflow: 'hidden' },
   barFill: { height: 6, backgroundColor: colors.brand },
   label: { fontSize: 14, color: colors.muted, fontWeight: '600' },
   fare: { fontSize: 36, fontWeight: '800', color: colors.text, marginTop: 4 },
@@ -103,10 +103,10 @@ const styles = StyleSheet.create({
   row: { fontSize: 16, color: colors.text },
   error: { color: colors.error, fontSize: 14, marginTop: 10, textAlign: 'center' },
   buttons: { flexDirection: 'row', marginTop: 16, gap: 10 },
-  button: { flex: 1, borderRadius: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', minHeight: 56 },
+  button: { flex: 1, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', minHeight: 56 },
   decline: { borderWidth: 1, borderColor: colors.border },
   declineText: { fontSize: 17, fontWeight: '600', color: colors.text },
-  accept: { backgroundColor: '#16A34A', flex: 2 },
-  acceptText: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  accept: { backgroundColor: colors.success, flex: 2 },
+  acceptText: { fontSize: 18, fontWeight: '700', color: colors.onColor },
   dim: { opacity: 0.7 },
 });

@@ -7,7 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { setCurrentRide } from '@/lib/ride';
-import { colors } from '@/lib/theme';
+import { colors, elevation, radius } from '@/lib/theme';
 
 const ICONS: Record<VehicleType, string> = { bike: '🏍️', car: '🚗' };
 
@@ -129,20 +129,20 @@ function OptionRow({ option, selected, onPress }: { option: FareOption; selected
 }
 
 const styles = StyleSheet.create({
-  sheet: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, elevation: 6 },
+  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: 16, elevation: elevation.medium },
   center: { alignItems: 'center', paddingVertical: 16 },
   distance: { fontSize: 13, color: colors.muted, marginBottom: 8 },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 2,
     borderColor: 'transparent',
     marginBottom: 6,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: colors.background,
   },
-  optionSelected: { borderColor: colors.brand, backgroundColor: '#ECFEFF' },
+  optionSelected: { borderColor: colors.brand, backgroundColor: colors.brandSoft },
   icon: { fontSize: 28, marginEnd: 12 },
   optionText: { flex: 1 },
   optionTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
@@ -150,10 +150,10 @@ const styles = StyleSheet.create({
   muted: { fontSize: 13, color: colors.muted, marginTop: 2 },
   fixed: { fontSize: 13, color: colors.muted, marginVertical: 8, textAlign: 'center' },
   error: { fontSize: 15, color: colors.error, textAlign: 'center', marginBottom: 12 },
-  primary: { backgroundColor: colors.brand, borderRadius: 12, paddingVertical: 16, alignItems: 'center' },
+  primary: { backgroundColor: colors.brand, borderRadius: radius.lg, paddingVertical: 16, alignItems: 'center' },
   disabled: { opacity: 0.5 },
   primaryText: { color: colors.brandText, fontSize: 17, fontWeight: '600' },
-  secondary: { borderWidth: 1, borderColor: colors.brand, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 24 },
+  secondary: { borderWidth: 1, borderColor: colors.brand, borderRadius: radius.md, paddingVertical: 10, paddingHorizontal: 24 },
   secondaryText: { color: colors.brand, fontSize: 15, fontWeight: '600' },
   link: { color: colors.brand, fontSize: 15, fontWeight: '600', textAlign: 'center', paddingTop: 12 },
 });
