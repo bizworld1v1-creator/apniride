@@ -25,6 +25,9 @@ Every option needs the **backend** running somewhere the device can reach (secti
 
 ## 1. Start the backend (always)
 
+**Easiest: `pnpm dev`** starts the database, migrations, backend, the app (Expo) and the admin panel in one go,
+and gives Expo the Wi-Fi IP itself (see the README). The steps below do the same by hand.
+
 On the PC, from the repo root:
 
 ```bash

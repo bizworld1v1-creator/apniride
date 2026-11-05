@@ -48,7 +48,24 @@ shared, generate real ones: `node -e "console.log(require('crypto').randomBytes(
 **Docker says "Docker Desktop is unable to start"?** Usually WSL 2 is missing or outdated. Open PowerShell
 **as Administrator**, run `wsl --update`, restart the PC, then start Docker Desktop again.
 
-## Run the backend
+## Run everything: `pnpm dev`
+
+Start **Docker Desktop**, then from the repo root:
+
+```bash
+pnpm dev
+```
+
+One command does it all: starts Postgres + Redis (waits until they are healthy), applies migrations, finds the
+laptop's Wi-Fi IP, then runs the **backend** (port 3000), the **mobile app** (Expo, port 8081) and the **admin
+panel** (http://localhost:3001) side by side in Turborepo's terminal screen. Use the arrow keys to pick a task and
+see its output (the Expo QR code is in `@apniride/mobile#dev`). `Ctrl + C` stops everything; the database keeps
+running (`pnpm db:down` stops it). Shake the phone to reload the app (Expo's `r` key works with `pnpm mobile`).
+
+Parts on their own, when you only need one: `pnpm backend`, `pnpm mobile`, `pnpm admin`.
+Leave one out: `pnpm dev --filter=!@apniride/admin`.
+
+## Run the backend on its own
 
 ```bash
 pnpm backend          # builds packages/shared, then the API on http://localhost:3000
@@ -141,6 +158,7 @@ pnpm start:dev-client                       # then open the installed dev build 
 
 | Command | What it does |
 | --- | --- |
+| `pnpm dev` | **Everything**: database, migrations, backend, mobile app, admin panel |
 | `pnpm db:up` / `pnpm db:down` | Start / stop Postgres + PostGIS and Redis |
 | `pnpm db:migrate` | Apply new SQL migrations from `backend/migrations` |
 | `pnpm backend` | Backend in watch mode |

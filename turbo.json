@@ -1,5 +1,6 @@
 {
   "$schema": "https://turborepo.com/schema.json",
+  "ui": "tui",
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -8,7 +9,8 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": ["REACT_NATIVE_PACKAGER_HOSTNAME", "EXPO_*", "GOOGLE_MAPS_*"]
     },
     "lint": {},
     "typecheck": {

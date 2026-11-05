@@ -180,7 +180,8 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
   disabled on 2026-11-04. Allow rule "ApniRide dev" opens TCP 3000/8081/8082 on Private networks (8082 is no longer used). Use
   `$env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.100.6"` before `pnpm mobile` (WSL adapters confuse Expo's IP pick).
 - **2026-11-04: the owner got the passenger app running on their phone via Expo Go** (first real-device test).
-- Dev backend: `pnpm db:up && pnpm db:migrate && pnpm backend`. The laptop's LAN IP was `192.168.100.6`.
+- Dev: **`pnpm dev`** runs everything (database, migrations, backend, app, admin; finds the Wi-Fi IP itself).
+  Single parts: `pnpm backend`, `pnpm mobile`, `pnpm admin`. The laptop's LAN IP was `192.168.100.6`.
 - `backend/.env` has the dev-only flag `OTP_DEV_ECHO=true` (refused when `NODE_ENV=production`).
 - Admin panel: `pnpm admins add <phone> "<name>"` once, then `pnpm admin` → http://localhost:3001.
 - The e2e tests share the dev database; they remove the test admins they create (`removeTestAdmins`).

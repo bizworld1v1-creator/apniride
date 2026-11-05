@@ -36,6 +36,7 @@
   },
   "scripts": {
     "start": "expo start --go --port 8081",
+    "dev": "expo start --go --port 8081",
     "start:dev-client": "expo start --dev-client --port 8081",
     "start:tunnel": "expo start --go --tunnel --port 8081",
     "android": "expo start --go --android --port 8081",
