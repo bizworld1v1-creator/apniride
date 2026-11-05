@@ -53,8 +53,8 @@ interface RideRow {
 
 const RIDE_SELECT = `
   SELECT r.id, r.status, r.city, r.vehicle_type, r.fare, r.distance_km::float8 AS distance_km, r.duration_min,
-         r.passenger_id, p.name AS passenger_name, p.phone AS passenger_phone,
-         r.driver_id, d.name AS driver_name, d.phone AS driver_phone, r.cancelled_by, r.created_at
+         r.passenger_id, p.name AS passenger_name, COALESCE(p.phone, 'deleted account') AS passenger_phone,
+         r.driver_id, d.name AS driver_name, COALESCE(d.phone, 'deleted account') AS driver_phone, r.cancelled_by, r.created_at
     FROM rides r
     JOIN users p ON p.id = r.passenger_id
     LEFT JOIN users d ON d.id = r.driver_id`;

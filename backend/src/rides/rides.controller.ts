@@ -1,17 +1,30 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
-import { type BookRideBody, bookRideBodySchema, type CurrentRideResponse, type DriverPosition, type Ride } from '@apniride/shared';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  type BookRideBody,
+  bookRideBodySchema,
+  type CurrentRideResponse,
+  type DriverPosition,
+  type Ride,
+  type RideHistoryPage,
+  rideHistoryQuerySchema,
+} from '@apniride/shared';
+import type { z } from 'zod';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { assertRole } from '../auth/roles.js';
 import type { AuthUser } from '../auth/tokens.service.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { HistoryService } from './history.service.js';
 import { RidesService } from './rides.service.js';
 
 /** Passenger side. Status changes are also pushed over Socket.IO ("ride:update"). */
 @Controller('rides')
 @UseGuards(AuthGuard)
 export class RidesController {
-  constructor(private readonly rides: RidesService) {}
+  constructor(
+    private readonly rides: RidesService,
+    private readonly rideHistory: HistoryService,
+  ) {}
 
   /** Books the quoted fare and starts looking for a driver. Safe to retry with the same quoteId. */
   @Post()
@@ -28,6 +41,16 @@ export class RidesController {
   async current(@CurrentUser() me: AuthUser): Promise<CurrentRideResponse> {
     assertRole(me, 'passenger');
     return { ride: await this.rides.currentForPassenger(me.userId) };
+  }
+
+  /** Finished rides, newest first. Declared before ':id' so "history" isn't read as a ride id. */
+  @Get('history')
+  history(
+    @CurrentUser() me: AuthUser,
+    @Query(new ZodValidationPipe(rideHistoryQuerySchema)) query: z.output<typeof rideHistoryQuerySchema>,
+  ): Promise<RideHistoryPage> {
+    assertRole(me, 'passenger');
+    return this.rideHistory.page('passenger', me.userId, query.cursor);
   }
 
   @Get(':id')

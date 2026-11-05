@@ -50,7 +50,7 @@ export class DriverReviewService {
   /** Pending applications oldest first (first come, first served); otherwise newest first. */
   async list(status?: DriverApprovalStatus): Promise<AdminDriverSummary[]> {
     const { rows } = await this.pool.query<SummaryRow>(
-      `SELECT d.user_id, u.name, u.phone, d.approval_status, d.vehicle_type, d.gender, d.submitted_at, d.created_at
+      `SELECT d.user_id, u.name, COALESCE(u.phone, 'deleted account') AS phone, d.approval_status, d.vehicle_type, d.gender, d.submitted_at, d.created_at
        FROM drivers d JOIN users u ON u.id = d.user_id
        WHERE $1::text IS NULL OR d.approval_status = $1
        ORDER BY CASE WHEN $1 = 'pending' THEN d.submitted_at END ASC NULLS LAST, d.created_at DESC
@@ -62,7 +62,7 @@ export class DriverReviewService {
 
   async get(driverId: string): Promise<AdminDriverDetail> {
     const { rows } = await this.pool.query<{ name: string | null; phone: string }>(
-      'SELECT name, phone FROM users u JOIN drivers d ON d.user_id = u.id WHERE u.id = $1',
+      "SELECT name, COALESCE(phone, 'deleted account') AS phone FROM users u JOIN drivers d ON d.user_id = u.id WHERE u.id = $1",
       [driverId],
     );
     const user = rows[0];

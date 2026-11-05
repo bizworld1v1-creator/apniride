@@ -3,8 +3,8 @@ import { type AppMode, type AuthSession, maskPhone, type UserRole } from '@apnir
 import type { Redis } from 'ioredis';
 import type pg from 'pg';
 import { AppException } from '../common/app-exception.js';
+import { assertNotBusy } from '../common/assert-not-busy.js';
 import { PG_POOL } from '../database/database.module.js';
-import { driverKeys } from '../drivers/drivers.service.js';
 import { REDIS } from '../redis/redis.module.js';
 import { OtpService } from './otp.service.js';
 import { type AuthUser, TokensService } from './tokens.service.js';
@@ -71,19 +71,9 @@ export class AuthService {
     if (!(await this.tokens.sessionHasRefreshToken(me.sessionId, refreshToken))) {
       throw new AppException(HttpStatus.UNAUTHORIZED, 'invalid_refresh_token', 'Please sign in again');
     }
-    // A driver must not vanish from dispatch by switching: going offline is a deliberate step.
-    if (me.role === 'driver' && (await this.redis.exists(driverKeys.online(me.userId))) === 1) {
-      throw new AppException(HttpStatus.CONFLICT, 'go_offline_first', 'Go offline before switching to passenger mode');
-    }
-    const { rowCount: activeRides } = await this.pool.query(
-      `SELECT 1 FROM rides
-        WHERE (passenger_id = $1 OR driver_id = $1) AND status IN ('searching', 'accepted', 'arrived', 'in_progress')
-        LIMIT 1`,
-      [me.userId],
-    );
-    if (activeRides) {
-      throw new AppException(HttpStatus.CONFLICT, 'active_ride_exists', 'Finish or cancel the current ride first');
-    }
+    // A driver must not vanish from dispatch by switching (going offline is a deliberate step), and nobody
+    // switches in the middle of a ride.
+    await assertNotBusy(this.pool, this.redis, me.userId);
 
     const roleInsert = await this.pool.query(
       'INSERT INTO user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT DO NOTHING',

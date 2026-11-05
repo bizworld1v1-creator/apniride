@@ -6,5 +6,6 @@ export * from './drivers';
 export * from './rides';
 export * from './tracking';
 export * from './admin';
+export * from './account';
 export * from './theme';
 export * from './api-client';

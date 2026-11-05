@@ -1,10 +1,19 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
-import type { DriverCurrentResponse, Ride } from '@apniride/shared';
+import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  type DriverCurrentResponse,
+  type DriverEarnings,
+  type Ride,
+  type RideHistoryPage,
+  rideHistoryQuerySchema,
+} from '@apniride/shared';
+import type { z } from 'zod';
 import { AuthGuard } from '../auth/auth.guard.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { assertRole } from '../auth/roles.js';
 import type { AuthUser } from '../auth/tokens.service.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { DispatchService } from './dispatch.service.js';
+import { HistoryService } from './history.service.js';
 import { RidesService } from './rides.service.js';
 
 /** Driver side: answer offers and move the ride along. */
@@ -14,6 +23,7 @@ export class DriverRidesController {
   constructor(
     private readonly rides: RidesService,
     private readonly dispatch: DispatchService,
+    private readonly rideHistory: HistoryService,
   ) {}
 
   /** Pending offer and/or ride in progress. The driver app calls this on start and after reconnecting. */
@@ -21,6 +31,23 @@ export class DriverRidesController {
   current(@CurrentUser() me: AuthUser): Promise<DriverCurrentResponse> {
     assertRole(me, 'driver');
     return this.rides.currentForDriver(me.userId);
+  }
+
+  /** Rides this driver did (completed or cancelled), newest first. */
+  @Get('rides/history')
+  history(
+    @CurrentUser() me: AuthUser,
+    @Query(new ZodValidationPipe(rideHistoryQuerySchema)) query: z.output<typeof rideHistoryQuerySchema>,
+  ): Promise<RideHistoryPage> {
+    assertRole(me, 'driver');
+    return this.rideHistory.page('driver', me.userId, query.cursor);
+  }
+
+  /** Cash collected today, in the last 7 days and in total. */
+  @Get('earnings')
+  earnings(@CurrentUser() me: AuthUser): Promise<DriverEarnings> {
+    assertRole(me, 'driver');
+    return this.rideHistory.earnings(me.userId);
   }
 
   @Post('rides/:id/accept')

@@ -93,6 +93,8 @@ export const userSchema = z.object({
   name: z.string().nullable(),
   /** Masked – the full number is never sent back to apps. */
   phoneMasked: z.string(),
+  /** When the profile photo last changed (null / missing: no photo). Use it to bust the image cache. */
+  photoUpdatedAt: z.string().nullable().optional(),
 });
 export type User = z.infer<typeof userSchema>;
 

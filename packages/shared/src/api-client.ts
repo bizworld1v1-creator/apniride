@@ -55,6 +55,20 @@ import {
   type Ride,
   rideSchema,
 } from './rides';
+import {
+  type DriverEarnings,
+  driverEarningsSchema,
+  type RideHistoryPage,
+  rideHistoryPageSchema,
+  type SavedPlace,
+  type SavedPlaceBody,
+  savedPlaceSchema,
+  type SavedPlacesResponse,
+  savedPlacesResponseSchema,
+} from './account';
+
+const historyPath = (base: string, cursor?: string | null) =>
+  cursor ? `${base}?cursor=${encodeURIComponent(cursor)}` : base;
 
 /**
  * A file for a multipart upload: a Blob (web / Node), or what React Native's FormData accepts:
@@ -295,6 +309,9 @@ export function createApiClient(options: ApiClientOptions) {
         request(`/rides/${id}/driver-location`, (d) => driverPositionResponseSchema.parse(d).position),
       cancel: (id: string): Promise<Ride> =>
         request(`/rides/${id}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      /** The passenger's finished rides, newest first. Pass the previous page's nextCursor for older ones. */
+      history: (cursor?: string | null): Promise<RideHistoryPage> =>
+        request(historyPath('/rides/history', cursor), (d) => rideHistoryPageSchema.parse(d)),
     },
 
     driver: {
@@ -340,6 +357,11 @@ export function createApiClient(options: ApiClientOptions) {
         request(`/driver/rides/${rideId}/complete`, (d) => rideSchema.parse(d), { method: 'POST' }),
       cancel: (rideId: string): Promise<Ride> =>
         request(`/driver/rides/${rideId}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      /** Rides this driver did (completed or cancelled), newest first. */
+      history: (cursor?: string | null): Promise<RideHistoryPage> =>
+        request(historyPath('/driver/rides/history', cursor), (d) => rideHistoryPageSchema.parse(d)),
+      /** Cash collected today, in the last 7 days and in total (Pakistan time). */
+      earnings: (): Promise<DriverEarnings> => request('/driver/earnings', (d) => driverEarningsSchema.parse(d)),
     },
 
     /** Admin panel. Needs a session from signing in with role "admin". */
@@ -377,6 +399,30 @@ export function createApiClient(options: ApiClientOptions) {
       get: (): Promise<User> => request('/me', (d) => userSchema.parse(d)),
       update: (body: UpdateProfileBody): Promise<User> =>
         request('/me', (d) => userSchema.parse(d), { method: 'PATCH', body }),
+      /** GET it with the access token as a Bearer header (it's private). Add ?v=<photoUpdatedAt> to bust caches. */
+      photoPath: '/me/photo',
+      uploadPhoto: (file: UploadFile): Promise<User> => {
+        const form = new FormData();
+        form.append('file', file as Blob);
+        return request('/me/photo', (d) => userSchema.parse(d), {
+          method: 'PUT',
+          body: form,
+          idempotent: true,
+          timeoutMs: 60_000,
+        });
+      },
+      deletePhoto: (): Promise<User> => request('/me/photo', (d) => userSchema.parse(d), { method: 'DELETE' }),
+      /** Deletes the account for good (refused while online as a driver or with a ride going on). */
+      deleteAccount: (): Promise<void> => request('/me', () => undefined, { method: 'DELETE' }),
+      places: {
+        list: (): Promise<SavedPlacesResponse> => request('/me/places', (d) => savedPlacesResponseSchema.parse(d)),
+        create: (body: SavedPlaceBody): Promise<SavedPlace> =>
+          request('/me/places', (d) => savedPlaceSchema.parse(d), { method: 'POST', body }),
+        update: (id: string, body: SavedPlaceBody): Promise<SavedPlace> =>
+          request(`/me/places/${id}`, (d) => savedPlaceSchema.parse(d), { method: 'PUT', body, idempotent: true }),
+        remove: (id: string): Promise<void> =>
+          request(`/me/places/${id}`, () => undefined, { method: 'DELETE', idempotent: true }),
+      },
     },
   };
 }
