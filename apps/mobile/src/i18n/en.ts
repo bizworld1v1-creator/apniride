@@ -1,12 +1,6 @@
 // One app, two modes: passenger text at the top level, driver-mode screens under `driver`.
 export const en = {
   tagline: 'Cool ride, safe ride, on-time ride',
-  server: {
-    checking: 'Checking server…',
-    ok: 'Server connected',
-    degraded: 'Server has a problem',
-    offline: 'Server unreachable',
-  },
   welcome: {
     taglineBefore: 'Fair rides, on ',
     taglineHighlight: 'your',
@@ -34,7 +28,6 @@ export const en = {
     namePlaceholder: 'Your name',
     continue: 'Continue',
     signOut: 'Sign out',
-    greeting: 'Salam, {{name}}',
   },
   home: {
     morning: 'Good morning',
@@ -158,7 +151,21 @@ export const en = {
     goOnline: 'Go online',
     goOffline: 'Go offline',
     locationDenied: 'Location permission is needed to go online.',
-    waitingForRides: 'Waiting for ride requests…',
+    ready: 'Ready, {{name}}?',
+    earnedToday: 'Earned today',
+    trips_one: '{{count}} trip',
+    trips_other: '{{count}} trips',
+    week: '7 days: {{fare}}',
+    dailyGoal: 'Daily goal',
+    rating: 'Rating',
+    onlineHint: 'Waiting for ride requests near you',
+    offlineHint: 'Tap the button to start getting rides',
+    newRequest: 'New request · {{km}} km away',
+    riderOffers: 'Rider offers',
+    counterOffer: 'Counter-offer',
+    acceptFor: 'Accept for {{fare}}',
+    pickupPoint: 'Pickup {{km}} km from you',
+    tripLength: 'Trip {{km}} km · about {{min}} min',
     vehicle: {
       bike: 'Bike',
       car: 'Car (AC)',
@@ -239,12 +246,8 @@ export const en = {
       save: 'Save',
     },
     offer: {
-      newRide: 'New ride · {{seconds}}s',
-      fare: 'Rs {{amount}}',
       cash: 'Cash ride · price set by the passenger',
-      pickupAway: 'Pickup {{km}} km away',
       trip: '{{km}} km · about {{min}} min',
-      accept: 'Accept',
       decline: 'Decline',
     },
     ride: {
@@ -260,7 +263,7 @@ export const en = {
       startButton: 'Start ride',
       completeButton: 'Complete ride · collect {{fare}}',
       completed: 'Ride completed',
-      collect: 'Collect {{fare}} cash',
+      collectCash: 'Collect in cash',
       passengerCancelled: 'The passenger cancelled the ride',
       done: 'Done',
       cancel: 'Cancel ride',

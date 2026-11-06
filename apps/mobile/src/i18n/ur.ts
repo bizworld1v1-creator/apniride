@@ -2,12 +2,6 @@ import type { Translation } from './en';
 
 export const ur: Translation = {
   tagline: 'ٹھنڈا سفر، محفوظ سفر، وقت پہ سفر',
-  server: {
-    checking: 'سرور چیک ہو رہا ہے…',
-    ok: 'سرور سے رابطہ ہے',
-    degraded: 'سرور میں مسئلہ ہے',
-    offline: 'سرور سے رابطہ نہیں ہو سکا',
-  },
   welcome: {
     taglineBefore: 'منصفانہ سفر، ',
     taglineHighlight: 'آپ کی',
@@ -35,7 +29,6 @@ export const ur: Translation = {
     namePlaceholder: 'آپ کا نام',
     continue: 'جاری رکھیں',
     signOut: 'سائن آؤٹ',
-    greeting: 'السلام علیکم، {{name}}',
   },
   home: {
     morning: 'صبح بخیر',
@@ -159,7 +152,21 @@ export const ur: Translation = {
     goOnline: 'آن لائن ہوں',
     goOffline: 'آف لائن ہوں',
     locationDenied: 'آن لائن ہونے کے لیے لوکیشن کی اجازت ضروری ہے۔',
-    waitingForRides: 'رائیڈ کی درخواست کا انتظار ہے…',
+    ready: '{{name}}، تیار ہیں؟',
+    earnedToday: 'آج کی کمائی',
+    trips_one: '{{count}} سفر',
+    trips_other: '{{count}} سفر',
+    week: '7 دن: {{fare}}',
+    dailyGoal: 'روزانہ ہدف',
+    rating: 'ریٹنگ',
+    onlineHint: 'قریب سے رائیڈ کی درخواستوں کا انتظار',
+    offlineHint: 'رائیڈز لینے کے لیے بٹن دبائیں',
+    newRequest: 'نئی درخواست · {{km}} کلومیٹر دور',
+    riderOffers: 'مسافر کی پیشکش',
+    counterOffer: 'جوابی پیشکش',
+    acceptFor: '{{fare}} میں قبول کریں',
+    pickupPoint: 'پک اپ آپ سے {{km}} کلومیٹر',
+    tripLength: 'سفر {{km}} کلومیٹر · تقریباً {{min}} منٹ',
     vehicle: {
       bike: 'بائیک',
       car: 'کار (اے سی)',
@@ -240,12 +247,8 @@ export const ur: Translation = {
       save: 'محفوظ کریں',
     },
     offer: {
-      newRide: 'نئی رائیڈ · {{seconds}} سیکنڈ',
-      fare: '{{amount}} روپے',
       cash: 'نقد رائیڈ · کرایہ مسافر نے طے کیا',
-      pickupAway: 'پک اپ {{km}} کلومیٹر دور',
       trip: '{{km}} کلومیٹر · تقریباً {{min}} منٹ',
-      accept: 'قبول کریں',
       decline: 'انکار',
     },
     ride: {
@@ -261,7 +264,7 @@ export const ur: Translation = {
       startButton: 'رائیڈ شروع کریں',
       completeButton: 'رائیڈ مکمل کریں · {{fare}} وصول کریں',
       completed: 'رائیڈ مکمل ہو گئی',
-      collect: '{{fare}} نقد وصول کریں',
+      collectCash: 'نقد وصول کریں',
       passengerCancelled: 'مسافر نے رائیڈ منسوخ کر دی',
       done: 'ٹھیک ہے',
       cancel: 'رائیڈ منسوخ کریں',

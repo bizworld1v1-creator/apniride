@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { PressableScale } from '@/components/ui';
 import { errorMessage } from '@/lib/errors';
+import { bodyFont } from '@/lib/fonts';
 import { useMode, useSwitchMode } from '@/lib/mode';
-import { borderWidth, colors, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
+import { borderWidth, colors, fontSize, opacity, radius, space, touch } from '@/lib/theme';
 
 /**
- * "Driver mode" / "Passenger mode" button for the home header (inDrive has it in the side menu; we will move it
- * into the settings menu when that exists). `blocked` greys it out when we already know the server would refuse
- * (driver online or on a ride); the server checks again anyway.
+ * "Driver mode" / "Passenger mode" pill (design: "Rider mode" on the driver home; also in the side menu).
+ * `blocked` greys it out when we already know the server would refuse (driver online or on a ride); the server
+ * checks again anyway. `compact`: no outer margin, for a header row.
  */
-export function ModeSwitch({ blocked = false }: { blocked?: boolean }) {
+export function ModeSwitch({ blocked = false, compact = false }: { blocked?: boolean; compact?: boolean }) {
   const { t } = useTranslation();
   const mode = useMode();
   const switchMode = useSwitchMode();
@@ -17,21 +19,19 @@ export function ModeSwitch({ blocked = false }: { blocked?: boolean }) {
   const disabled = blocked || switchMode.isPending;
 
   return (
-    <View style={styles.wrap}>
-      <Pressable
+    <View style={[styles.wrap, compact && styles.compact]}>
+      <PressableScale
         style={[styles.button, disabled && styles.disabled]}
         onPress={() => switchMode.mutate(to)}
         disabled={disabled}
-        accessibilityRole="button"
         accessibilityState={{ disabled, busy: switchMode.isPending }}
-        hitSlop={touch.hitSlop}
       >
         {switchMode.isPending ? (
           <ActivityIndicator size="small" color={colors.brand} />
         ) : (
           <Text style={styles.text}>{t(to === 'driver' ? 'mode.toDriver' : 'mode.toPassenger')}</Text>
         )}
-      </Pressable>
+      </PressableScale>
       {switchMode.error ? <Text style={styles.error}>{errorMessage(t, switchMode.error)}</Text> : null}
     </View>
   );
@@ -39,16 +39,18 @@ export function ModeSwitch({ blocked = false }: { blocked?: boolean }) {
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'flex-start', marginTop: space[2] },
+  compact: { marginTop: 0, alignItems: 'flex-end' },
   button: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.brand,
+    minHeight: touch.min,
     borderRadius: radius.pill,
-    paddingVertical: space[1],
-    paddingHorizontal: space[3],
-    minWidth: 110,
+    backgroundColor: colors.surface,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.border,
+    paddingHorizontal: space[3.5],
     alignItems: 'center',
+    justifyContent: 'center',
   },
   disabled: { opacity: opacity.faint },
-  text: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.brand },
-  error: { fontSize: fontSize.sm, color: colors.error, marginTop: space[1] },
+  text: { ...bodyFont('semibold'), fontSize: fontSize.sm, color: colors.text },
+  error: { ...bodyFont('medium'), fontSize: fontSize.sm, color: colors.error, marginTop: space[1] },
 });

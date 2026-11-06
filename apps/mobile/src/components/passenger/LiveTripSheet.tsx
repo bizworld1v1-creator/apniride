@@ -2,9 +2,9 @@ import type { Ride } from '@apniride/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Animated, Linking, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, StyleSheet, Text, View } from 'react-native';
 import { TextLink } from '@/components/AuthLayout';
-import { ComingSoonBadge, Icon, IconButton, Initials, PressableScale } from '@/components/ui';
+import { ComingSoonBadge, IconButton, Initials } from '@/components/ui';
 import { api } from '@/lib/api';
 import { type ReceivedPosition, useAgeSeconds } from '@/lib/driver-position';
 import { errorMessage } from '@/lib/errors';
@@ -12,27 +12,10 @@ import { formatRupees } from '@/lib/fare';
 import { bodyFont, displayFont } from '@/lib/fonts';
 import { easing, useEnter, useLoop, useReduceMotion } from '@/lib/motion';
 import { setCurrentRide } from '@/lib/ride';
-import { borderWidth, colors, fontSize, iconSize, letterSpacing, motion, opacity, radius, shadow, size, space, text, touch } from '@/lib/theme';
+import { borderWidth, colors, fontSize, letterSpacing, motion, opacity, radius, shadow, size, space, text, touch } from '@/lib/theme';
 
 /** Progress through the trip: 1 = assigned, 2 = on the way / waiting at pickup, 3 = picked up, 4 = arrived. */
 const STEP: Partial<Record<Ride['status'], number>> = { accepted: 2, arrived: 2, in_progress: 3, completed: 4 };
-
-/** SOS: free and works today: the phone dialer with 15 (police) or 1122 (rescue). Admin alerts come later. */
-export function SosButton() {
-  const { t } = useTranslation();
-  const sos = () =>
-    Alert.alert(t('ride.sosTitle'), t('ride.sosBody'), [
-      { text: t('ride.police'), onPress: () => void Linking.openURL('tel:15') },
-      { text: t('ride.rescue'), onPress: () => void Linking.openURL('tel:1122') },
-      { text: t('common.cancel'), style: 'cancel' },
-    ]);
-  return (
-    <PressableScale style={styles.sos} onPress={sos} accessibilityLabel={`${t('ride.sos')}, ${t('ride.sosTitle')}`}>
-      <Icon name="shield" size={iconSize.sm} color={colors.onColor} />
-      <Text style={styles.sosText}>{t('ride.sos')}</Text>
-    </PressableScale>
-  );
-}
 
 /**
  * Floating sheet during a ride (design: trip.html): ETA + live dot, 4-step progress, the driver, and the parts that
@@ -213,17 +196,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   shareText: { ...bodyFont('bold'), fontSize: fontSize.md, color: colors.text },
-  sos: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space[2],
-    minHeight: size.iconButton,
-    borderRadius: radius.pill,
-    // Darker red than the design's #FF5A5F, so the white "SOS" passes 4.5:1 contrast.
-    backgroundColor: colors.error,
-    paddingHorizontal: space[4.5],
-    ...shadow.card,
-  },
-  sosText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.onColor },
   error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, textAlign: 'center' },
 });

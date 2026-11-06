@@ -1,0 +1,201 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Button, ComingSoonBadge, IconButton, RouteConnector } from '@/components/ui';
+import { api } from '@/lib/api';
+import { patchCurrent, type ReceivedOffer } from '@/lib/driver';
+import { errorMessage } from '@/lib/errors';
+import { formatRupees } from '@/lib/fare';
+import { bodyFont, displayFont } from '@/lib/fonts';
+import { useEnter, useReduceMotion } from '@/lib/motion';
+import { borderWidth, colors, fontSize, letterSpacing, opacity, radius, shadow, size, space, text, touch } from '@/lib/theme';
+
+/** Counter-offer amounts shown in the design (Rs +100 / +200 / +300). They arrive with the full bidding chunk. */
+const COUNTER_STEPS = [100, 200, 300] as const;
+
+/**
+ * Incoming ride request (design: driver.html): springs up with a blue border, a yellow bar that empties over the
+ * offer time, the passenger's price, pickup distance and trip, and Accept. Counter-offers are greyed out ("Coming
+ * soon") until drivers can bid.
+ */
+export function RequestSheet({ offer }: { offer: ReceivedOffer }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const secondsLeft = useSecondsLeft(offer);
+  const enter = useEnter('sheet');
+  const rupees = (n: number) => t('ride.fare', { amount: formatRupees(n) });
+
+  const accept = useMutation({
+    mutationFn: () => api.driver.accept(offer.rideId),
+    onSuccess: (ride) => patchCurrent(queryClient, { offer: null, ride }),
+    onError: () => setTimeout(() => patchCurrent(queryClient, { offer: null }), 2500),
+  });
+  const decline = useMutation({
+    mutationFn: () => api.driver.decline(offer.rideId),
+    onSettled: () => patchCurrent(queryClient, { offer: null }),
+  });
+
+  // Time's up on this phone: hide it (the server moves on to the next driver by itself).
+  useEffect(() => {
+    if (secondsLeft <= 0 && !accept.isPending && !accept.isSuccess) patchCurrent(queryClient, { offer: null });
+  }, [secondsLeft, accept.isPending, accept.isSuccess, queryClient]);
+
+  const busy = accept.isPending || decline.isPending;
+  const fare = rupees(offer.fare);
+
+  return (
+    <Animated.View style={[styles.sheet, shadow.sheet, enter]} accessibilityLiveRegion="polite">
+      <CountdownBar offer={offer} />
+
+      <View style={styles.top}>
+        <View style={styles.flex}>
+          <Text style={styles.badge}>{t('driver.newRequest', { km: offer.pickupDistanceKm })}</Text>
+          {offer.passengerFirstName ? (
+            <Text style={[text.title, styles.name]} numberOfLines={1}>
+              {offer.passengerFirstName}
+            </Text>
+          ) : null}
+          <Text style={text.caption}>{t('driver.offer.cash')}</Text>
+        </View>
+        <View style={styles.price}>
+          <Text style={text.caption}>{t('driver.riderOffers')}</Text>
+          <Text style={styles.fare} adjustsFontSizeToFit numberOfLines={1}>
+            {fare}
+          </Text>
+          <Text style={styles.seconds}>{secondsLeft}s</Text>
+        </View>
+      </View>
+
+      <View style={styles.route}>
+        <RouteConnector />
+        <View style={styles.routeText}>
+          <Text style={styles.routeLine}>{t('driver.pickupPoint', { km: offer.pickupDistanceKm })}</Text>
+          <Text style={styles.routeLine}>{t('driver.tripLength', { km: offer.distanceKm, min: offer.durationMin })}</Text>
+        </View>
+      </View>
+
+      <View
+        style={styles.counterBlock}
+        accessible
+        accessibilityLabel={`${t('driver.counterOffer')}, ${t('common.comingSoon')}`}
+      >
+        <View style={styles.counterHead}>
+          <Text style={text.label}>{t('driver.counterOffer')}</Text>
+          <ComingSoonBadge />
+        </View>
+        <View style={[styles.counters, styles.dim]} importantForAccessibility="no-hide-descendants">
+          {COUNTER_STEPS.map((step) => (
+            <View key={step} style={styles.counter}>
+              <Text style={styles.counterText}>{rupees(offer.fare + step)}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {accept.isError ? <Text style={styles.error}>{errorMessage(t, accept.error)}</Text> : null}
+
+      <View style={styles.actions}>
+        <IconButton
+          icon="x"
+          label={t('driver.offer.decline')}
+          tone="outline"
+          onPress={() => decline.mutate()}
+          disabled={busy}
+          diameter={touch.buttonLarge}
+        />
+        <Button
+          variant="primary"
+          label={t('driver.acceptFor', { fare })}
+          onPress={() => accept.mutate()}
+          loading={accept.isPending}
+          disabled={busy}
+          style={styles.flex}
+        />
+      </View>
+    </Animated.View>
+  );
+}
+
+/** Yellow bar that empties smoothly over the offer time (one native animation, no ticking re-renders). */
+function CountdownBar({ offer }: { offer: ReceivedOffer }) {
+  const reduce = useReduceMotion();
+  const total = offer.expiresInSeconds * 1000;
+  const left = Math.max(0, offer.receivedAt + total - Date.now());
+  const progress = useRef(new Animated.Value(total > 0 ? left / total : 0)).current;
+
+  useEffect(() => {
+    const anim = Animated.timing(progress, { toValue: 0, duration: left, easing: Easing.linear, useNativeDriver: true });
+    if (!reduce) anim.start();
+    return () => anim.stop();
+    // Runs once per offer.
+  }, []);
+
+  return (
+    <View style={styles.track}>
+      {/* Shrinks towards the left edge (transformOrigin), on the native driver. */}
+      <Animated.View style={[styles.bar, { transform: [{ scaleX: progress }] }]} />
+    </View>
+  );
+}
+
+function useSecondsLeft(offer: ReceivedOffer) {
+  const deadline = offer.receivedAt + offer.expiresInSeconds * 1000;
+  const [now, setNow] = useState(() => Date.now());
+  const left = Math.max(0, Math.ceil((deadline - now) / 1000));
+  useEffect(() => {
+    if (left <= 0) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [left]);
+  return left;
+}
+
+const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.stack,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.brand,
+    padding: space[5],
+    gap: space[3],
+  },
+  track: { height: size.progressBar, borderRadius: size.progressBar / 2, backgroundColor: colors.borderLight, overflow: 'hidden' },
+  bar: { height: '100%', width: '100%', backgroundColor: colors.accent, transformOrigin: 'left' },
+  top: { flexDirection: 'row', alignItems: 'flex-start', gap: space[3] },
+  badge: {
+    ...bodyFont('bold'),
+    alignSelf: 'flex-start',
+    fontSize: fontSize.xs,
+    color: colors.brand,
+    backgroundColor: colors.brandSoft,
+    borderRadius: radius.pill,
+    paddingHorizontal: space[2.5],
+    paddingVertical: space[1],
+    overflow: 'hidden',
+  },
+  name: { marginTop: space[2] },
+  price: { alignItems: 'flex-end', maxWidth: '55%' },
+  fare: { ...displayFont('extraBold', letterSpacing.tight), fontSize: fontSize.stat, color: colors.brand },
+  seconds: { ...bodyFont('bold'), fontSize: fontSize.sm, color: colors.textSecondary },
+  route: { flexDirection: 'row', gap: space[3], backgroundColor: colors.background, borderRadius: radius.card - space[1.5], padding: space[3.5] },
+  routeText: { flex: 1, justifyContent: 'space-between', gap: space[3] },
+  routeLine: { ...bodyFont('semibold'), fontSize: fontSize.md, color: colors.text },
+  counterBlock: { gap: space[1.5] },
+  counterHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  counters: { flexDirection: 'row', gap: space[2] },
+  counter: {
+    flex: 1,
+    minHeight: touch.min,
+    borderRadius: radius.pill,
+    borderWidth: borderWidth.thick,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterText: { ...bodyFont('bold'), fontSize: fontSize.md, color: colors.text },
+  dim: { opacity: opacity.faint },
+  error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, textAlign: 'center' },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+});
