@@ -117,7 +117,8 @@ function Cloud({ width, height }: { width: number; height: number }) {
 }
 
 const styles = StyleSheet.create({
-  scene: { height: 340, width: '100%', overflow: 'hidden' },
+  // Left-to-right also in Urdu: the drawing is positioned from the left edge.
+  scene: { height: 340, width: '100%', overflow: 'hidden', direction: 'ltr' },
   sun: { position: 'absolute', top: 30, width: 200, height: 200 },
   sunDisc: { position: 'absolute', top: 40, left: 40, right: 40, bottom: 40, borderRadius: 60, backgroundColor: colors.accent },
   cloudBig: { position: 'absolute', top: 0, opacity: 0.9 },

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { formatRupees } from '@/components/FareSheet';
+import { formatRupees } from '@/lib/fare';
 import { HistoryRow } from '@/components/HistoryRow';
 import { useEarnings, useHistory } from '@/lib/account';
 import { errorMessage } from '@/lib/errors';

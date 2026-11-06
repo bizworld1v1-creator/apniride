@@ -83,7 +83,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
   `npx expo export --platform android` in `apps/mobile` to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, commands.md, theme.md, account.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-07, after new-design group 2: welcome + sign-in)
+## Progress (last updated 2026-11-07, after new-design group 3: passenger home, booking, trip)
 
 ### Done ✅
 | Feature | Where | Notes |
@@ -91,9 +91,9 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
 | SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log, 0006 profile photo + account deletion + saved places + history indexes |
 | Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/welcome, sign-in, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
-| Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
+| Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareScreen`, `lib/fare.ts` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
-| Passenger booking UI | `apps/mobile/src/components/PassengerHome.tsx`, `FareSheet`, `RideStatusSheet` | Live status, cancel, "pay cash" |
+| Passenger booking UI | `apps/mobile/src/components/PassengerHome.tsx`, `components/passenger/*` | Live status, cancel, "pay cash" (new design since group 3) |
 | Driver ride UI | `apps/mobile/src/components/DriverHome.tsx`, `OfferCard`, `ActiveRideCard` | Vibrates on offer, Google Maps navigation link |
 | Run on any device guide | `docs/running-on-devices.md`, `apps/mobile/src/lib/map-provider.ts` | Android/iPhone (Expo Go), emulator, simulator, tunnels, EAS APK. iPhone uses Apple Maps unless a build has an iOS Google key |
 | Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `VehicleMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
@@ -105,6 +105,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Side menu (like inDrive) | `apps/mobile/src/components/SideMenu.tsx`, `app/history/*`, `app/places/*`, `app/profile.tsx`, `app/settings.tsx`, `lib/account.ts`, `lib/language.ts`, `backend/src/users`, `backend/src/rides/history.service.ts` | ☰ on the home card: ride history (20 per page; driver mode adds cash today / 7 days / all time), saved places (Home / Work / up to 20, one-tap destinations when booking), profile (photo, name, delete account), settings (language incl. RTL after restart, help, 15 / 1122), mode switch, sign out (blocked while online / on a ride). No addresses (no geocoding). See docs/account.md |
 | New design, group 1: theme + fonts + components | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/fonts.ts`, `lib/motion.ts`, `components/ui/*`, `app/ui-preview.tsx` | From `ApniRide-design-handoff/` (2026-11-07): royal blue + yellow accent + ink, Bricolage Grotesque + Plus Jakarta Sans (system font in Urdu), pill buttons, round cards, reduce-motion-aware animations. Existing screens got the new colours; their layouts change in groups 2–5. Dev-only "UI preview" in Settings. See docs/theme.md |
 | New design, group 2: welcome + sign-in | `app/welcome.tsx`, `components/welcome/SunScene.tsx`, `app/sign-in.tsx`, `components/auth/*`, `AuthLayout`, `design/splash` (`pnpm render:splash`) | Animated welcome screen ("Let's ride" → passenger, "Become a driver" → driver). Number + 6-digit code on one screen with an on-screen number pad, dev code in the speech bubble. `verify.tsx` removed. New native splash: yellow sun on blue (needs a new build). See docs/auth.md |
+| New design, group 3: passenger home, booking, trip | `components/PassengerHome.tsx`, `components/passenger/*` (`HomeDashboard`, `PlacePickSheet`, `FareScreen`, `SearchingScreen`, `LiveTripSheet`, `TripComplete`, `RideEndedSheet`, `MapPin`, `CornerMask`, `RouteCard`), `lib/fare.ts` | One map stays mounted: rounded card on the dashboard (greeting, search pill, Ride/Moto tiles preselect the vehicle, Rickshaw/Intercity "Coming soon", 1–2 saved places, bottom nav Home/Trips/Wallet (soon)/Profile, avatar opens the side menu), full screen for picking places and the trip. Fare page shows the fixed fare (car/bike switch, Cash; JazzCash soon). Searching page (radar). Live trip: SOS (dials 15 / 1122), ETA + live dot, 4-step progress, driver initials; chat, call, plate, ride PIN, share trip "Coming soon". Trip complete: confetti, cash to pay; rating "Coming soon". No addresses: places show "Your location" / "Pin on the map" / saved-place names |
 
 Tests: 89 shared + 32 backend unit, 35 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
@@ -115,18 +116,19 @@ The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04
 **New design** (`ApniRide-design-handoff/`, owner decisions 2026-11-07): reskin group by group, stop after each for
 the owner to check on the phone. Features the design shows that we don't have (Rickshaw, Intercity, chat, ride PIN,
 JazzCash, notifications, daily goal) appear greyed out with "Coming soon". Keep the 6-digit OTP and Urdu/RTL.
-1. **Owner checks groups 1 + 2** on the phone: Settings → "UI preview (dev only)"; sign out → welcome screen
+1. **Owner checks groups 1–3** on the phone. Group 3: dashboard (map card with nearby cars and the bouncing pin, tiles,
+   saved places, bottom nav, avatar → side menu), booking (search → pin → fare page → book), searching page, live trip
+   (needs a second phone in driver mode: SOS, ETA, steps), trip complete, cancel and "no driver". Check the map card's
+   rounded corners on Android and that short phones fit without scrolling. Groups 1 + 2: Settings → "UI preview (dev only)"; sign out → welcome screen
    (sun, clouds, car, words bouncing in) → "Let's ride" → sign-in (number pad, green tick, code circles, auto check,
    resend, change number, Android back) → name screen for a new number. Also "Become a driver" lands in driver mode.
-2. ~~Group 2~~ done.
-3. Group 3: passenger home (map card, service tiles, saved places, bottom nav), booking, live trip, trip complete.
-4. Group 4: driver mode (earnings card, online card, incoming request sheet).
-5. Group 5: side-menu screens (history, places, profile, settings) + driver onboarding.
-6. Then **switch to inDrive-style fare bidding** (owner decision 2026-11-07): rider names the price ("Name your
+2. Group 4: driver mode (earnings card, online card, incoming request sheet).
+3. Group 5: side-menu screens (history, places, profile, settings) + driver onboarding.
+4. Then **switch to inDrive-style fare bidding** (owner decision 2026-11-07): rider names the price ("Name your
    price" slider), drivers accept or counter-offer, rider picks from the offers deck. Own chunk: backend matching,
    offers, counter-offers, apps, tests, docs/fares.md + docs/rides.md. Until then the design's fare/offers screens
    show our fixed fare and single-driver dispatch.
-7. Still open from before: the owner tests the merged app + side menu on real phones (mode switch, history, places,
+5. Still open from before: the owner tests the merged app + side menu on real phones (mode switch, history, places,
    profile photo, Urdu, account deletion, driver onboarding, vehicle markers glide), and decides what account
    deletion keeps (docs/account.md).
 

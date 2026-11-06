@@ -35,7 +35,7 @@ export function MenuButton({ busy = false }: { busy?: boolean }) {
   );
 }
 
-function SideMenu({ visible, onClose, busy }: { visible: boolean; onClose: () => void; busy: boolean }) {
+export function SideMenu({ visible, onClose, busy }: { visible: boolean; onClose: () => void; busy: boolean }) {
   const { t } = useTranslation();
   const mode = useMode();
   const name = useAuth((s) => s.user?.name);

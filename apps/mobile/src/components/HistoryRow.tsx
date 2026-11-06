@@ -2,7 +2,7 @@ import type { AppMode, RideHistoryItem } from '@apniride/shared';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { formatRupees } from '@/components/FareSheet';
+import { formatRupees } from '@/lib/fare';
 import { borderWidth, colors, fontSize, fontWeight, radius, space } from '@/lib/theme';
 
 const ICONS = { bike: '🏍️', car: '🚗' } as const;

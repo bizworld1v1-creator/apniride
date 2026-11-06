@@ -1,40 +1,59 @@
-import { CITY_CENTERS, type LatLng } from '@apniride/shared';
+import { CITY_CENTERS, type LatLng, type SavedPlace, type VehicleType } from '@apniride/shared';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Location from 'expo-location';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, StyleSheet, View, type ViewStyle } from 'react-native';
 import MapView, { Marker, type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FareSheet } from '@/components/FareSheet';
-import { MenuButton } from '@/components/SideMenu';
-import { RideStatusSheet } from '@/components/RideStatusSheet';
-import { ServerStatus } from '@/components/ServerStatus';
+import { FareScreen } from '@/components/passenger/FareScreen';
+import { HomeDashboard } from '@/components/passenger/HomeDashboard';
+import { LiveTripSheet, SosButton } from '@/components/passenger/LiveTripSheet';
+import { CenterPin } from '@/components/passenger/MapPin';
+import { PlacePickSheet } from '@/components/passenger/PlacePickSheet';
+import { RideEndedSheet } from '@/components/passenger/RideEndedSheet';
+import { SearchingScreen } from '@/components/passenger/SearchingScreen';
+import { TripComplete } from '@/components/passenger/TripComplete';
+import { SideMenu } from '@/components/SideMenu';
+import { IconButton } from '@/components/ui';
 import { VehicleMarker } from '@/components/VehicleMarker';
-import { placeIcon, usePlaces } from '@/lib/account';
-import { useAuth } from '@/lib/auth-store';
+import { usePlaces } from '@/lib/account';
 import { useDriverPosition } from '@/lib/driver-position';
 import { MAP_PROVIDER } from '@/lib/map-provider';
 import { useNearbyDrivers } from '@/lib/nearby-drivers';
-import { useCurrentRide } from '@/lib/ride';
-import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
+import { setCurrentRide, useCurrentRide } from '@/lib/ride';
+import { colors, space } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.03, longitudeDelta: 0.03 };
+/** Room for the floating sheet when framing the driver and pickup on the map. */
+const TRIP_PADDING = { top: 140, right: 60, bottom: 460, left: 60 };
 
 /** home → (pickup, only without GPS) → dropoff → quote */
 type Step = 'home' | 'pickup' | 'dropoff' | 'quote';
+type Frame = { x: number; y: number; width: number; height: number };
 
-/** Passenger mode: book a ride and follow it. */
+/**
+ * Passenger mode: book a ride and follow it (new design, group 3). One map stays mounted the whole time (low-end
+ * phones): it is the rounded card on the dashboard, full screen while picking places and during the trip, and hidden
+ * behind the full-page fare / searching / trip-complete screens.
+ */
 export function PassengerHome() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const mapRef = useRef<MapView>(null);
+  const screenRef = useRef<ComponentRef<typeof View>>(null);
+  const slotRef = useRef<ComponentRef<typeof View>>(null);
   // The map centre lives in a ref: updating it while the user drags must not re-render the screen.
   const centerRef = useRef<LatLng>(CITY_CENTERS.LHE);
+  const [slot, setSlot] = useState<Frame | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [locationGranted, setLocationGranted] = useState(false);
   const [gpsPickup, setGpsPickup] = useState<LatLng | null>(null);
   const [pickup, setPickup] = useState<LatLng | null>(null);
   const [dropoff, setDropoff] = useState<LatLng | null>(null);
+  const [labels, setLabels] = useState({ from: '', to: '' });
+  const [vehicle, setVehicle] = useState<VehicleType>('car');
   const [step, setStep] = useState<Step>('home');
-  const name = useAuth((s) => s.user?.name);
   const { data: ride } = useCurrentRide();
   const rideId = ride?.id;
   const { data: driverPosition } = useDriverPosition(ride);
@@ -42,16 +61,18 @@ export function PassengerHome() {
   // Where to look for nearby drivers: the area the passenger is looking at (updated when a pan ends).
   const [lookingAt, setLookingAt] = useState<LatLng | null>(null);
   const { data: nearby } = useNearbyDrivers(lookingAt ?? gpsPickup, !ride);
+  // Saved places as one-tap destinations (cached, so they show instantly and offline).
+  const { data: places } = usePlaces(!ride);
 
-  // A booked ride takes over the screen; when it's dismissed, start fresh from "Where to?".
+  const onTrip = ride?.status === 'accepted' || ride?.status === 'arrived' || ride?.status === 'in_progress';
+  const dashboard = !ride && step === 'home';
+
+  // A booked ride takes over the screen; when it's dismissed, start fresh from the dashboard.
   useEffect(() => {
     if (!rideId || !ride) return;
     setStep('home');
     setDropoff(null);
-    mapRef.current?.fitToCoordinates([ride.pickup, ride.dropoff], {
-      edgePadding: { top: 160, right: 60, bottom: 340, left: 60 },
-      animated: true,
-    });
+    mapRef.current?.fitToCoordinates([ride.pickup, ride.dropoff], { edgePadding: TRIP_PADDING, animated: true });
     // Only when a different ride appears, not on every status change.
   }, [rideId]);
 
@@ -77,6 +98,18 @@ export function PassengerHome() {
     };
   }, []);
 
+  // Back on the dashboard: the map card shows "you are here" again.
+  useEffect(() => {
+    if (dashboard && gpsPickup) mapRef.current?.animateToRegion({ ...gpsPickup, ...DELTA }, 300);
+  }, [dashboard, gpsPickup]);
+
+  const measureSlot = () => {
+    const node = slotRef.current;
+    const screen = screenRef.current;
+    if (!node || !screen) return;
+    node.measureLayout(screen, (x, y, width, height) => setSlot({ x, y, width, height }));
+  };
+
   const goBack = () => {
     if (step === 'quote') setStep('dropoff');
     else if (step === 'dropoff') setStep(gpsPickup ? 'home' : 'pickup');
@@ -85,7 +118,7 @@ export function PassengerHome() {
 
   // Android back button walks back through the steps instead of leaving the app.
   useEffect(() => {
-    if (step === 'home') return;
+    if (step === 'home' || ride) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       goBack();
       return true;
@@ -93,47 +126,64 @@ export function PassengerHome() {
     return () => sub.remove();
   });
 
-  const startBooking = () => {
+  const pinLabel = t('ride.pinOnMap');
+
+  const goToQuote = (from: LatLng, to: LatLng, fromLabel: string, toLabel: string) => {
+    setPickup(from);
+    setDropoff(to);
+    setLabels({ from: fromLabel, to: toLabel });
+    setStep('quote');
+  };
+
+  /** "Search destination", or a Ride / Moto tile (which preselects the vehicle). */
+  const startBooking = (preferred?: VehicleType) => {
+    if (preferred) setVehicle(preferred);
+    setDropoff(null);
     if (gpsPickup) {
       setPickup(gpsPickup);
+      setLabels({ from: t('ride.yourLocation'), to: '' });
       setStep('dropoff');
     } else {
       setStep('pickup');
     }
   };
 
-  const chooseDropoff = (point: LatLng) => {
-    if (!pickup) return;
-    setDropoff(point);
-    setStep('quote');
-    mapRef.current?.fitToCoordinates([pickup, point], {
-      edgePadding: { top: 120, right: 60, bottom: 380, left: 60 },
-      animated: true,
-    });
+  /** A saved place on the dashboard: straight to the fare (or first the pickup, without GPS). */
+  const bookToPlace = (place: SavedPlace) => {
+    if (gpsPickup) {
+      goToQuote(gpsPickup, place.location, t('ride.yourLocation'), place.label);
+    } else {
+      setDropoff(place.location);
+      setLabels({ from: '', to: place.label });
+      setStep('pickup');
+    }
   };
 
   const confirmPin = () => {
     const point = { ...centerRef.current };
     if (step === 'pickup') {
-      setPickup(point);
-      setStep('dropoff');
-    } else if (step === 'dropoff') {
-      chooseDropoff(point);
+      // A saved place was already chosen as the destination: go straight to the fare.
+      if (dropoff) goToQuote(point, dropoff, pinLabel, labels.to || pinLabel);
+      else {
+        setPickup(point);
+        setLabels({ from: pinLabel, to: '' });
+        setStep('dropoff');
+      }
+    } else if (step === 'dropoff' && pickup) {
+      goToQuote(pickup, point, labels.from || pinLabel, pinLabel);
     }
   };
 
-  // Saved places as one-tap destinations (cached, so they show instantly and offline).
-  const { data: places } = usePlaces(!ride);
+  const choosePlace = (place: SavedPlace) => {
+    if (pickup) goToQuote(pickup, place.location, labels.from || pinLabel, place.label);
+  };
 
   // When the driver first shows up (and again once on board), frame the driver and where they're heading.
   const phase = ride?.status === 'in_progress' ? 'to_dropoff' : 'to_pickup';
   useEffect(() => {
     if (!ride || !driverPosition) return;
     const target = phase === 'to_dropoff' ? ride.dropoff : ride.pickup;
-    mapRef.current?.fitToCoordinates([driverPosition.location, target], {
-      edgePadding: { top: 160, right: 60, bottom: 340, left: 60 },
-      animated: true,
-    });
+    mapRef.current?.fitToCoordinates([driverPosition.location, target], { edgePadding: TRIP_PADDING, animated: true });
     // Not on every position update: the passenger may be panning the map.
   }, [rideId, phase, hasDriverPosition]);
 
@@ -143,156 +193,136 @@ export function PassengerHome() {
     if (!ride) setLookingAt(centerRef.current);
   };
 
-  const choosing = step === 'pickup' || step === 'dropoff';
+  const dismissRide = () => setCurrentRide(queryClient, null);
+  const choosing = !ride && (step === 'pickup' || step === 'dropoff');
+  const fullPage = (!ride && step === 'quote') || ride?.status === 'searching' || ride?.status === 'completed';
+
+  // The one map: a card on the dashboard (once we know where the card is), otherwise the whole screen.
+  const mapFrame: ViewStyle = dashboard
+    ? slot
+      ? { position: 'absolute', left: slot.x, top: slot.y, width: slot.width, height: slot.height }
+      : styles.hidden
+    : StyleSheet.absoluteFill;
 
   return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        style={StyleSheet.absoluteFill}
-        provider={MAP_PROVIDER}
-        initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
-        onRegionChangeComplete={onRegionChangeComplete}
-        showsUserLocation={locationGranted}
-        showsMyLocationButton={locationGranted && step === 'home'}
-        toolbarEnabled={false}
-        showsIndoors={false}
-        showsBuildings={false}
-      >
-        {ride ? (
-          <>
-            <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
-            <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor={colors.dropoffPin} tracksViewChanges={false} />
-            {driverPosition ? (
-              <VehicleMarker
-                location={driverPosition.location}
-                heading={driverPosition.heading}
-                vehicleType={ride.vehicleType}
-                zIndex={10}
-              />
-            ) : null}
-          </>
-        ) : null}
-        {!ride
-          ? nearby?.map((d) => (
+    <View ref={screenRef} style={styles.screen}>
+      <View style={mapFrame} pointerEvents={dashboard ? 'none' : 'auto'}>
+        <MapView
+          ref={mapRef}
+          style={StyleSheet.absoluteFill}
+          provider={MAP_PROVIDER}
+          initialRegion={{ ...CITY_CENTERS.LHE, ...DELTA }}
+          onRegionChangeComplete={onRegionChangeComplete}
+          showsUserLocation={locationGranted && !dashboard}
+          showsMyLocationButton={false}
+          scrollEnabled={!dashboard}
+          zoomEnabled={!dashboard}
+          rotateEnabled={false}
+          pitchEnabled={false}
+          toolbarEnabled={false}
+          showsIndoors={false}
+          showsBuildings={false}
+        >
+          {ride ? (
+            <>
+              <Marker coordinate={ride.pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
+              <Marker coordinate={ride.dropoff} title={t('ride.dropoff')} pinColor={colors.dropoffPin} tracksViewChanges={false} />
+              {driverPosition ? (
+                <VehicleMarker
+                  location={driverPosition.location}
+                  heading={driverPosition.heading}
+                  vehicleType={ride.vehicleType}
+                  zIndex={10}
+                />
+              ) : null}
+            </>
+          ) : (
+            nearby?.map((d) => (
               <VehicleMarker key={d.key} location={d.location} heading={d.heading} vehicleType={d.vehicleType} zIndex={1} />
             ))
-          : null}
-        {!ride && pickup && step !== 'home' && step !== 'pickup' ? (
-          <Marker coordinate={pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
-        ) : null}
-        {dropoff && step === 'quote' ? (
-          <Marker coordinate={dropoff} title={t('ride.dropoff')} pinColor={colors.dropoffPin} tracksViewChanges={false} />
-        ) : null}
-      </MapView>
+          )}
+          {!ride && pickup && step === 'dropoff' ? (
+            <Marker coordinate={pickup} title={t('ride.pickup')} pinColor={colors.pickupPin} tracksViewChanges={false} />
+          ) : null}
+        </MapView>
+      </View>
+
+      {dashboard ? (
+        <HomeDashboard
+          mapSlotRef={slotRef}
+          onMapSlotLayout={measureSlot}
+          places={places}
+          onSearch={startBooking}
+          onPlace={bookToPlace}
+          onOpenMenu={() => setMenuOpen(true)}
+        />
+      ) : null}
 
       {/* Fixed pin in the middle of the map: the passenger moves the map under it. */}
-      {choosing ? (
-        <View style={styles.pinWrap} pointerEvents="none">
-          <Text style={step === 'pickup' ? styles.dot : styles.pin}>{step === 'pickup' ? '🟢' : '📍'}</Text>
+      {choosing ? <CenterPin color={step === 'pickup' ? colors.pickupPin : colors.dropoffPin} /> : null}
+
+      {choosing || onTrip ? (
+        <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
+          {choosing ? <IconButton icon="chevronLeft" label={t('common.back')} onPress={goBack} /> : <View />}
+          {onTrip ? <SosButton /> : null}
+        </SafeAreaView>
+      ) : null}
+
+      {choosing || (ride && !fullPage) ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottom} pointerEvents="box-none">
+          {ride && onTrip ? (
+            <LiveTripSheet ride={ride} driverPosition={driverPosition ?? null} />
+          ) : ride ? (
+            <RideEndedSheet ride={ride} onDone={dismissRide} />
+          ) : (
+            <PlacePickSheet
+              step={step === 'pickup' ? 'pickup' : 'dropoff'}
+              places={places}
+              onPlace={choosePlace}
+              onConfirm={confirmPin}
+            />
+          )}
+        </SafeAreaView>
+      ) : null}
+
+      {fullPage ? (
+        <View style={styles.page}>
+          {ride?.status === 'searching' ? (
+            <SearchingScreen ride={ride} fromLabel={labels.from || t('ride.pickup')} toLabel={labels.to || t('ride.dropoff')} />
+          ) : ride?.status === 'completed' ? (
+            <TripComplete ride={ride} onDone={dismissRide} />
+          ) : pickup && dropoff ? (
+            <FareScreen
+              pickup={pickup}
+              dropoff={dropoff}
+              fromLabel={labels.from || pinLabel}
+              toLabel={labels.to || pinLabel}
+              initialVehicle={vehicle}
+              onBack={goBack}
+            />
+          ) : null}
         </View>
       ) : null}
 
-      <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-        {step === 'home' ? (
-          <View style={styles.card}>
-            <View style={styles.headerRow}>
-              {/* Side menu: history, saved places, profile, settings, driver mode, sign out.
-                  No switching to driver mode while a ride is on (the server refuses too). */}
-              <MenuButton busy={!!ride} />
-              <Text style={styles.brand}>ApniRide</Text>
-            </View>
-            {name ? <Text style={styles.greeting}>{t('auth.greeting', { name })}</Text> : null}
-            <Text style={styles.tagline}>{t('tagline')}</Text>
-            <ServerStatus />
-          </View>
-        ) : (
-          <Pressable style={styles.backButton} onPress={goBack} accessibilityRole="button" hitSlop={touch.hitSlop}>
-            <Text style={styles.backText}>← {t('ride.back')}</Text>
-          </Pressable>
-        )}
-      </SafeAreaView>
-
-      <SafeAreaView edges={['bottom']} style={styles.bottom} pointerEvents="box-none">
-        {ride ? (
-          <RideStatusSheet ride={ride} driverPosition={driverPosition ?? null} />
-        ) : step === 'home' ? (
-          <Pressable style={styles.primary} onPress={startBooking} accessibilityRole="button">
-            <Text style={styles.primaryText}>{t('whereTo')}</Text>
-          </Pressable>
-        ) : choosing ? (
-          <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>{t(step === 'pickup' ? 'ride.setPickup' : 'ride.setDropoff')}</Text>
-            {step === 'dropoff' && places?.length ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                {places.map((place) => (
-                  <Pressable
-                    key={place.id}
-                    style={styles.chip}
-                    onPress={() => chooseDropoff(place.location)}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.chipText} numberOfLines={1}>
-                      {placeIcon(place.kind)} {place.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : null}
-            <Pressable style={styles.primary} onPress={confirmPin} accessibilityRole="button">
-              <Text style={styles.primaryText}>
-                {t(step === 'pickup' ? 'ride.confirmPickup' : 'ride.confirmDropoff')}
-              </Text>
-            </Pressable>
-          </View>
-        ) : pickup && dropoff ? (
-          <FareSheet pickup={pickup} dropoff={dropoff} onChangeDestination={() => setStep('dropoff')} />
-        ) : null}
-      </SafeAreaView>
+      <SideMenu visible={menuOpen} onClose={() => setMenuOpen(false)} busy={!!ride} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: space[3] },
-  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[4] },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3], elevation: elevation.low },
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  brand: { fontSize: fontSize.brand, fontWeight: fontWeight.bold, color: colors.brand },
-  greeting: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text, marginTop: space[1] },
-  tagline: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: space[0.5] },
-  backButton: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    paddingVertical: space[2],
-    paddingHorizontal: space[3.5],
-    elevation: elevation.low,
+  screen: { flex: 1, backgroundColor: colors.background },
+  // Before the dashboard has measured the card: keep the map mounted but out of sight.
+  hidden: { position: 'absolute', left: 0, top: 0, width: 1, height: 1, opacity: 0 },
+  top: {
+    position: 'absolute',
+    top: 0,
+    start: 0,
+    end: 0,
+    paddingHorizontal: space[4],
+    paddingTop: space[2],
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  backText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text },
-  // The emoji's tip sits on the exact map centre.
-  pinWrap: { position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, alignItems: 'center', justifyContent: 'center' },
-  pin: { fontSize: iconSize.xl, marginBottom: iconSize.xl },
-  dot: { fontSize: iconSize.md },
-  sheet: { backgroundColor: colors.surface, borderRadius: radius.xl, padding: space[4], elevation: elevation.medium },
-  chips: { gap: space[2], paddingBottom: space[3] },
-  chip: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingVertical: space[2],
-    paddingHorizontal: space[3.5],
-    maxWidth: 180,
-  },
-  chipText: { fontSize: fontSize.md, color: colors.text },
-  sheetTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text, marginBottom: space[3], textAlign: 'center' },
-  primary: {
-    backgroundColor: colors.brand,
-    borderRadius: radius.lg,
-    paddingVertical: space[4],
-    alignItems: 'center',
-    elevation: elevation.low,
-  },
-  primaryText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
+  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[3] },
+  page: { ...StyleSheet.absoluteFill, backgroundColor: colors.background },
 });

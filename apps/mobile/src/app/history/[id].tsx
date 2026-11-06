@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Platform, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
-import { formatRupees } from '@/components/FareSheet';
+import { formatRupees } from '@/lib/fare';
 import { formatDateTime, historyIcons, otherPerson, statusStyle } from '@/components/HistoryRow';
 import { PageLayout, pageStyles } from '@/components/PageLayout';
 import { findHistoryItem } from '@/lib/account';

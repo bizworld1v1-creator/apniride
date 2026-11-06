@@ -313,6 +313,11 @@ export const size = {
   progressBar: 8,
   /** Blue top area of the sign-in screens. */
   authHeader: 200,
+  /** Service tiles on the passenger home (shorter on small phones). */
+  tile: 96,
+  tileCompact: 80,
+  /** Smallest the home map card may get. */
+  mapCardMin: 140,
   /** OTP digit circles (they shrink to fit 6 on a narrow phone). */
   otpCircle: 64,
 } as const;
@@ -392,8 +397,10 @@ export const opacity = {
   dim: 0.7,
   /** Disabled button. */
   disabled: 0.5,
-  /** Disabled small link. */
+  /** Disabled small link; "Coming soon" items. */
   faint: 0.4,
+  /** Drawn shadows (map pin shadow). */
+  shadow: 0.2,
 } as const;
 
 export function getTheme(app: AppName) {
