@@ -5,7 +5,9 @@ import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 import type { z } from 'zod';
-import { AuthLayout, authStyles, FieldError, PrimaryButton, TextLink } from '@/components/AuthLayout';
+import { PhoneIllustration } from '@/components/auth/PhoneIllustration';
+import { AuthLayout, authStyles, FieldError, TextLink } from '@/components/AuthLayout';
+import { Button } from '@/components/ui';
 import { api, signOut } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { errorMessage } from '@/lib/errors';
@@ -32,7 +34,14 @@ export default function CompleteProfileScreen() {
   const fieldError = formState.errors.name?.message;
 
   return (
-    <AuthLayout title={t('auth.nameTitle')} subtitle={t('auth.nameSubtitle')}>
+    <AuthLayout
+      title={t('auth.nameTitle')}
+      subtitle={t('auth.nameSubtitle')}
+      illustration={<PhoneIllustration bubble="👋" />}
+      footer={
+        <Button variant="ink" label={t('auth.continue')} onPress={() => void onSubmit()} loading={save.isPending} />
+      }
+    >
       <Text style={authStyles.label}>{t('auth.namePlaceholder')}</Text>
       <Controller
         control={control}
@@ -57,8 +66,6 @@ export default function CompleteProfileScreen() {
       />
       <FieldError message={fieldError ? t(`errors.${fieldError}`, { defaultValue: t('errors.generic') }) : null} />
       <FieldError message={save.isError ? errorMessage(t, save.error) : null} />
-      <View style={authStyles.gap} />
-      <PrimaryButton label={t('auth.continue')} onPress={() => void onSubmit()} loading={save.isPending} />
       <View style={authStyles.gap} />
       <TextLink label={t('auth.signOut')} onPress={() => void signOut()} />
     </AuthLayout>

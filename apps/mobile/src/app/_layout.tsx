@@ -60,7 +60,8 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        {/* Light icons on the blue welcome / sign-in screens. */}
+        <StatusBar style={signedIn && hasName ? 'dark' : 'light'} />
         {signedIn ? <RealtimeBridge mode={mode} /> : null}
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={signedIn && hasName}>
@@ -84,8 +85,9 @@ export default function RootLayout() {
             <Stack.Screen name="complete-profile" />
           </Stack.Protected>
           <Stack.Protected guard={!signedIn}>
+            {/* First available screen when signed out: the welcome (splash) screen. */}
+            <Stack.Screen name="welcome" />
             <Stack.Screen name="sign-in" />
-            <Stack.Screen name="verify" />
           </Stack.Protected>
         </Stack>
       </SafeAreaProvider>

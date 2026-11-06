@@ -83,14 +83,14 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
   `npx expo export --platform android` in `apps/mobile` to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, commands.md, theme.md, account.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-07, after new-design group 1: theme, fonts, shared components)
+## Progress (last updated 2026-11-07, after new-design group 2: welcome + sign-in)
 
 ### Done ✅
 | Feature | Where | Notes |
 | --- | --- | --- |
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
 | SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log, 0006 profile photo + account deletion + saved places + history indexes |
-| Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/sign-in, verify, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
+| Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/welcome, sign-in, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
 | Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareSheet` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
 | Passenger booking UI | `apps/mobile/src/components/PassengerHome.tsx`, `FareSheet`, `RideStatusSheet` | Live status, cancel, "pay cash" |
@@ -104,6 +104,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | One app, two modes (like inDrive) | `apps/mobile` (`app/index.tsx`, `lib/mode.ts`, `ModeSwitch`, `RealtimeBridge`), `backend/src/auth` (`switch-role`) | `apps/passenger` + `apps/driver` merged into `apps/mobile` (`pnpm mobile`, package `pk.apniride.app`). "Driver mode" / "Passenger mode" button on the home card swaps the session without a new OTP; refused while online (`go_offline_first`) or with an active ride (`active_ride_exists`). Signs in to the last used mode. Driver texts under `driver.*` in i18n. A full ride test now needs two devices. See docs/auth.md |
 | Side menu (like inDrive) | `apps/mobile/src/components/SideMenu.tsx`, `app/history/*`, `app/places/*`, `app/profile.tsx`, `app/settings.tsx`, `lib/account.ts`, `lib/language.ts`, `backend/src/users`, `backend/src/rides/history.service.ts` | ☰ on the home card: ride history (20 per page; driver mode adds cash today / 7 days / all time), saved places (Home / Work / up to 20, one-tap destinations when booking), profile (photo, name, delete account), settings (language incl. RTL after restart, help, 15 / 1122), mode switch, sign out (blocked while online / on a ride). No addresses (no geocoding). See docs/account.md |
 | New design, group 1: theme + fonts + components | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/fonts.ts`, `lib/motion.ts`, `components/ui/*`, `app/ui-preview.tsx` | From `ApniRide-design-handoff/` (2026-11-07): royal blue + yellow accent + ink, Bricolage Grotesque + Plus Jakarta Sans (system font in Urdu), pill buttons, round cards, reduce-motion-aware animations. Existing screens got the new colours; their layouts change in groups 2–5. Dev-only "UI preview" in Settings. See docs/theme.md |
+| New design, group 2: welcome + sign-in | `app/welcome.tsx`, `components/welcome/SunScene.tsx`, `app/sign-in.tsx`, `components/auth/*`, `AuthLayout`, `design/splash` (`pnpm render:splash`) | Animated welcome screen ("Let's ride" → passenger, "Become a driver" → driver). Number + 6-digit code on one screen with an on-screen number pad, dev code in the speech bubble. `verify.tsx` removed. New native splash: yellow sun on blue (needs a new build). See docs/auth.md |
 
 Tests: 89 shared + 32 backend unit, 35 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
@@ -114,9 +115,10 @@ The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04
 **New design** (`ApniRide-design-handoff/`, owner decisions 2026-11-07): reskin group by group, stop after each for
 the owner to check on the phone. Features the design shows that we don't have (Rickshaw, Intercity, chat, ride PIN,
 JazzCash, notifications, daily goal) appear greyed out with "Coming soon". Keep the 6-digit OTP and Urdu/RTL.
-1. **Owner checks group 1** on the phone: Settings → "UI preview (dev only)" (fonts, buttons, cards, chips, countdown
-   ring, bottom nav), and that the existing screens still work in the new colours.
-2. Group 2: splash ("Let's ride" / "Become a driver") + sign-in (phone + OTP with number pad, one screen).
+1. **Owner checks groups 1 + 2** on the phone: Settings → "UI preview (dev only)"; sign out → welcome screen
+   (sun, clouds, car, words bouncing in) → "Let's ride" → sign-in (number pad, green tick, code circles, auto check,
+   resend, change number, Android back) → name screen for a new number. Also "Become a driver" lands in driver mode.
+2. ~~Group 2~~ done.
 3. Group 3: passenger home (map card, service tiles, saved places, bottom nav), booking, live trip, trip complete.
 4. Group 4: driver mode (earnings card, online card, incoming request sheet).
 5. Group 5: side-menu screens (history, places, profile, settings) + driver onboarding.

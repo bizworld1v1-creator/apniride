@@ -54,6 +54,19 @@ were (`assertRole` → `wrong_app` 403). Switching swaps the phone's session:
 The old access token keeps working until it expires (at most 1 hour), as after a logout.
 The last used mode is kept on the phone (`apniride.mode` in SecureStore) even after signing out.
 
+## Screens (mobile app, new design since 2026-11-07)
+
+1. **Welcome** (`app/welcome.tsx`, design `splash.html`): the first screen when signed out. Animated sun, road and
+   car. **"Let's ride"** sets the mode to passenger, **"Become a driver"** to driver, then opens sign-in. (Before
+   this screen existed, sign-in always used the last used mode; now the button decides.)
+2. **Sign-in** (`app/sign-in.tsx`, design `login.html`): one screen for the number and the code. `+92` is fixed and
+   a leading `0` is ignored; the green tick shows when the number is valid. "Continue" sends the code, then 6 code
+   circles appear (we keep 6 digits; the design shows 4) and the code is checked as soon as the 6th digit is typed.
+   Both are typed on an on-screen number pad (no system keyboard, so no SMS autofill). Tapping the number, "Change
+   number", the back arrow or Android back returns to the number step. Resend after the cooldown.
+   In development the code appears in the yellow speech bubble (`OTP_DEV_ECHO=true`).
+3. **Your name** (`app/complete-profile.tsx`): once, after the first sign-in.
+
 ## Limits (`backend/src/auth/otp.service.ts`)
 
 | Limit | Value | Why |

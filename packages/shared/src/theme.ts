@@ -311,6 +311,10 @@ export const size = {
   pagerDotActive: 24,
   /** Thin progress bars (trip steps, request countdown) and their corner. */
   progressBar: 8,
+  /** Blue top area of the sign-in screens. */
+  authHeader: 200,
+  /** OTP digit circles (they shrink to fit 6 on a narrow phone). */
+  otpCircle: 64,
 } as const;
 
 /**
@@ -357,6 +361,7 @@ export const space = {
   6: step(6),
   6.5: step(6.5),
   7: step(7),
+  8: step(8),
   10: step(10),
   12: step(12),
   20: step(20),

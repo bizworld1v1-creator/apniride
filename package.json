@@ -19,7 +19,8 @@
     "db:migrate": "pnpm --filter @apniride/backend migrate",
     "admins": "pnpm --silent --filter @apniride/backend admins",
     "admin": "pnpm --filter @apniride/admin dev",
-    "render:vehicles": "node design/vehicles/render.mjs"
+    "render:vehicles": "node design/vehicles/render.mjs",
+    "render:splash": "node design/splash/render.mjs"
   },
   "devDependencies": {
     "@resvg/resvg-js": "^2.6.2",

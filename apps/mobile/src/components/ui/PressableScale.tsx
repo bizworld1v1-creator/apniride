@@ -3,7 +3,10 @@ import { Animated, Pressable, type PressableProps, type StyleProp, type ViewStyl
 import { useReduceMotion } from '@/lib/motion';
 import { motion, touch } from '@/lib/theme';
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 interface Props extends Omit<PressableProps, 'style' | 'children'> {
+  /** Applied to the pressable itself, so layout styles (flex, width) work as on a View. */
   style?: StyleProp<ViewStyle>;
   children: ReactNode;
   /** How small it gets while pressed (default 0.94; number-pad keys use 0.9). */
@@ -21,7 +24,7 @@ export function PressableScale({ style, children, pressedScale = motion.pressSca
   };
 
   return (
-    <Pressable
+    <AnimatedPressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled }}
       hitSlop={touch.hitSlop}
@@ -29,8 +32,9 @@ export function PressableScale({ style, children, pressedScale = motion.pressSca
       onPressIn={() => to(pressedScale)}
       onPressOut={() => to(1)}
       {...rest}
+      style={[style, { transform: [{ scale }] }]}
     >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
-    </Pressable>
+      {children}
+    </AnimatedPressable>
   );
 }
