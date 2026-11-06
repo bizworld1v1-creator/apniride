@@ -31,7 +31,7 @@ export const rideSchema = z.object({
   status: rideStatusSchema,
   city: cityCodeSchema,
   vehicleType: vehicleTypeSchema,
-  /** Fixed fare in rupees, from the quote the passenger booked. Paid in cash. */
+  /** Fare in rupees the passenger offered (at least the recommended fare of the quote). Paid in cash. */
   fare: z.number().int(),
   distanceKm: z.number(),
   durationMin: z.number().int(),
@@ -48,6 +48,11 @@ export type Ride = z.infer<typeof rideSchema>;
 export const bookRideBodySchema = z.object({
   quoteId: z.string().uuid(),
   vehicleType: vehicleTypeSchema,
+  /**
+   * The passenger's own price (like inDrive), within `offerRange(recommended fare)`. Leave out to book at the
+   * recommended fare. Out of range → 400 `offer_out_of_range`.
+   */
+  offeredFare: z.number().int().positive().optional(),
 });
 export type BookRideBody = z.infer<typeof bookRideBodySchema>;
 

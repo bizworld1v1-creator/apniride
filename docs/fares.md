@@ -1,7 +1,8 @@
 # Fare estimate
 
-`POST /fares/estimate` (signed in) with `{ pickup, dropoff }` (lat/lng) returns a **fixed** fare for every vehicle
-type. There's no bargaining and no surge yet. The passenger pays exactly what they saw.
+`POST /fares/estimate` (signed in) with `{ pickup, dropoff }` (lat/lng) returns the **fair price** (recommended fare)
+for every vehicle type, from distance and time. Since 2026-11-07 the passenger **names their own price** like inDrive
+(see "Passenger's offer" below); the fair price is the lowest they may offer. No surge yet.
 
 ```json
 { "quoteId": "…", "expiresAt": "…", "city": "LHE", "currency": "PKR", "distanceKm": 11.2,
@@ -32,6 +33,18 @@ Set the real ones before launch:**
 - Every estimate is saved in Redis for **10 minutes** under its `quoteId`, together with the user id.
   Booking will take the `quoteId` and charge that exact fare (`FaresService.getQuote`), so the price can't
   change between seeing it and booking.
+
+## Passenger's offer (like inDrive, owner decision 2026-11-07)
+
+- The "Name your price" screen starts at the fair price. A slider and −Rs 20 / +Rs 20 / +Rs 50 buttons change it.
+- Allowed: **fair price ≤ offer ≤ 2 × fair price** (rounded up to Rs 10), in steps of Rs 10. The rule lives in one
+  place, `offerRange` / `clampOffer` in `packages/shared/src/fares.ts` (unit tests in `fares.test.ts`), used by the
+  app and the server. Change `MAX_OFFER_MULTIPLIER` to allow more or less.
+- `POST /rides` takes an optional `offeredFare`. Out of range → `400 offer_out_of_range`. Left out → the fair price.
+  The ride's `fare` is the offer, so the driver sees and gets that price.
+- A meter under the price lights 2–4 cars: fair price, ≥ +10 % "more drivers will want this ride", ≥ +25 % "drivers
+  will rush to you". It is a hint only.
+- Not yet: drivers counter-offering and the passenger choosing between several offers (the full bidding chunk).
 
 ## Later
 

@@ -1,4 +1,5 @@
 // The design's shared building blocks (ApniRide-design-handoff/design/DESIGN_SPEC.md, section 2).
+export { BackButton } from './BackButton';
 export { BottomNav, type NavItem } from './BottomNav';
 export { Button, type ButtonVariant } from './Button';
 export { Card } from './Card';
@@ -10,3 +11,4 @@ export { IconButton } from './IconButton';
 export { Initials, initialsOf } from './Initials';
 export { PressableScale } from './PressableScale';
 export { RouteConnector } from './RouteConnector';
+export { Slider } from './Slider';

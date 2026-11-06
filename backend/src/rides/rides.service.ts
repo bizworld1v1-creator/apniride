@@ -1,5 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import type { BookRideBody, DriverCurrentResponse, DriverPosition, Ride, RideStatus } from '@apniride/shared';
+import { offerRange } from '@apniride/shared';
 import { AppException } from '../common/app-exception.js';
 import { DriversService } from '../drivers/drivers.service.js';
 import { TrackingService } from '../drivers/tracking.service.js';
@@ -38,6 +39,12 @@ export class RidesService {
     if (!quote) throw quoteExpired();
     const option = quote.options.find((o) => o.vehicleType === body.vehicleType);
     if (!option) throw quoteExpired();
+    // The passenger may raise the price (like inDrive), never below the distance-based fare and at most 2×.
+    const range = offerRange(option.fare);
+    const fare = body.offeredFare ?? option.fare;
+    if (fare < range.min || fare > range.max) {
+      throw new AppException(HttpStatus.BAD_REQUEST, 'offer_out_of_range', `Offer must be between Rs ${range.min} and Rs ${range.max}`);
+    }
 
     let rideId: string;
     try {
@@ -47,7 +54,7 @@ export class RidesService {
         vehicleType: option.vehicleType,
         pickup: quote.pickup,
         dropoff: quote.dropoff,
-        fare: option.fare,
+        fare,
         distanceKm: quote.distanceKm,
         durationMin: option.durationMin,
         quoteId: body.quoteId,

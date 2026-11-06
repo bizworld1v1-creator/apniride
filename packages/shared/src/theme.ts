@@ -318,6 +318,8 @@ export const size = {
   tileCompact: 80,
   /** Smallest the home map card may get. */
   mapCardMin: 140,
+  /** Number-pad keys on the sign-in screen: big enough for thumbs (above the 44 px minimum). */
+  numKey: 58,
   /** OTP digit circles (they shrink to fit 6 on a narrow phone). */
   otpCircle: 64,
 } as const;

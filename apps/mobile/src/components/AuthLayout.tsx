@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Animated, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, IconButton } from '@/components/ui';
+import { BackButton, Button } from '@/components/ui';
 import { bodyFont } from '@/lib/fonts';
 import { useEnter } from '@/lib/motion';
 import { borderWidth, colors, fontSize, radius, size, space, text, touch } from '@/lib/theme';
@@ -19,21 +28,24 @@ interface Props {
   children: ReactNode;
 }
 
+const COMPACT_HEIGHT = 720;
+
 /**
  * Sign-in layout from the design: blue top area with an illustration, white sheet (40 px top corners) that slides up.
  * The sheet scrolls on small phones; the footer button stays at the bottom.
  */
 export function AuthLayout({ title, subtitle, illustration, onBack, footer, children }: Props) {
-  const { t } = useTranslation();
   const sheetIn = useEnter('sheet');
+  // Short phones: a smaller blue header leaves room for the big number pad.
+  const compact = useWindowDimensions().height < COMPACT_HEIGHT;
 
   return (
     <View style={styles.screen}>
-      <SafeAreaView edges={['top']} style={styles.top}>
+      <SafeAreaView edges={['top']} style={[styles.top, compact && styles.topCompact]}>
         {onBack ? (
-          <IconButton icon="chevronLeft" label={t('common.back')} tone="onBrand" onPress={onBack} style={styles.back} />
+          <BackButton onBlue onPress={onBack} style={styles.back} />
         ) : null}
-        <View style={styles.illustration}>{illustration}</View>
+        <View style={[styles.illustration, compact && styles.illustrationCompact]}>{illustration}</View>
       </SafeAreaView>
       <Animated.View style={[styles.sheet, sheetIn]}>
         <SafeAreaView edges={['bottom']} style={styles.flex}>
@@ -111,6 +123,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.brand },
   flex: { flex: 1 },
   top: { minHeight: size.authHeader },
+  topCompact: { minHeight: size.authHeader * 0.7 },
+  illustrationCompact: { transform: [{ scale: 0.75 }], paddingVertical: 0 },
   back: { position: 'absolute', top: space[5], start: space[5], zIndex: 1 },
   illustration: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: space[4] },
   sheet: {

@@ -2,8 +2,8 @@ import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { Icon, PressableScale } from '@/components/ui';
-import { bodyFont } from '@/lib/fonts';
-import { colors, fontSize, iconSize, motion, radius, space, touch } from '@/lib/theme';
+import { displayFont } from '@/lib/fonts';
+import { borderWidth, colors, fontSize, iconSize, motion, radius, size, space } from '@/lib/theme';
 
 const ROWS = [
   ['1', '2', '3'],
@@ -36,14 +36,14 @@ export const NumberPad = memo(function NumberPad({ onDigit, onBackspace, disable
         <View style={styles.spacer} />
         <Key label="0" onPress={() => onDigit('0')} disabled={disabled} />
         <PressableScale
-          style={styles.key}
+          style={[styles.key, styles.backspace]}
           onPress={onBackspace}
           onLongPress={onBackspace}
           disabled={disabled}
           pressedScale={motion.pressScaleSmall}
           accessibilityLabel={t('auth.backspace')}
         >
-          <Icon name="backspace" size={iconSize.md} />
+          <Icon name="backspace" size={iconSize.lg} color={colors.brand} />
         </PressableScale>
       </View>
     </View>
@@ -65,16 +65,19 @@ function Key({ label, onPress, disabled }: { label: string; onPress: () => void;
 }
 
 const styles = StyleSheet.create({
-  pad: { gap: space[2], direction: 'ltr' },
-  row: { flexDirection: 'row', gap: space[2] },
+  pad: { gap: space[2.5], direction: 'ltr' },
+  row: { flexDirection: 'row', gap: space[2.5] },
   key: {
     flex: 1,
-    height: touch.min + space[1],
-    borderRadius: radius.chip,
-    backgroundColor: colors.background,
+    height: size.numKey,
+    borderRadius: radius.xl,
+    backgroundColor: colors.brandSoft,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.brandTint2,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  backspace: { backgroundColor: colors.surface, borderColor: colors.border },
   spacer: { flex: 1 },
-  digit: { ...bodyFont('bold'), fontSize: fontSize.brand, color: colors.text },
+  digit: { ...displayFont('bold'), fontSize: fontSize.code, color: colors.text },
 });

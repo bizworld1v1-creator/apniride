@@ -83,7 +83,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
   `npx expo export --platform android` in `apps/mobile` to confirm it bundles.
 - Design notes live in `docs/` (auth.md, fares.md, rides.md, drivers.md, admin.md, running-on-devices.md, commands.md, theme.md, account.md). Keep them in sync with the code.
 
-## Progress (last updated 2026-11-07, after new-design group 3: passenger home, booking, trip)
+## Progress (last updated 2026-11-07, after the owner's fixes to groups 2–3 + passenger names the price)
 
 ### Done ✅
 | Feature | Where | Notes |
@@ -106,8 +106,9 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | New design, group 1: theme + fonts + components | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/fonts.ts`, `lib/motion.ts`, `components/ui/*`, `app/ui-preview.tsx` | From `ApniRide-design-handoff/` (2026-11-07): royal blue + yellow accent + ink, Bricolage Grotesque + Plus Jakarta Sans (system font in Urdu), pill buttons, round cards, reduce-motion-aware animations. Existing screens got the new colours; their layouts change in groups 2–5. Dev-only "UI preview" in Settings. See docs/theme.md |
 | New design, group 2: welcome + sign-in | `app/welcome.tsx`, `components/welcome/SunScene.tsx`, `app/sign-in.tsx`, `components/auth/*`, `AuthLayout`, `design/splash` (`pnpm render:splash`) | Animated welcome screen ("Let's ride" → passenger, "Become a driver" → driver). Number + 6-digit code on one screen with an on-screen number pad, dev code in the speech bubble. `verify.tsx` removed. New native splash: yellow sun on blue (needs a new build). See docs/auth.md |
 | New design, group 3: passenger home, booking, trip | `components/PassengerHome.tsx`, `components/passenger/*` (`HomeDashboard`, `PlacePickSheet`, `FareScreen`, `SearchingScreen`, `LiveTripSheet`, `TripComplete`, `RideEndedSheet`, `MapPin`, `CornerMask`, `RouteCard`), `lib/fare.ts` | One map stays mounted: rounded card on the dashboard (greeting, search pill, Ride/Moto tiles preselect the vehicle, Rickshaw/Intercity "Coming soon", 1–2 saved places, bottom nav Home/Trips/Wallet (soon)/Profile, avatar opens the side menu), full screen for picking places and the trip. Fare page shows the fixed fare (car/bike switch, Cash; JazzCash soon). Searching page (radar). Live trip: SOS (dials 15 / 1122), ETA + live dot, 4-step progress, driver initials; chat, call, plate, ride PIN, share trip "Coming soon". Trip complete: confetti, cash to pay; rating "Coming soon". No addresses: places show "Your location" / "Pin on the map" / saved-place names |
+| Fixes after the owner's first look + passenger names the price | `packages/shared/src/fares.ts` (`offerRange`, `clampOffer`), `backend/src/rides/rides.service.ts`, `FareScreen`, `ui/Slider`, `ui/BackButton`, `auth/NumberPad`, `HomeDashboard` | Like inDrive: "Name your price" with slider and −20 / +20 / +50; lowest = fair price for the distance, highest = 2×; `offeredFare` on `POST /rides` (`offer_out_of_range`). Bigger number-pad keys (58 px). Service tiles grow with their text. One round back button everywhere (history, places, profile, settings, registration). See docs/fares.md |
 
-Tests: 89 shared + 32 backend unit, 35 backend e2e (all passing at the last commit). The admin panel was clicked
+Tests: 95 shared + 32 backend unit, 36 backend e2e (all passing at the last commit). The admin panel was clicked
 through in Chrome (sign-in, approve, fares save, rides, sign-out) on 2026-11-04.
 The owner tested sign-in, fares, booking and tracking on their phone (2026-11-04): all worked.
 **Driver onboarding is not yet tested on a real phone** (camera, gallery, upload on mobile data).
@@ -124,10 +125,10 @@ JazzCash, notifications, daily goal) appear greyed out with "Coming soon". Keep 
    resend, change number, Android back) → name screen for a new number. Also "Become a driver" lands in driver mode.
 2. Group 4: driver mode (earnings card, online card, incoming request sheet).
 3. Group 5: side-menu screens (history, places, profile, settings) + driver onboarding.
-4. Then **switch to inDrive-style fare bidding** (owner decision 2026-11-07): rider names the price ("Name your
-   price" slider), drivers accept or counter-offer, rider picks from the offers deck. Own chunk: backend matching,
-   offers, counter-offers, apps, tests, docs/fares.md + docs/rides.md. Until then the design's fare/offers screens
-   show our fixed fare and single-driver dispatch.
+4. Then the rest of **inDrive-style bidding** (owner decision 2026-11-07). Done: the passenger names the price
+   (fair price … 2×). Still to do: send the request to several drivers at once, drivers accept or counter-offer
+   (Rs +100 / +200 / +300 pills in the driver design), the passenger picks from the offers deck (design: offers.html).
+   Own chunk: backend matching, offers, apps, tests, docs/fares.md + docs/rides.md.
 5. Still open from before: the owner tests the merged app + side menu on real phones (mode switch, history, places,
    profile photo, Urdu, account deletion, driver onboarding, vehicle markers glide), and decides what account
    deletion keeps (docs/account.md).

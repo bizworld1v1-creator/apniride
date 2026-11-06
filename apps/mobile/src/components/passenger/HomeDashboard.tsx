@@ -195,13 +195,15 @@ function Tile({
     >
       <View style={styles.tileTop}>
         <Animated.View style={{ transform: [{ rotate }] }}>
-          <Icon name={icon} size={iconSize.lg} color={iconColor} />
+          <Icon name={icon} size={compact ? iconSize.md : iconSize.lg} color={iconColor} />
         </Animated.View>
-        {comingSoon ? <ComingSoonBadge /> : null}
+        {comingSoon ? <ComingSoonBadge style={styles.tileBadge} /> : null}
       </View>
-      <View>
-        <Text style={[styles.tileTitle, { color: fg }]}>{title}</Text>
-        <Text style={[styles.tileHint, { color: tone === 'brand' ? colors.onBrandMuted : colors.textSecondary }]} numberOfLines={1}>
+      <View style={styles.tileText}>
+        <Text style={[styles.tileTitle, { color: fg }]} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={[styles.tileHint, { color: tone === 'brand' ? colors.onBrandMuted : colors.textSecondary }]} numberOfLines={2}>
           {hint}
         </Text>
       </View>
@@ -269,22 +271,25 @@ const styles = StyleSheet.create({
   },
   tiles: { gap: space[3] },
   tileRow: { flexDirection: 'row', gap: space[3] },
+  // No fixed height: the tile grows with its text (large system fonts, Urdu), so nothing gets cut off.
   tile: {
     flex: 1,
-    height: size.tile,
+    minHeight: size.tile,
     borderRadius: radius.card,
     paddingHorizontal: space[4],
     paddingVertical: space[3.5],
-    justifyContent: 'space-between',
+    gap: space[2.5],
   },
-  tileCompact: { height: size.tileCompact, paddingVertical: space[2.5] },
+  tileCompact: { minHeight: size.tileCompact, paddingVertical: space[3], gap: space[1.5] },
   brand: { backgroundColor: colors.brand },
   accent: { backgroundColor: colors.accent },
   plain: { backgroundColor: colors.surface },
   tileSoon: { opacity: opacity.dim },
-  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: space[2] },
+  tileBadge: { flexShrink: 1 },
+  tileText: { gap: space[0.5] },
   tileTitle: { ...bodyFont('bold'), fontSize: fontSize.lg },
-  tileHint: { ...bodyFont('medium'), fontSize: fontSize.xs },
+  tileHint: { ...bodyFont('medium'), fontSize: fontSize.xs, lineHeight: fontSize.xs * 1.35 },
   places: { backgroundColor: colors.surface, borderRadius: radius.card, paddingHorizontal: space[4], paddingVertical: space[1] },
   placeRow: { flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: touch.button - space[1] },
   divider: { borderBottomWidth: borderWidth.thin, borderBottomColor: colors.borderLight },

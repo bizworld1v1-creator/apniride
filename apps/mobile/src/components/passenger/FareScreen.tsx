@@ -1,10 +1,10 @@
-import { ApiError, type LatLng, type VehicleType } from '@apniride/shared';
+import { ApiError, clampOffer, type LatLng, offerRange, type VehicleType } from '@apniride/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, ComingSoonBadge, Icon, IconButton, PressableScale } from '@/components/ui';
+import { BackButton, Button, Card, Chip, ComingSoonBadge, Icon, PressableScale, Slider } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { formatRupees, useFareEstimate } from '@/lib/fare';
@@ -14,11 +14,26 @@ import { setCurrentRide } from '@/lib/ride';
 import { colors, fontSize, iconSize, opacity, radius, size, space, text, touch } from '@/lib/theme';
 import { RouteCard } from './RouteCard';
 
-const VEHICLE_ICON = { car: 'car', bike: 'bike' } as const;
+/** Quick buttons under the slider (design: −Rs 20, +Rs 20, +Rs 50). */
+const QUICK = [-20, 20, 50] as const;
+
+/** How keen drivers will be, from the offer compared with the fair price: 2, 3 or 4 cars lit. */
+function meterLevel(offer: number, fair: number): 2 | 3 | 4 {
+  const ratio = offer / fair;
+  if (ratio >= 1.25) return 4;
+  if (ratio >= 1.1) return 3;
+  return 2;
+}
+const METER = {
+  2: ['ride.meterFair', 'ride.meterFairHint'],
+  3: ['ride.meterMore', 'ride.meterMoreHint'],
+  4: ['ride.meterRush', 'ride.meterRushHint'],
+} as const;
 
 /**
- * "Your fare" page (design: fare.html). Until fare bidding is built (owner decision 2026-11-07), the blue card shows
- * our fixed fare instead of a price slider, and the passenger picks car or bike there.
+ * "Name your price" (design: fare.html, like inDrive). The passenger offers their own price: never below the fair
+ * price for the distance (the recommended fare from the server), at most 2× (`offerRange` in packages/shared).
+ * Drivers see the offered price. Counter-offers from drivers come with the full bidding chunk.
  */
 export function FareScreen({
   pickup,
@@ -40,37 +55,54 @@ export function FareScreen({
   const { data, error, isPending, refetch, isRefetching } = useFareEstimate(pickup, dropoff);
   const [vehicle, setVehicle] = useState<VehicleType>(initialVehicle);
   const option = data?.options.find((o) => o.vehicleType === vehicle) ?? data?.options[0];
-  const jelly = useJelly(option?.fare);
+  const fair = option?.fare ?? 0;
+  // The offer belongs to one fair price: a new vehicle or a refreshed quote starts again from the fair price.
+  const [chosen, setChosen] = useState<{ fair: number; offer: number } | null>(null);
+  const offer = chosen && chosen.fair === fair ? chosen.offer : fair;
+  const range = offerRange(fair);
+  const setOffer = (value: number) => setChosen({ fair, offer: clampOffer(fair, value) });
+  const jelly = useJelly(offer);
+  const rupees = (amount: number) => t('ride.fare', { amount: formatRupees(amount) });
 
   const book = useMutation({
-    mutationFn: (vehicleType: VehicleType) => api.rides.book({ quoteId: data!.quoteId, vehicleType }),
+    mutationFn: () => api.rides.book({ quoteId: data!.quoteId, vehicleType: option!.vehicleType, offeredFare: offer }),
     // The home screen switches to "finding your driver" as soon as there's a current ride.
     onSuccess: (ride) => setCurrentRide(queryClient, ride),
     onError: (err) => {
-      // Quote older than 10 minutes: get a fresh fare; the passenger taps Book again.
+      // Quote older than 10 minutes: get a fresh fare; the passenger taps Send again.
       if (err instanceof ApiError && err.code === 'quote_expired') void refetch();
     },
   });
 
-  const fare = option ? t('ride.fare', { amount: formatRupees(option.fare) }) : '';
+  const level = meterLevel(offer, fair || 1);
+  const [meterTitle, meterHint] = METER[level];
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <IconButton icon="chevronLeft" label={t('common.back')} onPress={onBack} />
+        <BackButton onPress={onBack} />
         <Text style={text.h2} accessibilityRole="header">
-          {t('ride.yourFare')}
+          {t('ride.nameYourPrice')}
         </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         <RouteCard from={fromLabel} to={toLabel} km={data?.distanceKm} minutes={option?.durationMin} />
 
-        <Card tone="hero" index={1}>
-          <View style={styles.heroTop}>
-            <Text style={styles.heroLabel}>{t('ride.fixedLabel')}</Text>
-            <Text style={styles.heroLabel}>{t('ride.noBargain')}</Text>
+        {data ? (
+          <View style={styles.vehicles} accessibilityRole="radiogroup">
+            {data.options.map((o) => (
+              <Chip
+                key={o.vehicleType}
+                label={t(`ride.${o.vehicleType}`)}
+                selected={o.vehicleType === option?.vehicleType}
+                onPress={() => setVehicle(o.vehicleType)}
+              />
+            ))}
           </View>
+        ) : null}
+
+        <Card tone="hero" index={1}>
           {isPending ? (
             <ActivityIndicator color={colors.onColor} style={styles.loading} accessibilityLabel={t('ride.calculating')} />
           ) : error ? (
@@ -80,40 +112,68 @@ export function FareScreen({
             </View>
           ) : (
             <>
+              <View style={styles.heroTop}>
+                <Text style={styles.heroLabel}>{t('ride.yourOffer')}</Text>
+                <Text style={styles.heroLabel}>{t('ride.fairPrice', { fare: rupees(fair) })}</Text>
+              </View>
               <Animated.Text
                 style={[text.priceHero, styles.price, { transform: [{ scale: jelly }] }]}
                 adjustsFontSizeToFit
                 numberOfLines={1}
                 accessibilityLiveRegion="polite"
               >
-                {fare}
+                {rupees(offer)}
               </Animated.Text>
-              <View style={styles.vehicles} accessibilityRole="radiogroup">
-                {data.options.map((o) => {
-                  const on = o.vehicleType === vehicle;
+              <Slider
+                min={range.min}
+                max={range.max}
+                value={offer}
+                step={range.step}
+                snap={(raw) => clampOffer(fair, raw)}
+                onChange={setOffer}
+                accessibilityLabel={t('ride.priceSlider')}
+                valueText={rupees(offer)}
+              />
+              <View style={styles.rangeLabels}>
+                <Text style={styles.heroLabel}>{rupees(range.min)}</Text>
+                <Text style={styles.heroLabel}>{rupees(range.max)}</Text>
+              </View>
+              <View style={styles.quick}>
+                {QUICK.map((delta) => {
+                  const next = clampOffer(fair, offer + delta);
+                  const label = `${delta < 0 ? '−' : '+'}${rupees(Math.abs(delta))}`;
                   return (
                     <PressableScale
-                      key={o.vehicleType}
-                      style={[styles.vehicle, on && styles.vehicleOn]}
-                      onPress={() => setVehicle(o.vehicleType)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: on }}
-                      accessibilityLabel={`${t(`ride.${o.vehicleType}`)}, ${t('ride.fare', { amount: formatRupees(o.fare) })}`}
+                      key={delta}
+                      style={[styles.quickButton, next === offer && styles.quickOff]}
+                      onPress={() => setOffer(offer + delta)}
+                      disabled={next === offer}
+                      accessibilityLabel={t(delta < 0 ? 'ride.lower' : 'ride.raise', { fare: rupees(Math.abs(delta)) })}
                     >
-                      <Icon name={VEHICLE_ICON[o.vehicleType]} size={iconSize.sm} color={on ? colors.text : colors.onColor} />
-                      <Text style={[styles.vehicleText, on && styles.vehicleTextOn]}>{t(`ride.${o.vehicleType}`)}</Text>
+                      <Text style={styles.quickText}>{label}</Text>
                     </PressableScale>
                   );
                 })}
               </View>
-              <Text style={styles.hint}>{t(`ride.${vehicle}Hint`)}</Text>
             </>
           )}
         </Card>
 
-        <Card index={2}>
-          <Text style={text.body}>{t('ride.fixedFare')}</Text>
-        </Card>
+        {option ? (
+          <Card index={2}>
+            <View style={styles.meter} accessible accessibilityLabel={`${t(meterTitle)}. ${t(meterHint)}`}>
+              <View style={styles.cars}>
+                {[1, 2, 3, 4].map((n) => (
+                  <Icon key={n} name="car" size={iconSize.md} color={n <= level ? colors.brand : colors.disabled} />
+                ))}
+              </View>
+              <View style={styles.flex}>
+                <Text style={text.title}>{t(meterTitle)}</Text>
+                <Text style={text.caption}>{t(meterHint)}</Text>
+              </View>
+            </View>
+          </Card>
+        ) : null}
 
         <View style={styles.payRow}>
           <View style={styles.pay} accessible accessibilityLabel={`${t('ride.payWith')}: ${t('ride.cash')}`}>
@@ -136,8 +196,8 @@ export function FareScreen({
       <View style={styles.footer}>
         <Button
           variant="ink"
-          label={option ? t('ride.book', { vehicle: t(`ride.${vehicle}`), fare }) : t('ride.calculating')}
-          onPress={() => book.mutate(vehicle)}
+          label={option ? t('ride.sendOffer', { fare: rupees(offer) }) : t('ride.calculating')}
+          onPress={() => book.mutate()}
           loading={book.isPending}
           disabled={!option || isRefetching}
         />
@@ -148,29 +208,30 @@ export function FareScreen({
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', gap: space[3], paddingHorizontal: space[5], paddingVertical: space[2] },
   content: { paddingHorizontal: space[5], paddingBottom: space[4], gap: space[3.5] },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between' },
+  vehicles: { flexDirection: 'row', gap: space[2] },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', gap: space[2] },
   heroLabel: { ...bodyFont('semibold'), fontSize: fontSize.sm, color: colors.onBrandMuted },
   loading: { marginVertical: space[10] },
-  price: { color: colors.onColor, marginVertical: space[2] },
-  vehicles: { flexDirection: 'row', gap: space[2] },
-  vehicle: {
+  price: { color: colors.onColor, marginVertical: space[1] },
+  rangeLabels: { flexDirection: 'row', justifyContent: 'space-between', direction: 'ltr' },
+  quick: { flexDirection: 'row', gap: space[2], marginTop: space[4] },
+  quickButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: space[2],
-    minHeight: touch.min,
+    minHeight: touch.min + space[1],
     borderRadius: radius.pill,
     backgroundColor: colors.onBrandSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  vehicleOn: { backgroundColor: colors.surface },
-  vehicleText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.onColor },
-  vehicleTextOn: { color: colors.text },
-  hint: { ...bodyFont('medium'), fontSize: fontSize.sm, color: colors.onBrandMuted, marginTop: space[3] },
+  quickOff: { opacity: opacity.faint },
+  quickText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.onColor },
   errorBox: { gap: space[3], marginTop: space[3] },
   errorOnBlue: { ...bodyFont('semibold'), fontSize: fontSize.base, color: colors.onColor },
+  meter: { flexDirection: 'row', alignItems: 'center', gap: space[3.5] },
+  cars: { flexDirection: 'row', gap: space[1] },
   payRow: { flexDirection: 'row', gap: space[3] },
   pay: {
     flex: 1,
@@ -185,6 +246,6 @@ const styles = StyleSheet.create({
   paySoon: { opacity: opacity.dim, justifyContent: 'space-between' },
   cashDot: { width: size.pagerDot + space[0.5], height: size.pagerDot + space[0.5], borderRadius: radius.pill, backgroundColor: colors.online },
   payText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.text },
-  error: { ...bodyFont('medium'), fontSize: fontSize.base, color: colors.error, textAlign: 'center' },
+  error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, textAlign: 'center' },
   footer: { paddingHorizontal: space[5], paddingBottom: space[2], paddingTop: space[2] },
 });

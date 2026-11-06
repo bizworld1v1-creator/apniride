@@ -8,7 +8,8 @@ import { HistoryRow } from '@/components/HistoryRow';
 import { useEarnings, useHistory } from '@/lib/account';
 import { errorMessage } from '@/lib/errors';
 import { useMode } from '@/lib/mode';
-import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
+import { borderWidth, colors, fontSize, fontWeight, radius, space } from '@/lib/theme';
+import { BackButton } from '@/components/ui';
 
 /** Finished rides of the current mode (20 at a time); in driver mode with the cash collected on top. */
 export default function HistoryScreen() {
@@ -41,9 +42,9 @@ export default function HistoryScreen() {
         }
         ListHeaderComponent={
           <View>
-            <Pressable onPress={() => router.back()} accessibilityRole="button" hitSlop={touch.hitSlop} style={styles.back}>
-              <Text style={styles.backText}>‹ {t('common.back')}</Text>
-            </Pressable>
+            <View style={styles.header}>
+              <BackButton />
+            </View>
             <Text style={styles.title}>{t(mode === 'driver' ? 'history.titleDriver' : 'history.title')}</Text>
             {mode === 'driver' ? <EarningsCard /> : null}
           </View>
@@ -102,8 +103,7 @@ function EarningsCard() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   content: { padding: space[5], paddingBottom: space[10] },
-  back: { alignSelf: 'flex-start', marginBottom: space[3] },
-  backText: { fontSize: fontSize.lg, color: colors.brand, fontWeight: fontWeight.semibold },
+  header: { flexDirection: 'row', marginBottom: space[3] },
   title: { fontSize: fontSize.heading, fontWeight: fontWeight.bold, color: colors.text, marginBottom: space[4] },
   spinner: { marginTop: space[6] },
   center: { alignItems: 'center', marginTop: space[6], gap: space[3] },

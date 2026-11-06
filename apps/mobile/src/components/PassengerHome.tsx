@@ -15,7 +15,7 @@ import { RideEndedSheet } from '@/components/passenger/RideEndedSheet';
 import { SearchingScreen } from '@/components/passenger/SearchingScreen';
 import { TripComplete } from '@/components/passenger/TripComplete';
 import { SideMenu } from '@/components/SideMenu';
-import { IconButton } from '@/components/ui';
+import { BackButton } from '@/components/ui';
 import { VehicleMarker } from '@/components/VehicleMarker';
 import { usePlaces } from '@/lib/account';
 import { useDriverPosition } from '@/lib/driver-position';
@@ -263,7 +263,7 @@ export function PassengerHome() {
 
       {choosing || onTrip ? (
         <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-          {choosing ? <IconButton icon="chevronLeft" label={t('common.back')} onPress={goBack} /> : <View />}
+          {choosing ? <BackButton onPress={goBack} overMap /> : <View />}
           {onTrip ? <SosButton /> : null}
         </SafeAreaView>
       ) : null}

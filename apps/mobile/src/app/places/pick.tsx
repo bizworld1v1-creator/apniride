@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { MAP_PROVIDER } from '@/lib/map-provider';
 import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
+import { BackButton } from '@/components/ui';
 
 const DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
@@ -82,9 +83,7 @@ export default function PickPlaceScreen() {
       </View>
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
-        <Pressable style={styles.back} onPress={() => router.back()} accessibilityRole="button" hitSlop={touch.hitSlop}>
-          <Text style={styles.backText}>‹ {t('common.back')}</Text>
-        </Pressable>
+        <BackButton overMap />
       </SafeAreaView>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.bottom}>

@@ -6,6 +6,7 @@ import {
   authSessionSchema,
   type DriverPosition,
   fareEstimateResponseSchema,
+  offerRange,
   type LatLng,
   requestOtpResponseSchema,
   type Ride,
@@ -269,6 +270,26 @@ describe('Booking and dispatch (e2e)', () => {
     expect(karachi.body).toEqual({ drivers: [] });
     await http().get('/drivers/nearby').query(here).set(bike.auth).expect(403);
     await http().get('/drivers/nearby').query({ latitude: 'x', longitude: 1 }).set(passenger.auth).expect(400);
+  });
+
+  it("books at the passenger's own offer, within the allowed range (like inDrive)", async () => {
+    const passenger = await signIn('passenger', 'Sana');
+    const pickup = spot(0.09, 0.09);
+    const quote = fareEstimateResponseSchema.parse(
+      (await http().post('/fares/estimate').set(passenger.auth).send({ pickup, dropoff: DROPOFF }).expect(200)).body,
+    );
+    const recommended = quote.options.find((o) => o.vehicleType === 'car')!.fare;
+    const { max } = offerRange(recommended);
+    const send = (offeredFare: number) =>
+      http().post('/rides').set(passenger.auth).send({ quoteId: quote.quoteId, vehicleType: 'car', offeredFare });
+
+    // Below the distance-based fare, or above 2×: refused.
+    expect((await send(recommended - 10).expect(400)).body.code).toBe('offer_out_of_range');
+    expect((await send(max + 10).expect(400)).body.code).toBe('offer_out_of_range');
+
+    const ride = rideSchema.parse((await send(recommended + 50).expect(201)).body);
+    expect(ride.fare).toBe(recommended + 50);
+    await http().post(`/rides/${ride.id}/cancel`).set(passenger.auth).expect(200);
   });
 
   it('tells the passenger "no driver" when the only driver declines', async () => {
