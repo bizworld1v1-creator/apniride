@@ -2,15 +2,17 @@ import { DRIVER_DOCUMENT_TYPES, formatCnic, REQUIRED_DRIVER_DOCUMENTS } from '@a
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { authStyles, FieldError } from '@/components/AuthLayout';
 import { DocumentRow } from '@/components/DocumentRow';
 import { PageLayout, pageStyles } from '@/components/PageLayout';
+import { Button, Icon, PressableScale } from '@/components/ui';
 import { api } from '@/lib/api';
 import { PROFILE_KEY } from '@/lib/driver';
 import { errorMessage } from '@/lib/errors';
 import { ONBOARDING_KEY, useOnboarding } from '@/lib/onboarding';
-import { colors, fontSize, fontWeight, space } from '@/lib/theme';
+import { bodyFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, size, space } from '@/lib/theme';
 
 /** Registration overview: details, document photos, send for review. */
 export default function OnboardingScreen() {
@@ -34,7 +36,7 @@ export default function OnboardingScreen() {
         ) : (
           <>
             <FieldError message={errorMessage(t, error)} />
-            <PrimaryButton label={t('driver.onboarding.retry')} onPress={() => void refetch()} />
+            <Button variant="outline" label={t('driver.onboarding.retry')} onPress={() => void refetch()} />
           </>
         )}
       </PageLayout>
@@ -60,11 +62,10 @@ export default function OnboardingScreen() {
       ) : null}
 
       <Text style={pageStyles.section}>{t('driver.onboarding.stepDetails')}</Text>
-      <Pressable
-        style={[pageStyles.card, styles.detailsRow]}
-        onPress={() => router.push('/onboarding-details')}
-        accessibilityRole="button"
-      >
+      <PressableScale style={[pageStyles.card, styles.detailsRow]} onPress={() => router.push('/onboarding-details')}>
+        <View style={[styles.iconBox, details && styles.iconDone]}>
+          <Icon name={details ? 'check' : 'user'} size={iconSize.sm} color={details ? colors.onColor : colors.brand} />
+        </View>
         <View style={styles.flex}>
           {details ? (
             <>
@@ -78,8 +79,11 @@ export default function OnboardingScreen() {
             <Text style={[pageStyles.muted, styles.todo]}>{t('driver.onboarding.detailsMissing')}</Text>
           )}
         </View>
-        <Text style={styles.link}>{!canEdit ? '›' : details ? t('driver.onboarding.edit') : t('driver.onboarding.add')}</Text>
-      </Pressable>
+        {canEdit ? (
+          <Text style={styles.link}>{details ? t('driver.onboarding.edit') : t('driver.onboarding.add')}</Text>
+        ) : null}
+        <Icon name="chevronRight" size={iconSize.sm} color={colors.textSecondary} />
+      </PressableScale>
 
       <View style={authStyles.gap} />
       <Text style={pageStyles.section}>{t('driver.onboarding.stepDocuments')}</Text>
@@ -103,7 +107,8 @@ export default function OnboardingScreen() {
           {!data.readyToSubmit ? <Text style={[pageStyles.muted, styles.center]}>{t('driver.onboarding.submitHint')}</Text> : null}
           <FieldError message={submit.isError ? errorMessage(t, submit.error) : null} />
           <View style={authStyles.gap} />
-          <PrimaryButton
+          <Button
+            variant="ink"
             label={t('driver.onboarding.submit')}
             onPress={() => submit.mutate()}
             loading={submit.isPending}
@@ -118,11 +123,20 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   detailsRow: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
-  strong: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
-  link: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.brand },
-  todo: { color: colors.brand, fontWeight: fontWeight.semibold },
+  iconBox: {
+    width: size.iconButton - space[2],
+    height: size.iconButton - space[2],
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconDone: { backgroundColor: colors.success },
+  strong: { ...bodyFont('bold'), fontSize: fontSize.lg, color: colors.text },
+  link: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.brand },
+  todo: { ...bodyFont('bold'), color: colors.brand },
   center: { textAlign: 'center' },
-  bold: { fontWeight: fontWeight.bold, marginBottom: space[1] },
+  bold: { ...bodyFont('bold'), marginBottom: space[1] },
   rejected: { backgroundColor: colors.errorSoft },
   info: { backgroundColor: colors.infoSoft },
 });

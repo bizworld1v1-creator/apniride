@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Choice, PageLayout, pageStyles } from '@/components/PageLayout';
 import { type LanguageChoice, setLanguage, useLanguage } from '@/lib/language';
-import { colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
+import { Icon, PressableScale } from '@/components/ui';
+import { bodyFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, space, text, touch } from '@/lib/theme';
 
 /** Language, short help, emergency numbers and the app version. */
 export default function SettingsScreen() {
@@ -54,31 +56,29 @@ export default function SettingsScreen() {
 
 function CallButton({ label, number }: { label: string; number: string }) {
   return (
-    <Pressable
-      style={styles.call}
-      onPress={() => void Linking.openURL(`tel:${number}`)}
-      accessibilityRole="button"
-      hitSlop={touch.hitSlop}
-    >
-      <Text style={styles.callText}>📞 {label}</Text>
-    </Pressable>
+    <PressableScale style={styles.call} onPress={() => void Linking.openURL(`tel:${number}`)}>
+      <Icon name="phone" size={iconSize.sm} color={colors.onColor} />
+      <Text style={styles.callText}>{label}</Text>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   gap: { marginTop: space[6] },
-  note: { fontSize: fontSize.md, color: colors.warningStrong, marginTop: space[2] },
+  note: { ...bodyFont('semibold'), fontSize: fontSize.md, color: colors.warningStrong, marginTop: space[2] },
   helpCard: { gap: space[3] },
-  body: { fontSize: fontSize.base, color: colors.text, marginBottom: space[1] },
+  body: { ...text.body, marginBottom: space[1] },
   callRow: { flexDirection: 'row', gap: space[3] },
+  // Emergency calls: solid red pills (white text on the darker red passes 4.5:1).
   call: {
     flex: 1,
-    backgroundColor: colors.errorSoft,
-    borderRadius: radius.lg,
-    paddingVertical: space[3],
+    flexDirection: 'row',
+    gap: space[2],
+    backgroundColor: colors.error,
+    borderRadius: radius.pill,
     alignItems: 'center',
     minHeight: touch.button,
     justifyContent: 'center',
   },
-  callText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.errorText },
+  callText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.onColor },
 });

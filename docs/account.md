@@ -1,7 +1,6 @@
 # Side menu: ride history, profile, settings, saved places
 
-The side menu (like inDrive's) opens from the ☰ button in driver mode and from your avatar (top left) on the passenger
-home. The passenger home's bottom nav also links Trips (history) and Profile. Both modes:
+The side menu (like inDrive's) opens from your avatar (top left) on the home screen, in both modes. The passenger home's bottom nav also links Trips (history) and Profile. Both modes:
 
 | Item | Passenger mode | Driver mode |
 | --- | --- | --- |

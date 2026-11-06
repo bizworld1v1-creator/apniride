@@ -4,15 +4,18 @@ import * as Location from 'expo-location';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import MapView, { type Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PLACES_KEY } from '@/lib/account';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { MAP_PROVIDER } from '@/lib/map-provider';
-import { borderWidth, colors, elevation, fontSize, fontWeight, iconSize, radius, space, touch } from '@/lib/theme';
-import { BackButton } from '@/components/ui';
+import { authStyles } from '@/components/AuthLayout';
+import { CenterPin } from '@/components/passenger/MapPin';
+import { BackButton, Button } from '@/components/ui';
+import { bodyFont } from '@/lib/fonts';
+import { colors, fontSize, radius, shadow, space, text } from '@/lib/theme';
 
 const DELTA = { latitudeDelta: 0.01, longitudeDelta: 0.01 };
 
@@ -77,10 +80,8 @@ export default function PickPlaceScreen() {
         showsIndoors={false}
         showsBuildings={false}
       />
-      {/* The emoji's tip sits on the exact map centre. */}
-      <View style={styles.pinWrap} pointerEvents="none">
-        <Text style={styles.pin}>📍</Text>
-      </View>
+      {/* Fixed pin: its tip sits on the exact map centre. */}
+      <CenterPin color={colors.dropoffPin} />
 
       <SafeAreaView edges={['top']} style={styles.top} pointerEvents="box-none">
         <BackButton overMap />
@@ -88,7 +89,7 @@ export default function PickPlaceScreen() {
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.bottom}>
         <SafeAreaView edges={['bottom']} style={styles.sheet}>
-          <Text style={styles.title}>{t(`places.pickTitle.${kind}`)}</Text>
+          <Text style={text.h2}>{t(`places.pickTitle.${kind}`)}</Text>
           <Text style={styles.hint}>{t('places.pickHint')}</Text>
           <Text style={styles.label}>{t('places.label')}</Text>
           <TextInput
@@ -97,19 +98,11 @@ export default function PickPlaceScreen() {
             placeholder={t('places.labelPlaceholder')}
             placeholderTextColor={colors.muted}
             maxLength={40}
-            style={styles.input}
+            style={authStyles.input}
             returnKeyType="done"
           />
           {save.error ? <Text style={styles.error}>{errorMessage(t, save.error)}</Text> : null}
-          <Pressable
-            style={styles.primary}
-            onPress={() => save.mutate()}
-            disabled={save.isPending}
-            accessibilityRole="button"
-            accessibilityState={{ busy: save.isPending }}
-          >
-            {save.isPending ? <ActivityIndicator color={colors.onColor} /> : <Text style={styles.primaryText}>{t('places.save')}</Text>}
-          </Pressable>
+          <Button variant="ink" label={t('places.save')} onPress={() => save.mutate()} loading={save.isPending} style={styles.save} />
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>
@@ -118,47 +111,11 @@ export default function PickPlaceScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  pinWrap: { position: 'absolute', top: 0, bottom: 0, start: 0, end: 0, alignItems: 'center', justifyContent: 'center' },
-  pin: { fontSize: iconSize.xl, marginBottom: iconSize.xl },
-  top: { position: 'absolute', top: 0, start: 0, end: 0, padding: space[3] },
-  back: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: radius.pill,
-    paddingVertical: space[2],
-    paddingHorizontal: space[3.5],
-    elevation: elevation.low,
-  },
-  backText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text },
-  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0 },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: space[4],
-    elevation: elevation.medium,
-  },
-  title: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.text },
-  hint: { fontSize: fontSize.md, color: colors.muted, marginTop: space[1], marginBottom: space[3] },
-  label: { fontSize: fontSize.md, color: colors.muted, marginBottom: space[1] },
-  input: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingHorizontal: space[3],
-    paddingVertical: space[2.5],
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-  error: { fontSize: fontSize.md, color: colors.error, marginTop: space[2] },
-  primary: {
-    backgroundColor: colors.brand,
-    borderRadius: radius.lg,
-    paddingVertical: space[4],
-    alignItems: 'center',
-    marginTop: space[3],
-    minHeight: touch.button,
-    justifyContent: 'center',
-  },
-  primaryText: { color: colors.brandText, fontSize: fontSize.xl, fontWeight: fontWeight.semibold },
+  top: { position: 'absolute', top: 0, start: 0, end: 0, paddingHorizontal: space[4], paddingTop: space[2] },
+  bottom: { position: 'absolute', bottom: 0, start: 0, end: 0, padding: space[3] },
+  sheet: { ...shadow.sheet, backgroundColor: colors.surface, borderRadius: radius.sheet, padding: space[5] },
+  hint: { ...text.body, color: colors.textSecondary, marginTop: space[1], marginBottom: space[4] },
+  label: { ...text.label, marginBottom: space[1.5] },
+  error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, marginTop: space[2] },
+  save: { marginTop: space[4] },
 });

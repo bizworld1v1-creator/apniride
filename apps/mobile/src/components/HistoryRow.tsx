@@ -1,11 +1,13 @@
 import type { AppMode, RideHistoryItem } from '@apniride/shared';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Icon, PressableScale } from '@/components/ui';
 import { formatRupees } from '@/lib/fare';
-import { borderWidth, colors, fontSize, fontWeight, radius, space } from '@/lib/theme';
+import { bodyFont, displayFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, size, space } from '@/lib/theme';
 
-const ICONS = { bike: '🏍️', car: '🚗' } as const;
+const ICONS = { bike: 'bike', car: 'car' } as const;
 
 /** "6 Nov 2026, 9:41 pm" in the app's language, always in Pakistan time. */
 export function formatDateTime(iso: string, language: string): string {
@@ -39,8 +41,10 @@ export function HistoryRow({ ride, mode, onPress }: { ride: RideHistoryItem; mod
   const { t, i18n } = useTranslation();
   const who = otherPerson(t, mode, ride);
   return (
-    <Pressable style={styles.row} onPress={onPress} accessibilityRole="button">
-      <Text style={styles.icon}>{ICONS[ride.vehicleType]}</Text>
+    <PressableScale style={styles.row} onPress={onPress}>
+      <View style={styles.iconBox}>
+        <Icon name={ICONS[ride.vehicleType]} size={iconSize.md} color={colors.brand} />
+      </View>
       <View style={styles.flex}>
         <Text style={styles.date}>{formatDateTime(ride.createdAt, i18n.language)}</Text>
         <Text style={styles.muted}>
@@ -52,7 +56,7 @@ export function HistoryRow({ ride, mode, onPress }: { ride: RideHistoryItem; mod
       <Text style={[styles.fare, ride.status !== 'completed' && styles.fareStruck]}>
         {t('ride.fare', { amount: formatRupees(ride.fare) })}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -65,19 +69,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space[3],
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.borderLight,
-    padding: space[3],
-    marginBottom: space[2],
+    borderRadius: radius.card - space[2],
+    padding: space[3.5],
+    marginBottom: space[2.5],
   },
-  icon: { fontSize: fontSize.heading },
-  date: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text },
-  muted: { fontSize: fontSize.sm, color: colors.muted, marginTop: space[0.5] },
-  status: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, marginTop: space[0.5] },
+  iconBox: {
+    width: size.iconButton,
+    height: size.iconButton,
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  date: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.text },
+  muted: { ...bodyFont('medium'), fontSize: fontSize.sm, color: colors.textSecondary, marginTop: space[0.5] },
+  status: { ...bodyFont('bold'), fontSize: fontSize.sm, marginTop: space[0.5] },
   completed: { color: colors.success },
-  notCompleted: { color: colors.muted },
-  fare: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text },
+  notCompleted: { color: colors.textSecondary },
+  fare: { ...displayFont('extraBold'), fontSize: fontSize.xxl, color: colors.text },
   // Nobody paid for a cancelled ride.
   fareStruck: { color: colors.muted, textDecorationLine: 'line-through' },
 });

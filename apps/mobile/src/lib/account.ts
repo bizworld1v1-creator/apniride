@@ -1,4 +1,4 @@
-import type { AppMode, RideHistoryItem, RideHistoryPage, SavedPlace, User } from '@apniride/shared';
+import type { AppMode, RideHistoryItem, RideHistoryPage, User } from '@apniride/shared';
 import { type InfiniteData, type QueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ImageSourcePropType } from 'react-native';
 import { api, API_URL } from './api';
@@ -19,8 +19,6 @@ export function usePlaces(enabled = true) {
   });
 }
 
-const ICONS: Record<SavedPlace['kind'], string> = { home: '🏠', work: '💼', other: '⭐' };
-export const placeIcon = (kind: SavedPlace['kind']) => ICONS[kind];
 
 // Ride history -------------------------------------------------------------
 

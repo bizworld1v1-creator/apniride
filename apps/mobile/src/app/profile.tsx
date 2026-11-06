@@ -3,15 +3,18 @@ import { useMutation } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, View } from 'react-native';
+import { authStyles, TextLink } from '@/components/AuthLayout';
 import { Avatar } from '@/components/Avatar';
 import { PageLayout, pageStyles } from '@/components/PageLayout';
+import { Button, Icon, PressableScale } from '@/components/ui';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
 import { errorMessage } from '@/lib/errors';
 import { useMode } from '@/lib/mode';
 import { CameraDeniedError, pickPhoto } from '@/lib/onboarding';
-import { borderWidth, colors, fontSize, fontWeight, opacity, radius, space, touch } from '@/lib/theme';
+import { bodyFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, size, space, text } from '@/lib/theme';
 
 /** Small enough for weak internet (~50–100 KB), big enough for the profile picture. */
 const PHOTO_WIDTH = 512;
@@ -65,26 +68,28 @@ export default function ProfileScreen() {
 
   return (
     <PageLayout title={t('profile.title')}>
-      <View style={styles.photoRow}>
-        <Avatar size={88} />
-        <View style={styles.photoButtons}>
-          {busyPhoto ? (
-            <ActivityIndicator color={colors.brand} />
-          ) : (
-            <>
-              <SmallButton label={t('common.camera')} onPress={() => photo.mutate('camera')} />
-              <SmallButton label={t('common.gallery')} onPress={() => photo.mutate('gallery')} />
-              {user?.photoUpdatedAt ? (
-                <Pressable onPress={() => removePhoto.mutate()} accessibilityRole="button" hitSlop={touch.hitSlop}>
-                  <Text style={styles.removeText}>{t('profile.removePhoto')}</Text>
-                </Pressable>
-              ) : null}
-            </>
-          )}
+      {/* Photo card: big avatar, camera / gallery, remove. */}
+      <View style={[pageStyles.card, styles.photoCard]}>
+        <View style={styles.avatarRing}>
+          <Avatar size={size.avatarLarge + space[5]} />
         </View>
+        <Text style={text.h2} numberOfLines={1}>
+          {user?.name}
+        </Text>
+        <Text style={pageStyles.muted}>{t('profile.photoNote')}</Text>
+        {busyPhoto ? (
+          <ActivityIndicator color={colors.brand} style={styles.photoBusy} />
+        ) : (
+          <View style={styles.photoButtons}>
+            <Button variant="primary" compact label={t('common.camera')} onPress={() => photo.mutate('camera')} style={styles.flex} />
+            <Button variant="outline" compact label={t('common.gallery')} onPress={() => photo.mutate('gallery')} style={styles.flex} />
+          </View>
+        )}
+        {user?.photoUpdatedAt && !busyPhoto ? (
+          <TextLink label={t('profile.removePhoto')} onPress={() => removePhoto.mutate()} />
+        ) : null}
+        {photoError ? <Text style={styles.error}>{photoError}</Text> : null}
       </View>
-      <Text style={pageStyles.muted}>{t('profile.photoNote')}</Text>
-      {photoError ? <Text style={styles.error}>{photoError}</Text> : null}
 
       <Text style={[pageStyles.section, styles.gap]}>{t('profile.name')}</Text>
       <TextInput
@@ -95,121 +100,88 @@ export default function ProfileScreen() {
         }}
         maxLength={60}
         autoComplete="name"
-        style={styles.input}
+        style={[authStyles.input, styles.inputOnBg]}
         placeholderTextColor={colors.muted}
         placeholder={t('auth.namePlaceholder')}
       />
       {nameError ? <Text style={styles.error}>{t(`errors.${nameError}`)}</Text> : null}
       {saveName.error ? <Text style={styles.error}>{errorMessage(t, saveName.error)}</Text> : null}
       <View style={styles.saveRow}>
-        <SmallButton
+        <Button
+          variant="ink"
+          compact
           label={t('profile.saveName')}
           onPress={() => saveName.mutate()}
-          disabled={!parsed.success || name.trim() === user?.name || saveName.isPending}
-          primary
+          loading={saveName.isPending}
+          disabled={!parsed.success || name.trim() === user?.name}
         />
         {saveName.isSuccess ? <Text style={styles.saved}>{t('profile.saved')}</Text> : null}
       </View>
 
       <Text style={[pageStyles.section, styles.gap]}>{t('profile.phone')}</Text>
-      <Text style={styles.value}>{user?.phoneMasked}</Text>
-      <Text style={pageStyles.muted}>{t('profile.phoneNote')}</Text>
+      <View style={[pageStyles.card, styles.phoneCard]}>
+        <View style={styles.iconBox}>
+          <Icon name="phone" size={iconSize.sm} color={colors.brand} />
+        </View>
+        <View style={styles.flex}>
+          <Text style={styles.value}>{user?.phoneMasked}</Text>
+          <Text style={pageStyles.muted}>{t('profile.phoneNote')}</Text>
+        </View>
+      </View>
 
       {mode === 'driver' ? (
         <>
           <Text style={[pageStyles.section, styles.gap]}>{t('profile.driverSection')}</Text>
-          <Pressable style={pageStyles.card} onPress={() => router.push('/onboarding')} accessibilityRole="button">
-            <Text style={styles.value}>{t('profile.driverOpen')} ›</Text>
-          </Pressable>
+          <PressableScale style={[pageStyles.card, styles.linkCard]} onPress={() => router.push('/onboarding')} accessibilityRole="link">
+            <View style={styles.iconBox}>
+              <Icon name="car" size={iconSize.sm} color={colors.brand} />
+            </View>
+            <Text style={[styles.value, styles.flex]}>{t('profile.driverOpen')}</Text>
+            <Icon name="chevronRight" size={iconSize.sm} color={colors.textSecondary} />
+          </PressableScale>
         </>
       ) : null}
 
-      <Text style={[pageStyles.section, styles.dangerGap]}>{t('profile.deleteTitle')}</Text>
-      <Text style={pageStyles.muted}>{t('profile.deleteBody')}</Text>
-      {deleteAccount.error ? <Text style={styles.error}>{errorMessage(t, deleteAccount.error)}</Text> : null}
-      <Pressable
-        style={styles.delete}
-        onPress={confirmDelete}
-        disabled={deleteAccount.isPending}
-        accessibilityRole="button"
-        accessibilityState={{ busy: deleteAccount.isPending }}
-      >
-        {deleteAccount.isPending ? (
-          <ActivityIndicator color={colors.error} />
-        ) : (
-          <Text style={styles.deleteText}>{t('profile.deleteButton')}</Text>
-        )}
-      </Pressable>
+      <View style={[styles.danger, styles.dangerGap]}>
+        <Text style={[text.title, styles.dangerTitle]}>{t('profile.deleteTitle')}</Text>
+        <Text style={pageStyles.muted}>{t('profile.deleteBody')}</Text>
+        {deleteAccount.error ? <Text style={styles.error}>{errorMessage(t, deleteAccount.error)}</Text> : null}
+        <Button
+          variant="danger"
+          label={t('profile.deleteButton')}
+          onPress={confirmDelete}
+          loading={deleteAccount.isPending}
+          style={styles.deleteButton}
+        />
+      </View>
     </PageLayout>
   );
 }
 
-function SmallButton({
-  label,
-  onPress,
-  disabled,
-  primary,
-}: {
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  primary?: boolean;
-}) {
-  return (
-    <Pressable
-      style={[styles.small, primary && styles.smallPrimary, disabled && styles.smallDisabled]}
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityState={{ disabled }}
-    >
-      <Text style={[styles.smallText, primary && styles.smallPrimaryText]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  photoRow: { flexDirection: 'row', alignItems: 'center', gap: space[4], marginBottom: space[2] },
-  photoButtons: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space[2] },
-  removeText: { fontSize: fontSize.md, color: colors.error },
-  error: { fontSize: fontSize.md, color: colors.error, marginTop: space[1.5] },
+  flex: { flex: 1 },
+  photoCard: { alignItems: 'center', gap: space[2] },
+  avatarRing: { padding: space[1], borderRadius: radius.pill, backgroundColor: colors.accent, marginBottom: space[1] },
+  photoButtons: { flexDirection: 'row', gap: space[2], alignSelf: 'stretch', marginTop: space[2] },
+  photoBusy: { marginVertical: space[3] },
+  error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, marginTop: space[1.5] },
   gap: { marginTop: space[6] },
   dangerGap: { marginTop: space[10] },
-  input: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    paddingHorizontal: space[3],
-    paddingVertical: space[2.5],
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-  saveRow: { flexDirection: 'row', alignItems: 'center', gap: space[3], marginTop: space[2.5] },
-  saved: { fontSize: fontSize.md, color: colors.success, fontWeight: fontWeight.semibold },
-  value: { fontSize: fontSize.lg, color: colors.text, marginBottom: space[1] },
-  small: {
-    borderWidth: borderWidth.thin,
-    borderColor: colors.brand,
-    borderRadius: radius.md,
-    paddingVertical: space[2],
-    paddingHorizontal: space[3.5],
-    minHeight: touch.min,
-    justifyContent: 'center',
-  },
-  smallPrimary: { backgroundColor: colors.brand },
-  smallDisabled: { opacity: opacity.faint },
-  smallText: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.brand },
-  smallPrimaryText: { color: colors.brandText },
-  delete: {
-    marginTop: space[3],
-    borderWidth: borderWidth.thin,
-    borderColor: colors.error,
-    borderRadius: radius.lg,
-    paddingVertical: space[3],
+  inputOnBg: { backgroundColor: colors.surface },
+  saveRow: { flexDirection: 'row', alignItems: 'center', gap: space[3], marginTop: space[3] },
+  saved: { ...bodyFont('bold'), fontSize: fontSize.md, color: colors.success },
+  phoneCard: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  linkCard: { flexDirection: 'row', alignItems: 'center', gap: space[3] },
+  iconBox: {
+    width: size.iconButton - space[2],
+    height: size.iconButton - space[2],
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
     alignItems: 'center',
-    minHeight: touch.button,
     justifyContent: 'center',
   },
-  deleteText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.error },
+  value: { ...bodyFont('bold'), fontSize: fontSize.lg, color: colors.text },
+  danger: { backgroundColor: colors.errorSoft, borderRadius: radius.card, padding: space[5], gap: space[2] },
+  dangerTitle: { color: colors.errorText },
+  deleteButton: { marginTop: space[2] },
 });

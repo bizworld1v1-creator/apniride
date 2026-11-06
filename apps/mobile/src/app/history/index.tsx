@@ -1,15 +1,16 @@
 import type { RideHistoryItem } from '@apniride/shared';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatRupees } from '@/lib/fare';
 import { HistoryRow } from '@/components/HistoryRow';
 import { useEarnings, useHistory } from '@/lib/account';
 import { errorMessage } from '@/lib/errors';
 import { useMode } from '@/lib/mode';
-import { borderWidth, colors, fontSize, fontWeight, radius, space } from '@/lib/theme';
-import { BackButton } from '@/components/ui';
+import { BackButton, Button, Icon } from '@/components/ui';
+import { bodyFont, displayFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, size, space, text } from '@/lib/theme';
 
 /** Finished rides of the current mode (20 at a time); in driver mode with the cash collected on top. */
 export default function HistoryScreen() {
@@ -44,8 +45,10 @@ export default function HistoryScreen() {
           <View>
             <View style={styles.header}>
               <BackButton />
+              <Text style={[text.h2, styles.flex]} accessibilityRole="header">
+                {t(mode === 'driver' ? 'history.titleDriver' : 'history.title')}
+              </Text>
             </View>
-            <Text style={styles.title}>{t(mode === 'driver' ? 'history.titleDriver' : 'history.title')}</Text>
             {mode === 'driver' ? <EarningsCard /> : null}
           </View>
         }
@@ -55,12 +58,15 @@ export default function HistoryScreen() {
           ) : history.isError ? (
             <View style={styles.center}>
               <Text style={styles.error}>{errorMessage(t, history.error)}</Text>
-              <Pressable onPress={refresh} accessibilityRole="button" style={styles.retry}>
-                <Text style={styles.retryText}>{t('common.retry')}</Text>
-              </Pressable>
+              <Button variant="outline" compact label={t('common.retry')} onPress={refresh} />
             </View>
           ) : (
-            <Text style={styles.empty}>{t(mode === 'driver' ? 'history.emptyDriver' : 'history.empty')}</Text>
+            <View style={styles.emptyBox}>
+              <View style={styles.emptyIcon}>
+                <Icon name="clock" size={iconSize.xl} color={colors.brand} />
+              </View>
+              <Text style={styles.empty}>{t(mode === 'driver' ? 'history.emptyDriver' : 'history.empty')}</Text>
+            </View>
           )
         }
         ListFooterComponent={history.isFetchingNextPage ? <ActivityIndicator color={colors.brand} /> : undefined}
@@ -81,19 +87,19 @@ function EarningsCard() {
     : [];
   return (
     <View style={styles.earnings}>
-      <Text style={styles.earningsTitle}>{t('history.earnings.title')}</Text>
+      <Text style={[text.label, styles.earningsTitle]}>{t('history.earnings.title')}</Text>
       {data ? (
         <View style={styles.periods}>
           {periods.map((p) => (
             <View key={p.label} style={styles.period}>
               <Text style={styles.muted}>{p.label}</Text>
-              <Text style={styles.cash}>{t('ride.fare', { amount: formatRupees(p.cash) })}</Text>
+              <Text style={styles.cash} adjustsFontSizeToFit numberOfLines={1}>{t('ride.fare', { amount: formatRupees(p.cash) })}</Text>
               <Text style={styles.muted}>{t('history.earnings.rides', { count: p.rides })}</Text>
             </View>
           ))}
         </View>
       ) : (
-        <ActivityIndicator color={colors.brand} />
+        <ActivityIndicator color={colors.onColor} />
       )}
       <Text style={styles.note}>{t('history.earnings.note')}</Text>
     </View>
@@ -102,27 +108,28 @@ function EarningsCard() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
   content: { padding: space[5], paddingBottom: space[10] },
-  header: { flexDirection: 'row', marginBottom: space[3] },
-  title: { fontSize: fontSize.heading, fontWeight: fontWeight.bold, color: colors.text, marginBottom: space[4] },
+  header: { flexDirection: 'row', alignItems: 'center', gap: space[3], marginBottom: space[5] },
   spinner: { marginTop: space[6] },
   center: { alignItems: 'center', marginTop: space[6], gap: space[3] },
-  error: { fontSize: fontSize.base, color: colors.error, textAlign: 'center' },
-  retry: { borderWidth: borderWidth.thin, borderColor: colors.brand, borderRadius: radius.md, paddingVertical: space[2], paddingHorizontal: space[5] },
-  retryText: { fontSize: fontSize.base, color: colors.brand, fontWeight: fontWeight.semibold },
-  empty: { fontSize: fontSize.base, color: colors.muted, textAlign: 'center', marginTop: space[6] },
-  earnings: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.borderLight,
-    padding: space[4],
-    marginBottom: space[4],
+  error: { ...bodyFont('medium'), fontSize: fontSize.base, color: colors.error, textAlign: 'center' },
+  emptyBox: { alignItems: 'center', marginTop: space[10], gap: space[4] },
+  emptyIcon: {
+    width: size.avatarLarge + space[4],
+    height: size.avatarLarge + space[4],
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  earningsTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.text, marginBottom: space[3] },
+  empty: { ...bodyFont('medium'), fontSize: fontSize.base, color: colors.textSecondary, textAlign: 'center' },
+  // Blue hero card (design: earnings card).
+  earnings: { backgroundColor: colors.brand, borderRadius: radius.hero, padding: space[5], marginBottom: space[5] },
+  earningsTitle: { color: colors.onBrandMuted, marginBottom: space[3] },
   periods: { flexDirection: 'row', gap: space[2] },
   period: { flex: 1 },
-  cash: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.success, marginVertical: space[0.5] },
-  muted: { fontSize: fontSize.sm, color: colors.muted },
-  note: { fontSize: fontSize.xs, color: colors.muted, marginTop: space[3] },
+  cash: { ...displayFont('extraBold'), fontSize: fontSize.xxl, color: colors.onColor, marginVertical: space[0.5] },
+  muted: { ...bodyFont('medium'), fontSize: fontSize.sm, color: colors.onBrandMuted },
+  note: { ...bodyFont('medium'), fontSize: fontSize.xs, color: colors.onBrandMuted, marginTop: space[3] },
 });

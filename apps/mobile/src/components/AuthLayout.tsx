@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton, Button } from '@/components/ui';
+import { BackButton } from '@/components/ui';
 import { bodyFont } from '@/lib/fonts';
 import { useEnter } from '@/lib/motion';
 import { borderWidth, colors, fontSize, radius, size, space, text, touch } from '@/lib/theme';
@@ -63,21 +63,6 @@ export function AuthLayout({ title, subtitle, illustration, onBack, footer, chil
       </Animated.View>
     </View>
   );
-}
-
-/** The main blue button (kept for the driver registration screens, which get their new layout in group 5). */
-export function PrimaryButton({
-  label,
-  onPress,
-  loading,
-  disabled,
-}: {
-  label: string;
-  onPress: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-}) {
-  return <Button variant="primary" label={label} onPress={onPress} loading={loading} disabled={disabled} />;
 }
 
 export function TextLink({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {

@@ -12,9 +12,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { type Control, Controller, type FieldPath, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Text, TextInput, type TextInputProps, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, type TextInputProps, View } from 'react-native';
 import type { z } from 'zod';
-import { authStyles, FieldError, PrimaryButton } from '@/components/AuthLayout';
+import { authStyles, FieldError } from '@/components/AuthLayout';
+import { Button } from '@/components/ui';
 import { Choice, PageLayout, pageStyles } from '@/components/PageLayout';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
@@ -135,7 +136,7 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
         editable={editable}
       />
 
-      <Text style={pageStyles.section}>{t('driver.details.vehicleSection')}</Text>
+      <Text style={[pageStyles.section, styles.sectionGap]}>{t('driver.details.vehicleSection')}</Text>
       <Text style={authStyles.label}>{t('driver.details.vehicleType')}</Text>
       <Controller
         control={control}
@@ -144,8 +145,8 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
           <>
             <Choice<VehicleType>
               options={[
-                { value: 'bike', label: `🏍️ ${t('driver.vehicle.bike')}` },
-                { value: 'car', label: `🚗 ${t('driver.vehicle.car')}` },
+                { value: 'bike', label: t('driver.vehicle.bike') },
+                { value: 'car', label: t('driver.vehicle.car') },
               ]}
               value={field.value}
               onChange={field.onChange}
@@ -179,7 +180,7 @@ function DetailsForm({ initial }: { initial: DriverOnboarding | undefined }) {
 
       <FieldError message={save.isError ? errorMessage(t, save.error) : null} />
       <View style={authStyles.gap} />
-      {editable ? <PrimaryButton label={t('driver.details.save')} onPress={() => void onSubmit()} loading={save.isPending} /> : null}
+      {editable ? <Button variant="ink" label={t('driver.details.save')} onPress={() => void onSubmit()} loading={save.isPending} /> : null}
     </PageLayout>
   );
 }
@@ -203,10 +204,10 @@ function Field({
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <View style={{ marginBottom: space[3.5] }}>
+        <View style={styles.field}>
           <Text style={authStyles.label}>{label}</Text>
           <TextInput
-            style={[authStyles.input, fieldState.error && authStyles.inputError]}
+            style={[authStyles.input, pageStyles.input, fieldState.error && authStyles.inputError]}
             value={field.value == null ? '' : String(field.value)}
             onChangeText={(text) => field.onChange(format ? format(text) : text)}
             onBlur={field.onBlur}
@@ -226,3 +227,8 @@ function Field({
     />
   );
 }
+
+const styles = StyleSheet.create({
+  field: { marginBottom: space[3.5] },
+  sectionGap: { marginTop: space[4] },
+});

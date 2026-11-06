@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BackButton } from '@/components/ui';
-import { borderWidth, colors, fontSize, fontWeight, radius, space, text } from '@/lib/theme';
+import { BackButton, PressableScale } from '@/components/ui';
+import { bodyFont } from '@/lib/fonts';
+import { borderWidth, colors, fontSize, opacity, radius, space, text, touch } from '@/lib/theme';
 
-/** Plain scrolling page with a back link (registration, profile, settings, saved places). */
+/** Plain scrolling page with the round back button and a title (registration, profile, settings, saved places). */
 export function PageLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
     <SafeAreaView style={styles.safe}>
@@ -24,7 +25,7 @@ export function PageLayout({ title, subtitle, children }: { title: string; subti
   );
 }
 
-/** A row of choices (gender, vehicle type). */
+/** A row of choices (gender, vehicle type, language): pills, the chosen one filled blue. */
 export function Choice<T extends string>({
   options,
   value,
@@ -37,29 +38,34 @@ export function Choice<T extends string>({
   disabled?: boolean;
 }) {
   return (
-    <View style={styles.choices}>
-      {options.map((o) => (
-        <Pressable
-          key={o.value}
-          style={[styles.choice, value === o.value && styles.choiceSelected]}
-          onPress={() => onChange(o.value)}
-          disabled={disabled}
-          accessibilityRole="radio"
-          accessibilityState={{ selected: value === o.value, disabled }}
-        >
-          <Text style={[styles.choiceText, value === o.value && styles.choiceTextSelected]}>{o.label}</Text>
-        </Pressable>
-      ))}
+    <View style={styles.choices} accessibilityRole="radiogroup">
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <PressableScale
+            key={o.value}
+            style={[styles.choice, on && styles.choiceSelected, disabled && styles.disabled]}
+            onPress={() => onChange(o.value)}
+            disabled={disabled}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: on, disabled }}
+          >
+            <Text style={[styles.choiceText, on && styles.choiceTextSelected]}>{o.label}</Text>
+          </PressableScale>
+        );
+      })}
     </View>
   );
 }
 
 export const pageStyles = StyleSheet.create({
-  section: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.text, marginTop: space[2], marginBottom: space[2.5] },
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3.5], borderWidth: borderWidth.thin, borderColor: colors.border },
-  muted: { fontSize: fontSize.md, color: colors.muted },
-  banner: { borderRadius: radius.lg, padding: space[3], marginBottom: space[4] },
-  bannerText: { fontSize: fontSize.md, color: colors.text },
+  section: { ...bodyFont('bold'), fontSize: fontSize.xl, color: colors.text, marginTop: space[2], marginBottom: space[2.5] },
+  card: { backgroundColor: colors.surface, borderRadius: radius.card, padding: space[5] },
+  muted: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.textSecondary },
+  banner: { borderRadius: radius.card - space[2], padding: space[4], marginBottom: space[4] },
+  bannerText: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.text },
+  /** Add to `authStyles.input` on a page: white field on the light background. */
+  input: { backgroundColor: colors.surface, borderWidth: borderWidth.thin, borderColor: colors.border },
 });
 
 const styles = StyleSheet.create({
@@ -72,15 +78,17 @@ const styles = StyleSheet.create({
   choices: { flexDirection: 'row', gap: space[2], flexWrap: 'wrap' },
   choice: {
     flexGrow: 1,
-    paddingVertical: space[3],
-    paddingHorizontal: space[3],
-    borderRadius: radius.md,
+    minHeight: touch.min,
+    paddingHorizontal: space[4],
+    borderRadius: radius.pill,
     borderWidth: borderWidth.thick,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  choiceSelected: { borderColor: colors.brand, backgroundColor: colors.brandSoft },
-  choiceText: { fontSize: fontSize.base, color: colors.text },
-  choiceTextSelected: { fontWeight: fontWeight.bold, color: colors.brand },
+  choiceSelected: { borderColor: colors.brand, backgroundColor: colors.brand },
+  disabled: { opacity: opacity.disabled },
+  choiceText: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.text },
+  choiceTextSelected: { color: colors.onColor },
 });

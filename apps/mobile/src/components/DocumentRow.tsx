@@ -1,11 +1,13 @@
 import type { DriverDocument, DriverDocumentType } from '@apniride/shared';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, View } from 'react-native';
+import { Button, Icon } from '@/components/ui';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
 import { CameraDeniedError, ONBOARDING_KEY, pickDocumentPhoto } from '@/lib/onboarding';
-import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
+import { bodyFont } from '@/lib/fonts';
+import { colors, fontSize, iconSize, radius, size, space, touch } from '@/lib/theme';
 
 /** One document: what to photograph, whether it's done, and camera / gallery buttons. */
 export function DocumentRow({
@@ -44,7 +46,13 @@ export function DocumentRow({
   return (
     <View style={styles.row}>
       <View style={styles.top}>
-        {preview ? <Image source={{ uri: preview }} style={styles.thumb} /> : null}
+        {preview ? (
+          <Image source={{ uri: preview }} style={styles.thumb} />
+        ) : (
+          <View style={[styles.thumb, styles.thumbEmpty, uploaded && styles.thumbDone]}>
+            <Icon name={uploaded ? 'check' : 'plus'} size={iconSize.md} color={uploaded ? colors.onColor : colors.brand} />
+          </View>
+        )}
         <View style={styles.flex}>
           <Text style={styles.name}>{t(`driver.onboarding.docs.${type}`)}</Text>
           <Text style={styles.hint}>{t(`driver.onboarding.hints.${type}`)}</Text>
@@ -66,8 +74,14 @@ export function DocumentRow({
             <ActivityIndicator color={colors.brand} />
           ) : (
             <>
-              <Button label={t('driver.onboarding.camera')} onPress={() => upload.mutate('camera')} primary={!uploaded} />
-              <Button label={t('driver.onboarding.gallery')} onPress={() => upload.mutate('gallery')} />
+              <Button
+                variant={uploaded ? 'outline' : 'primary'}
+                compact
+                label={t('driver.onboarding.camera')}
+                onPress={() => upload.mutate('camera')}
+                style={styles.flex}
+              />
+              <Button variant="outline" compact label={t('driver.onboarding.gallery')} onPress={() => upload.mutate('gallery')} style={styles.flex} />
             </>
           )}
         </View>
@@ -76,35 +90,18 @@ export function DocumentRow({
   );
 }
 
-function Button({ label, onPress, primary }: { label: string; onPress: () => void; primary?: boolean }) {
-  return (
-    <Pressable style={[styles.button, primary && styles.buttonPrimary]} onPress={onPress} accessibilityRole="button">
-      <Text style={[styles.buttonText, primary && styles.buttonTextPrimary]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  row: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: space[3.5], borderWidth: borderWidth.thin, borderColor: colors.border, marginBottom: space[2.5] },
+  row: { backgroundColor: colors.surface, borderRadius: radius.card - space[2], padding: space[4], marginBottom: space[2.5] },
   top: { flexDirection: 'row', gap: space[3] },
   flex: { flex: 1 },
-  thumb: { width: 56, height: 56, borderRadius: radius.sm, backgroundColor: colors.border },
-  name: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.text },
-  hint: { fontSize: fontSize.sm, color: colors.muted, marginTop: space[0.5] },
-  state: { fontSize: fontSize.sm, marginTop: space[1.5], color: colors.muted, fontWeight: fontWeight.semibold },
+  thumb: { width: size.avatar, height: size.avatar, borderRadius: radius.chip, backgroundColor: colors.border },
+  thumbEmpty: { backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  thumbDone: { backgroundColor: colors.success },
+  name: { ...bodyFont('bold'), fontSize: fontSize.lg, color: colors.text },
+  hint: { ...bodyFont('medium'), fontSize: fontSize.sm, color: colors.textSecondary, marginTop: space[0.5] },
+  state: { ...bodyFont('bold'), fontSize: fontSize.sm, marginTop: space[1.5], color: colors.textSecondary },
   done: { color: colors.success },
   todo: { color: colors.brand },
-  error: { color: colors.error, fontSize: fontSize.sm, marginTop: space[2] },
-  buttons: { flexDirection: 'row', gap: space[2], marginTop: space[2.5], minHeight: touch.min, alignItems: 'center' },
-  button: {
-    flex: 1,
-    borderRadius: radius.md,
-    borderWidth: borderWidth.thin,
-    borderColor: colors.brand,
-    paddingVertical: space[2.5],
-    alignItems: 'center',
-  },
-  buttonPrimary: { backgroundColor: colors.brand },
-  buttonText: { color: colors.brand, fontSize: fontSize.base, fontWeight: fontWeight.semibold },
-  buttonTextPrimary: { color: colors.brandText },
+  error: { ...bodyFont('medium'), color: colors.error, fontSize: fontSize.sm, marginTop: space[2] },
+  buttons: { flexDirection: 'row', gap: space[2], marginTop: space[3], minHeight: touch.min, alignItems: 'center' },
 });

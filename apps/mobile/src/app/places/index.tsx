@@ -2,12 +2,16 @@ import { MAX_SAVED_PLACES, type SavedPlace, type SavedPlaceKind } from '@apnirid
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { PageLayout, pageStyles } from '@/components/PageLayout';
-import { PLACES_KEY, placeIcon, usePlaces } from '@/lib/account';
+import { Button, Icon, type IconName, IconButton } from '@/components/ui';
+import { PLACES_KEY, usePlaces } from '@/lib/account';
 import { api } from '@/lib/api';
 import { errorMessage } from '@/lib/errors';
-import { borderWidth, colors, fontSize, fontWeight, radius, space, touch } from '@/lib/theme';
+import { bodyFont } from '@/lib/fonts';
+import { borderWidth, colors, fontSize, iconSize, radius, size, space, touch } from '@/lib/theme';
+
+const ICON: Record<SavedPlaceKind, IconName> = { home: 'home', work: 'building', other: 'pin' };
 
 const edit = (kind: SavedPlaceKind, place?: SavedPlace) =>
   router.push({
@@ -67,9 +71,7 @@ export default function PlacesScreen() {
           ) : null}
 
           {list.length < MAX_SAVED_PLACES ? (
-            <Pressable style={styles.add} onPress={() => edit('other')} accessibilityRole="button">
-              <Text style={styles.addText}>＋ {t('places.addOther')}</Text>
-            </Pressable>
+            <Button variant="outline" icon="plus" label={t('places.addOther')} onPress={() => edit('other')} style={styles.add} />
           ) : (
             <Text style={pageStyles.muted}>{t('places.limit', { count: MAX_SAVED_PLACES })}</Text>
           )}
@@ -97,18 +99,28 @@ function PlaceRow({
   const sub = !place ? t('places.notSet') : kind !== 'other' && place.label !== title ? place.label : null;
   return (
     <View style={styles.row}>
-      <Text style={styles.icon}>{placeIcon(kind)}</Text>
-      <View style={styles.flex}>
-        <Text style={styles.title}>{title}</Text>
-        {sub ? <Text style={pageStyles.muted}>{sub}</Text> : null}
+      <View style={styles.iconBox}>
+        <Icon name={ICON[kind]} size={iconSize.sm} color={colors.brand} />
       </View>
-      <Pressable onPress={onEdit} accessibilityRole="button" hitSlop={touch.hitSlop}>
-        <Text style={styles.link}>{place ? t('places.edit') : t('places.add')}</Text>
-      </Pressable>
+      <View style={styles.flex}>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+        {sub ? (
+          <Text style={pageStyles.muted} numberOfLines={1}>
+            {sub}
+          </Text>
+        ) : null}
+      </View>
+      <Button
+        variant={place ? 'outline' : 'primary'}
+        compact
+        label={place ? t('places.edit') : t('places.add')}
+        onPress={onEdit}
+        accessibilityLabel={`${place ? t('places.edit') : t('places.add')}: ${title}`}
+      />
       {onRemove ? (
-        <Pressable onPress={onRemove} accessibilityRole="button" hitSlop={touch.hitSlop}>
-          <Text style={styles.remove}>{t('places.remove')}</Text>
-        </Pressable>
+        <IconButton icon="x" tone="outline" label={`${t('places.remove')}: ${title}`} onPress={onRemove} diameter={touch.min} />
       ) : null}
     </View>
   );
@@ -116,21 +128,18 @@ function PlaceRow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  error: { fontSize: fontSize.md, color: colors.error, marginBottom: space[3] },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: touch.min },
-  icon: { fontSize: fontSize.xxl },
-  title: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.text },
-  link: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.brand },
-  remove: { fontSize: fontSize.md, color: colors.error },
+  error: { ...bodyFont('medium'), fontSize: fontSize.md, color: colors.error, marginBottom: space[3] },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space[3], minHeight: touch.button - space[1] },
+  iconBox: {
+    width: size.iconButton - space[2],
+    height: size.iconButton - space[2],
+    borderRadius: radius.pill,
+    backgroundColor: colors.brandSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: { ...bodyFont('bold'), fontSize: fontSize.base, color: colors.text },
   divider: { height: borderWidth.thin, backgroundColor: colors.borderLight, marginVertical: space[2] },
   sectionGap: { marginTop: space[5] },
-  add: {
-    marginTop: space[4],
-    borderWidth: borderWidth.thin,
-    borderColor: colors.brand,
-    borderRadius: radius.lg,
-    paddingVertical: space[3],
-    alignItems: 'center',
-  },
-  addText: { fontSize: fontSize.base, fontWeight: fontWeight.semibold, color: colors.brand },
+  add: { marginTop: space[4] },
 });
