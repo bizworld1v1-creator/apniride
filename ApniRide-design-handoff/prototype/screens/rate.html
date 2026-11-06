@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApniRide – Trip complete</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+html,body{min-height:100%}
+body{margin:0;background:#DDE3EF;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(20,19,43,.25),0 0 0 10px #14132B;flex:none}
+a{color:#1E40AF}
+@keyframes fall{0%{transform:translateY(-40px) rotate(0)}100%{transform:translateY(340px) rotate(540deg)}}
+@keyframes bounce{0%{opacity:0;transform:scale(.4)}60%{opacity:1;transform:scale(1.12)}100%{transform:none}}
+@keyframes up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.conf{position:absolute;top:0;width:10px;height:14px;border-radius:3px;animation:fall 3.2s linear infinite}
+.bounce{animation:bounce .8s cubic-bezier(.2,.9,.3,1.4) both}
+.up{animation:up .7s cubic-bezier(.2,.9,.3,1.2) both}
+.face{width:56px;height:56px;border-radius:50%;border:none;padding:0;background:#F2F5FC;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .25s cubic-bezier(.2,.9,.3,1.6),background .2s}
+.tag{height:42px;padding:0 16px;border-radius:21px;border:2px solid #DDE3EF;background:#FFFFFF;color:#14132B;font:600 14px 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .2s}
+.tag[aria-pressed="true"]{background:#1E40AF;border-color:#1E40AF;color:#FFFFFF}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="phone">
+<div style="width:390px;height:844px;background:#F2F5FC;color:#14132B;font-family:'Plus Jakarta Sans',sans-serif;position:relative;overflow:hidden;display:flex;flex-direction:column">
+  <div style="height:300px;background:#1E40AF;border-radius:0 0 44px 44px;position:relative;overflow:hidden;color:#FFFFFF;display:flex;flex-direction:column;align-items:center;justify-content:center">
+    <span class="conf" aria-hidden="true" style="left:30px;background:#FFC83D"></span>
+    <span class="conf" aria-hidden="true" style="left:90px;background:#1FC79A;animation-delay:.6s;animation-duration:2.6s"></span>
+    <span class="conf" aria-hidden="true" style="left:160px;background:#FFFFFF;animation-delay:1.3s"></span>
+    <span class="conf" aria-hidden="true" style="left:230px;background:#FF8A5B;animation-delay:.3s;animation-duration:3.6s"></span>
+    <span class="conf" aria-hidden="true" style="left:300px;background:#FFC83D;animation-delay:1.8s;animation-duration:2.8s"></span>
+    <span class="conf" aria-hidden="true" style="left:350px;background:#1FC79A;animation-delay:1s"></span>
+    <div class="bounce" style="width:84px;height:84px;border-radius:50%;background:#FFC83D;display:flex;align-items:center;justify-content:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#14132B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></div>
+    <h1 class="bounce" style="margin:16px 0 0;font-family:'Bricolage Grotesque',sans-serif;font-size:30px;font-weight:800;letter-spacing:-1px;text-align:center;animation-delay:.2s">Woohoo, you’re here!</h1>
+    <p class="bounce" style="margin:4px 0 0;font-size:15px;animation-delay:.3s">Paid <b>Rs 450</b> via JazzCash · 24 min ride</p>
+  </div>
+
+  <div style="padding:20px;display:flex;flex-direction:column;flex:1;box-sizing:border-box">
+    <div class="up" style="border-radius:30px;background:#FFFFFF;padding:20px;animation-delay:.4s">
+      <div style="text-align:center;font-weight:700">How was Bilal?</div>
+      <div id="faces" style="margin-top:14px;display:flex;justify-content:space-between"></div>
+      <div id="word" style="margin-top:10px;text-align:center;font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:#1E40AF"></div>
+    </div>
+
+    <div class="up" style="margin-top:16px;animation-delay:.55s">
+      <div style="font-weight:700;margin-bottom:10px">What stood out?</div>
+      <div id="tags" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+    <div style="flex:1"></div>
+    <a href="home.html" style="height:62px;border-radius:31px;background:#14132B;color:#FFFFFF;font-weight:700;font-size:17px;text-decoration:none;display:flex;align-items:center;justify-content:center">Submit &amp; go home</a>
+  </div>
+</div>
+</div>
+<script>
+(function () {
+  var mouths = ['M11 25c3-4 9-4 12 0', 'M11 24c3-2 9-2 12 0', 'M11 23h12', 'M11 21c3 3 9 3 12 0', 'M10 20c3 6 11 6 14 0'];
+  var words = ['Not great', 'Meh', 'Okay', 'Good!', 'Amazing!'];
+  var cols = ['#FFB3B5', '#FFD4B8', '#DDE3EF', '#C9F0DF', '#FFC83D'];
+  var rating = 5;
+  var faces = document.getElementById('faces');
+
+  words.forEach(function (w, k) {
+    var b = document.createElement('button');
+    b.className = 'face'; b.setAttribute('aria-label', w);
+    b.innerHTML = '<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="12" cy="13" r="2.4" fill="#14132B"/><circle cx="22" cy="13" r="2.4" fill="#14132B"/><path d="' + mouths[k] + '" fill="none" stroke="#14132B" stroke-width="2.6" stroke-linecap="round"/></svg>';
+    b.addEventListener('click', function () { rating = k + 1; renderFaces(); });
+    faces.appendChild(b);
+  });
+  function renderFaces() {
+    Array.prototype.forEach.call(faces.children, function (b, k) {
+      var on = k + 1 === rating;
+      b.style.background = on ? cols[k] : '#F2F5FC';
+      b.style.transform = on ? 'scale(1.18)' : 'scale(1)';
+      b.setAttribute('aria-pressed', on);
+    });
+    document.getElementById('word').textContent = words[rating - 1];
+  }
+
+  var selected = { 'Smooth driving': true, 'Clean car': true };
+  var tags = document.getElementById('tags');
+  ['Smooth driving', 'Clean car', 'On time', 'Friendly', 'Good music', 'Safe'].forEach(function (l) {
+    var b = document.createElement('button');
+    b.className = 'tag'; b.textContent = l;
+    b.setAttribute('aria-pressed', !!selected[l]);
+    b.addEventListener('click', function () {
+      selected[l] = !selected[l];
+      b.setAttribute('aria-pressed', selected[l]);
+    });
+    tags.appendChild(b);
+  });
+  renderFaces();
+})();
+</script>
+</body>
+</html>

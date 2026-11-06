@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApniRide – Live trip</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+
+a{color:#1E40AF}a:hover{color:#17338C}
+@keyframes drive{0%{offset-distance:0%}100%{offset-distance:100%}}
+@keyframes draw{from{stroke-dashoffset:700}to{stroke-dashoffset:0}}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+@keyframes fillbar{from{width:0}to{width:42%}}
+@keyframes beat{0%,100%{transform:scale(1)}50%{transform:scale(1.25)}}
+@keyframes flip{0%{transform:rotateX(90deg);opacity:0}100%{transform:none;opacity:1}}
+.car{position:absolute;top:0;left:0;offset-path:path('M50 440 C80 360 60 300 150 270 S260 230 250 150 S320 70 340 50');offset-rotate:auto;animation:drive 10s cubic-bezier(.45,.05,.55,.95) infinite alternate}
+.draw{stroke-dasharray:700;animation:draw 2s ease-out both}
+.up{animation:up .8s cubic-bezier(.2,.9,.25,1.05) both}
+.fillbar{animation:fillbar 1.6s cubic-bezier(.2,.9,.3,1) .8s both}
+.beat{animation:beat 1s ease-in-out infinite}
+.flip{display:inline-flex;animation:flip .5s cubic-bezier(.2,.9,.3,1.3) both}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<style>
+html,body{min-height:100%}
+body{margin:0;background:#DDE3EF;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(20,19,43,.25),0 0 0 10px #14132B;flex:none}
+</style>
+</head>
+<body>
+<div class="phone"><div style="width:390px;height:844px;background:#E1E8F6;color:#14132B;font-family:'Plus Jakarta Sans',sans-serif;position:relative;overflow:hidden">
+  <svg width="390" height="500" viewBox="0 0 390 500" aria-hidden="true" style="position:absolute;inset:0">
+    <rect x="200" y="300" width="110" height="80" rx="18" fill="#C9F0DF"/><rect x="20" y="60" width="90" height="70" rx="18" fill="#C9F0DF"/>
+    <g fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round"><path d="M-10 160 L400 140"/><path d="M-10 280 L400 300"/><path d="M140 -10 L160 510"/><path d="M320 -10 L340 510"/></g>
+    <path class="draw" d="M50 440 C80 360 60 300 150 270 S260 230 250 150 S320 70 340 50" fill="none" stroke="#1E40AF" stroke-width="6" stroke-linecap="round"/>
+  </svg>
+  <div aria-hidden="true" style="position:absolute;left:326px;top:30px"><svg width="28" height="36" viewBox="0 0 34 44"><path d="M17 43S2 26 2 16a15 15 0 0130 0c0 10-15 27-15 27z" fill="#FF8A5B"/><circle cx="17" cy="16" r="6" fill="#FFFFFF"/></svg></div>
+  <div class="car" aria-hidden="true"><svg width="46" height="26" viewBox="0 0 46 26"><rect width="46" height="26" rx="10" fill="#FFC83D" stroke="#14132B" stroke-width="2.5"/><rect x="28" y="5" width="9" height="16" rx="3" fill="#14132B" opacity=".7"/></svg></div>
+
+  <div style="position:absolute;top:20px;left:20px;right:20px;display:flex;justify-content:space-between">
+    <a href="home.html" aria-label="Back" style="width:46px;height:46px;border-radius:50%;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#14132B"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <button style="height:46px;padding:0 18px;border-radius:23px;border:none;background:#FF5A5F;color:#FFFFFF;font:700 14px 'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>SOS</button>
+  </div>
+
+  <div class="up" style="position:absolute;left:12px;right:12px;bottom:12px;height:384px;background:#FFFFFF;border-radius:36px;padding:22px;box-sizing:border-box;display:flex;flex-direction:column;box-shadow:0 -10px 40px rgba(20,19,43,.08)">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <h1 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px">Arriving in <span style="color:#1E40AF">3 min</span></h1>
+      <span class="beat" style="width:10px;height:10px;border-radius:50%;background:#1FC79A"></span>
+    </div>
+    <div style="margin-top:12px;height:10px;border-radius:5px;background:#EBEFF7;overflow:hidden"><div class="fillbar" style="height:100%;border-radius:5px;background:#1E40AF"></div></div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:#5B5A72"><span style="color:#1E40AF">Assigned</span><span style="color:#1E40AF">On the way</span><span>Picked up</span><span>Arrived</span></div>
+
+    <div style="margin-top:18px;display:flex;align-items:center;gap:12px">
+      <div style="width:56px;height:56px;border-radius:50%;background:#FFC83D;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:18px">BA</div>
+      <div style="flex:1"><b style="font-size:16px">Bilal Ahmed</b><div style="font-size:13px;color:#5B5A72">★ 4.9 · White Toyota Corolla</div></div>
+      <button aria-label="Chat" style="width:48px;height:48px;border-radius:50%;border:none;background:#F2F5FC;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2.2" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg></button>
+      <button aria-label="Call" style="width:48px;height:48px;border-radius:50%;border:none;background:#1E40AF;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2"/></svg></button>
+    </div>
+
+    <div style="margin-top:16px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+      <div style="border-radius:22px;background:#F2F5FC;padding:12px 14px"><div style="font-size:12px;color:#5B5A72">Plate</div><b style="font-family:'Bricolage Grotesque',sans-serif;font-size:17px">LEA 4821</b></div>
+      <div style="border-radius:22px;background:#14132B;color:#FFFFFF;padding:12px 14px"><div style="font-size:12px;opacity:.8">Ride PIN</div><div style="display:flex;gap:6px;font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;color:#FFC83D"><span class="flip" style="animation-delay:.9s">7</span><span class="flip" style="animation-delay:1s">2</span><span class="flip" style="animation-delay:1.1s">0</span><span class="flip" style="animation-delay:1.2s">5</span></div></div>
+    </div>
+    <div style="flex:1"></div>
+    <a href="rate.html" style="height:56px;border-radius:28px;border:2px solid #DDE3EF;color:#14132B;font-weight:700;font-size:15px;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:8px">Rs 450 · Cash/JazzCash · Share live trip</a>
+  </div>
+</div>
+</div>
+</body>
+</html>

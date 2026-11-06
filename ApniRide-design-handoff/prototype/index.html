@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApniRide – UI prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&amp;family=Plus+Jakarta+Sans:wght@500;700&amp;display=swap">
+<style>
+body{margin:0;background:#DDE3EF;font-family:'Plus Jakarta Sans',sans-serif;color:#14132B}
+header{padding:40px 40px 8px;max-width:1800px;margin:0 auto}
+h1{margin:0;font-family:'Bricolage Grotesque',sans-serif;font-size:44px;letter-spacing:-1.5px}
+h1 span{color:#1E40AF}
+p{margin:8px 0 0;color:#3D3C55}
+.grid{display:flex;flex-wrap:wrap;gap:28px;padding:28px 40px 60px;max-width:1800px;margin:0 auto}
+figure{margin:0;display:flex;flex-direction:column;gap:10px}
+.frame{width:351px;height:760px;overflow:hidden;border-radius:36px}
+iframe{width:438px;height:950px;border:0;transform:scale(.8);transform-origin:0 0;margin:-84px 0 0 -35px;pointer-events:auto}
+figcaption{font-weight:700}
+figcaption a{color:#1E40AF;font-weight:500;margin-left:8px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Apni<span>Ride</span> — UI prototype</h1>
+  <p>8 core screens. Every screen is live: animations run and buttons navigate. Open any screen full size to click through the flow.</p>
+</header>
+<main class="grid">
+  <figure><div class="frame"><iframe title="Splash" src="screens/splash.html"></iframe></div><figcaption>1 · Splash <a href="screens/splash.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Login" src="screens/login.html"></iframe></div><figcaption>2 · Login (phone + OTP) <a href="screens/login.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Home" src="screens/home.html"></iframe></div><figcaption>3 · Home <a href="screens/home.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Offer your fare" src="screens/fare.html"></iframe></div><figcaption>4 · Offer your fare <a href="screens/fare.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Driver offers" src="screens/offers.html"></iframe></div><figcaption>5 · Driver offers <a href="screens/offers.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Live trip" src="screens/trip.html"></iframe></div><figcaption>6 · Live trip <a href="screens/trip.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Trip complete" src="screens/rate.html"></iframe></div><figcaption>7 · Trip complete + rating <a href="screens/rate.html">open</a></figcaption></figure>
+  <figure><div class="frame"><iframe title="Driver mode" src="screens/driver.html"></iframe></div><figcaption>8 · Driver mode <a href="screens/driver.html">open</a></figcaption></figure>
+</main>
+</body>
+</html>

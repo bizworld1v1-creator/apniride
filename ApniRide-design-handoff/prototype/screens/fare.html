@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApniRide – Offer your fare</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+html,body{min-height:100%}
+body{margin:0;background:#DDE3EF;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(20,19,43,.25),0 0 0 10px #14132B;flex:none}
+a{color:#1E40AF}
+@keyframes pop{0%{opacity:0;transform:scale(.8) translateY(24px)}70%{opacity:1;transform:scale(1.03)}100%{transform:none}}
+@keyframes jelly{0%{transform:scale(1)}30%{transform:scale(1.12,.9)}50%{transform:scale(.94,1.06)}70%{transform:scale(1.03,.98)}100%{transform:scale(1)}}
+@keyframes dash{to{stroke-dashoffset:-20}}
+.pop{animation:pop .7s cubic-bezier(.2,.9,.3,1.3) both}
+.jelly{animation:jelly .6s ease both}
+.dash{stroke-dasharray:4 6;animation:dash .7s linear infinite}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:12px;border-radius:6px;background:rgba(255,255,255,.25);outline:none;margin:18px 0 0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#FFC83D;border:4px solid #FFFFFF;box-shadow:0 4px 12px rgba(0,0,0,.25);cursor:grab}
+input[type=range]::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#FFC83D;border:4px solid #FFFFFF}
+.car{transition:transform .35s cubic-bezier(.2,.9,.3,1.6),opacity .3s,fill .3s}
+.quick{flex:1;height:44px;border-radius:22px;border:none;background:rgba(255,255,255,.16);color:#FFFFFF;font:700 14px 'Plus Jakarta Sans',sans-serif;cursor:pointer}
+.quick:active{transform:scale(.94)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="phone">
+<div style="width:390px;height:844px;background:#F2F5FC;color:#14132B;font-family:'Plus Jakarta Sans',sans-serif;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <a href="home.html" aria-label="Back" style="width:46px;height:46px;border-radius:50%;background:#FFFFFF;display:flex;align-items:center;justify-content:center;color:#14132B"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a>
+    <h1 style="margin:0;font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px">Name your price</h1>
+  </div>
+
+  <div class="pop" style="border-radius:28px;background:#FFFFFF;padding:16px 18px;display:flex;gap:14px;align-items:center">
+    <svg width="14" height="70" viewBox="0 0 14 70" aria-hidden="true"><circle cx="7" cy="8" r="6" fill="#1E40AF"/><path class="dash" d="M7 16v38" stroke="#B7C8EE" stroke-width="2.5" fill="none"/><rect x="1" y="56" width="12" height="12" rx="3" fill="#FF8A5B"/></svg>
+    <div style="flex:1;display:flex;flex-direction:column;gap:16px">
+      <div><div style="font-size:12px;color:#5B5A72">From</div><b style="font-size:15px">Liberty Market, Gulberg</b></div>
+      <div><div style="font-size:12px;color:#5B5A72">To</div><b style="font-size:15px">Emporium Mall</b></div>
+    </div>
+    <div style="text-align:right;font-size:12px;color:#5B5A72"><b style="font-size:16px;color:#14132B">7.8 km</b><br>~22 min</div>
+  </div>
+
+  <div class="pop" style="animation-delay:.12s;border-radius:32px;background:#1E40AF;color:#FFFFFF;padding:22px 22px 24px">
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;opacity:.9"><span>Your offer</span><span>Fair range Rs 420–490</span></div>
+    <div id="fareText" class="jelly" style="margin-top:6px;font-family:'Bricolage Grotesque',sans-serif;font-size:76px;font-weight:800;letter-spacing:-3px;line-height:1">Rs 450</div>
+    <label for="fare" class="sr">Fare amount</label>
+    <input id="fare" type="range" min="250" max="750" step="10" value="450">
+    <div style="margin-top:8px;display:flex;justify-content:space-between;font-size:12px;opacity:.85"><span>Rs 250</span><span>Rs 750</span></div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="quick" data-d="-20">−Rs 20</button>
+      <button class="quick" data-d="20">+Rs 20</button>
+      <button class="quick" data-d="50">+Rs 50</button>
+    </div>
+  </div>
+
+  <div class="pop" style="animation-delay:.24s;border-radius:28px;background:#FFFFFF;padding:16px 18px;display:flex;align-items:center;gap:14px">
+    <div id="cars" style="display:flex;gap:4px" aria-hidden="true"></div>
+    <div style="flex:1"><b id="likelyTitle" style="font-size:14px"></b><div id="likelySub" style="font-size:12px;color:#5B5A72"></div></div>
+  </div>
+
+  <div class="pop" style="animation-delay:.32s;display:flex;gap:10px">
+    <div style="flex:1;height:52px;border-radius:26px;background:#FFFFFF;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:14px;font-weight:600"><span style="width:10px;height:10px;border-radius:50%;background:#1FC79A"></span>Cash · JazzCash</div>
+    <div style="flex:1;height:52px;border-radius:26px;background:#FFFFFF;display:flex;align-items:center;gap:10px;padding:0 16px;font-size:14px;font-weight:600;color:#5B5A72">+ Comment</div>
+  </div>
+  <div style="flex:1"></div>
+  <a href="offers.html" style="height:62px;border-radius:31px;background:#14132B;color:#FFFFFF;font-weight:700;font-size:17px;text-decoration:none;display:flex;align-items:center;justify-content:space-between;padding:0 8px 0 26px">Send offer to drivers<span style="width:48px;height:48px;border-radius:50%;background:#FFC83D;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14132B" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+</div>
+</div>
+<script>
+(function () {
+  var MIN = 250, MAX = 750, fare = 450;
+  var labels = ['', 'Few drivers may accept', 'Some drivers will accept', 'Most drivers will accept', 'Drivers will rush to you'];
+  var subs = ['', 'Try raising a little for a faster pickup', 'Expect offers in about 2 min', 'Expect offers in under a minute', 'Top-rated drivers get priority'];
+  var slider = document.getElementById('fare'), text = document.getElementById('fareText'), cars = document.getElementById('cars');
+  var carSvg = '<svg class="car" width="30" height="20" viewBox="0 0 30 18"><path d="M3 12l3-7h16l4 7v4H3z"/><circle cx="8" cy="15" r="2.5" fill="#14132B"/><circle cx="22" cy="15" r="2.5" fill="#14132B"/></svg>';
+  cars.innerHTML = carSvg + carSvg + carSvg + carSvg;
+
+  function level(f) { return f < 380 ? 1 : f < 420 ? 2 : f < 490 ? 3 : 4; }
+  function render(bounce) {
+    text.textContent = 'Rs ' + fare;
+    slider.value = fare;
+    if (bounce) { text.classList.remove('jelly'); void text.offsetWidth; text.classList.add('jelly'); }
+    var l = level(fare);
+    Array.prototype.forEach.call(cars.children, function (c, i) {
+      var on = i < l;
+      c.style.opacity = on ? 1 : .25;
+      c.style.transform = on ? 'translateY(-2px)' : 'none';
+      c.querySelector('path').setAttribute('fill', on ? '#1E40AF' : '#C5CCDB');
+    });
+    document.getElementById('likelyTitle').textContent = labels[l];
+    document.getElementById('likelySub').textContent = subs[l];
+  }
+  function set(v, bounce) { fare = Math.max(MIN, Math.min(MAX, v)); render(bounce); }
+  slider.addEventListener('input', function (e) { set(Number(e.target.value), false); });
+  document.querySelectorAll('.quick').forEach(function (b) {
+    b.addEventListener('click', function () { set(fare + Number(b.dataset.d), true); });
+  });
+  render(false);
+})();
+</script>
+</body>
+</html>

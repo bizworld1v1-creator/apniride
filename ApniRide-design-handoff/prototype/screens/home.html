@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ApniRide – Home</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap">
+<style>
+
+a{color:#1E40AF}a:hover{color:#17338C}
+@keyframes pin{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes shadow{0%,100%{transform:scale(1);opacity:.25}50%{transform:scale(.6);opacity:.12}}
+@keyframes pop{0%{opacity:0;transform:scale(.7) translateY(20px)}70%{opacity:1;transform:scale(1.04)}100%{transform:none}}
+@keyframes drive{from{offset-distance:0%}to{offset-distance:100%}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+.pin{animation:pin 1.4s cubic-bezier(.4,0,.4,1) infinite}
+.shadow{animation:shadow 1.4s cubic-bezier(.4,0,.4,1) infinite}
+.pop{animation:pop .7s cubic-bezier(.2,.9,.3,1.3) both}
+.car{position:absolute;top:0;left:0;offset-rotate:auto;animation:drive 8s linear infinite}
+.tile:hover svg{animation:wiggle .4s ease-in-out}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<style>
+html,body{min-height:100%}
+body{margin:0;background:#DDE3EF;display:flex;justify-content:center;align-items:center;padding:24px;box-sizing:border-box}
+.phone{width:390px;height:844px;border-radius:44px;overflow:hidden;box-shadow:0 30px 80px rgba(20,19,43,.25),0 0 0 10px #14132B;flex:none}
+</style>
+</head>
+<body>
+<div class="phone"><div style="width:390px;height:844px;background:#F2F5FC;color:#14132B;font-family:'Plus Jakarta Sans',sans-serif;position:relative;overflow:hidden;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+  <div class="pop" style="display:flex;align-items:center;gap:12px">
+    <div style="width:48px;height:48px;border-radius:50%;background:#FFC83D;display:flex;align-items:center;justify-content:center;font-family:'Bricolage Grotesque',sans-serif;font-weight:800">AK</div>
+    <div style="flex:1"><div style="font-size:13px;color:#5B5A72">Good morning</div><div style="font-family:'Bricolage Grotesque',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.5px">Where to, Ahmed?</div></div>
+    <button aria-label="Notifications" style="width:48px;height:48px;border-radius:50%;border:none;background:#FFFFFF;position:relative;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14132B" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0112 0v5l2 2H4zM10 21h4"/></svg><span style="position:absolute;top:11px;right:12px;width:9px;height:9px;border-radius:50%;background:#FF5A5F;border:2px solid #FFFFFF"></span></button>
+  </div>
+
+  <div class="pop" style="animation-delay:.1s;height:230px;border-radius:32px;overflow:hidden;position:relative;background:#E1E8F6">
+    <svg width="350" height="230" viewBox="0 0 350 230" aria-hidden="true" style="position:absolute;inset:0">
+      <rect x="40" y="30" width="80" height="60" rx="14" fill="#C9F0DF"/><rect x="230" y="140" width="90" height="60" rx="14" fill="#C9F0DF"/>
+      <g fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"><path d="M-10 120 C100 110 220 130 360 100"/><path d="M160 -10 L190 240"/><path d="M-10 200 L360 190"/></g>
+      <g fill="none" stroke="#F6F7FF" stroke-width="6"><path d="M70 -10 L60 240"/><path d="M290 -10 L300 240"/></g>
+    </svg>
+    <div class="car" aria-hidden="true" style="offset-path:path('M-20 121 C100 110 220 130 370 100')"><svg width="28" height="16" viewBox="0 0 28 16"><rect width="28" height="16" rx="6" fill="#1E40AF"/><rect x="17" y="3" width="6" height="10" rx="2" fill="#FFFFFF" opacity=".6"/></svg></div>
+    <div class="car" aria-hidden="true" style="offset-path:path('M150 -20 L190 250');animation-duration:6s;animation-delay:-2s"><svg width="28" height="16" viewBox="0 0 28 16"><rect width="28" height="16" rx="6" fill="#FFC83D"/><rect x="17" y="3" width="6" height="10" rx="2" fill="#14132B" opacity=".5"/></svg></div>
+    <div aria-hidden="true" style="position:absolute;left:158px;top:70px;display:flex;flex-direction:column;align-items:center">
+      <svg class="pin" width="34" height="44" viewBox="0 0 34 44"><path d="M17 43S2 26 2 16a15 15 0 0130 0c0 10-15 27-15 27z" fill="#1E40AF"/><circle cx="17" cy="16" r="6" fill="#FFFFFF"/></svg>
+      <div class="shadow" style="width:20px;height:6px;border-radius:50%;background:#14132B"></div>
+    </div>
+    <a href="fare.html" style="position:absolute;left:12px;right:12px;bottom:12px;height:56px;border-radius:28px;background:#FFFFFF;display:flex;align-items:center;gap:12px;padding:0 8px 0 18px;text-decoration:none;color:#5B5A72;font-weight:500;box-shadow:0 8px 24px rgba(30,64,175,.15)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Search destination
+      <span style="margin-left:auto;width:40px;height:40px;border-radius:50%;background:#1E40AF;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+    <div class="pop tile" style="animation-delay:.2s;height:96px;border-radius:26px;background:#1E40AF;color:#FFFFFF;padding:14px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between"><svg width="40" height="22" viewBox="0 0 30 18" aria-hidden="true"><path d="M3 12l3-7h16l4 7v4H3z" fill="#FFC83D"/><circle cx="8" cy="15" r="2.5" fill="#14132B"/><circle cx="22" cy="15" r="2.5" fill="#14132B"/></svg><div><b style="font-size:16px">Ride</b><div style="font-size:12px;opacity:.85">Cars, 4 seats</div></div></div>
+    <div class="pop tile" style="animation-delay:.27s;height:96px;border-radius:26px;background:#FFC83D;padding:14px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between"><svg width="40" height="22" viewBox="0 0 30 18" aria-hidden="true"><circle cx="6" cy="13" r="4" fill="none" stroke="#14132B" stroke-width="2.2"/><circle cx="24" cy="13" r="4" fill="none" stroke="#14132B" stroke-width="2.2"/><path d="M6 13l6-8h6l6 8" fill="none" stroke="#14132B" stroke-width="2.2"/></svg><div><b style="font-size:16px">Moto</b><div style="font-size:12px;color:#3D3C55">Beat traffic</div></div></div>
+    <div class="pop tile" style="animation-delay:.34s;height:96px;border-radius:26px;background:#FFFFFF;padding:14px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between"><svg width="40" height="22" viewBox="0 0 30 18" aria-hidden="true"><path d="M5 14V5h14l6 9z" fill="#1FC79A"/><circle cx="9" cy="15" r="2.5" fill="#14132B"/><circle cx="21" cy="15" r="2.5" fill="#14132B"/></svg><div><b style="font-size:16px">Rickshaw</b><div style="font-size:12px;color:#5B5A72">Chingchi / auto</div></div></div>
+    <div class="pop tile" style="animation-delay:.41s;height:96px;border-radius:26px;background:#FFFFFF;padding:14px 16px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between"><svg width="40" height="22" viewBox="0 0 30 18" aria-hidden="true"><rect x="2" y="3" width="22" height="11" rx="2" fill="#FF8A5B"/><path d="M24 7h3l2 4v3h-5z" fill="#14132B"/></svg><div><b style="font-size:16px">Intercity</b><div style="font-size:12px;color:#5B5A72">City to city</div></div></div>
+  </div>
+
+  <div class="pop" style="animation-delay:.5s;border-radius:26px;background:#FFFFFF;padding:6px 16px">
+    <div style="display:flex;align-items:center;gap:12px;height:56px;border-bottom:1px solid #EBEFF7"><span style="width:36px;height:36px;border-radius:50%;background:#F2F5FC;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span><div style="flex:1"><b style="font-size:14px">Emporium Mall</b><div style="font-size:12px;color:#5B5A72">Johar Town · 7.8 km</div></div></div>
+    <div style="display:flex;align-items:center;gap:12px;height:56px"><span style="width:36px;height:36px;border-radius:50%;background:#F2F5FC;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1E40AF" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V9l7-5 7 5v12"/></svg></span><div style="flex:1"><b style="font-size:14px">Office</b><div style="font-size:12px;color:#5B5A72">Arfa Software Technology Park · 11 km</div></div></div>
+  </div>
+
+  <div style="flex:1"></div>
+  <nav class="pop" style="animation-delay:.6s;height:68px;border-radius:34px;background:#14132B;display:flex;align-items:center;justify-content:space-around;padding:0 8px">
+    <span style="height:48px;padding:0 18px;border-radius:24px;background:#FFC83D;display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14132B" stroke-width="2.2" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/></svg>Home</span>
+    <span aria-label="Trips" style="color:#FFFFFF;display:flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+    <span aria-label="Wallet" style="color:#FFFFFF;display:flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/></svg></span>
+    <span aria-label="Profile" style="color:#FFFFFF;display:flex"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 15-5 16 0"/></svg></span>
+  </nav>
+</div>
+</div>
+</body>
+</html>
