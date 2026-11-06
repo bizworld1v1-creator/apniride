@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Choice, PageLayout, pageStyles } from '@/components/PageLayout';
@@ -42,6 +43,11 @@ export default function SettingsScreen() {
       <Text style={[pageStyles.section, styles.gap]}>{t('settings.about')}</Text>
       <Text style={styles.body}>{t('tagline')}</Text>
       <Text style={pageStyles.muted}>{t('settings.version', { version })}</Text>
+      {__DEV__ ? (
+        <Pressable onPress={() => router.push('/ui-preview')} accessibilityRole="link" hitSlop={touch.hitSlop}>
+          <Text style={[pageStyles.muted, styles.gap]}>UI preview (dev only)</Text>
+        </Pressable>
+      ) : null}
     </PageLayout>
   );
 }

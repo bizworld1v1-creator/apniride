@@ -206,6 +206,8 @@ export const ur: Translation = {
     camera: 'تصویر کھینچیں',
     gallery: 'گیلری',
     cameraDenied: 'کیمرے کی اجازت درکار ہے۔ فون کی سیٹنگز میں اجازت دیں۔',
+    comingSoon: 'جلد آ رہا ہے',
+    notifications: 'اطلاعات',
   },
   menu: {
     open: 'مینو کھولیں',

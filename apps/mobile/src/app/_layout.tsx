@@ -1,4 +1,5 @@
 import '@/i18n';
+import { useFonts } from 'expo-font';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -8,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { RealtimeBridge } from '@/components/RealtimeBridge';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-store';
+import { fontAssets } from '@/lib/fonts';
 import { loadLanguage } from '@/lib/language';
 import { useMode } from '@/lib/mode';
 
@@ -28,6 +30,9 @@ export default function RootLayout() {
   const status = useAuth((s) => s.status);
   const hasName = useAuth((s) => !!s.user?.name);
   const mode = useMode();
+  // Bundled font files (no download). On an error we carry on with the system font rather than block the app.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
+  const fontsReady = fontsLoaded || !!fontError;
 
   useEffect(() => {
     // Saved language first (still behind the splash screen), so no English flash for Urdu users.
@@ -35,7 +40,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (status === 'loading') return;
+    if (status === 'loading' || !fontsReady) return;
     SplashScreen.hide();
     if (status === 'signedIn') {
       // Refresh the cached profile in the background; offline is fine, we keep the cached one.
@@ -46,9 +51,9 @@ export default function RootLayout() {
     } else {
       queryClient.clear();
     }
-  }, [status, queryClient]);
+  }, [status, queryClient, fontsReady]);
 
-  if (status === 'loading') return null;
+  if (status === 'loading' || !fontsReady) return null;
 
   const signedIn = status === 'signedIn';
 
@@ -67,6 +72,8 @@ export default function RootLayout() {
             <Stack.Screen name="places/pick" />
             <Stack.Screen name="profile" />
             <Stack.Screen name="settings" />
+            {/* Development only: the new design's components (linked from Settings in dev). */}
+            <Stack.Screen name="ui-preview" />
           </Stack.Protected>
           {/* Driver registration: only reachable in driver mode. */}
           <Stack.Protected guard={signedIn && hasName && mode === 'driver'}>

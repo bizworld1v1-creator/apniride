@@ -205,6 +205,8 @@ export const en = {
     camera: 'Take photo',
     gallery: 'Gallery',
     cameraDenied: 'Camera permission is needed. Allow it in your phone settings.',
+    comingSoon: 'Coming soon',
+    notifications: 'Notifications',
   },
   menu: {
     open: 'Open menu',
