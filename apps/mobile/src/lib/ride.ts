@@ -1,8 +1,10 @@
 import { type Bid, isActiveRide, type Ride, type RideBids } from '@apniride/shared';
 import { type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
+import { getSocket } from './socket';
 
 export const CURRENT_RIDE_KEY = ['ride', 'current'] as const;
+const RIDE_POLL_MS = 8_000;
 
 /**
  * The ride shown on the home screen: the active one, or the one that just ended
@@ -13,8 +15,11 @@ export function useCurrentRide() {
   return useQuery({
     queryKey: CURRENT_RIDE_KEY,
     queryFn: () => fetchCurrentRide(queryClient),
-    // Socket events keep this fresh; refetch only on reconnect / app start.
+    // Socket events keep this fresh; refetch on reconnect / app start, and every few seconds during a ride while the
+    // live connection is down (weak internet, or a network that blocks WebSockets).
     staleTime: Infinity,
+    refetchInterval: (query) =>
+      query.state.data && isActiveRide(query.state.data.status) && !getSocket().connected ? RIDE_POLL_MS : false,
   });
 }
 
@@ -46,7 +51,13 @@ const withReceivedAt = (data: RideBids, previous: ReceivedBid[] | undefined): Re
   return data.bids.map((b) => known.get(b.bidId) ?? { ...b, receivedAt: now });
 };
 
-/** Drivers' open bids while the ride is searching. Pushed by the server as `ride:bids`; fetched after (re)connect. */
+/** How often the searching screen asks for bids itself, in case the live connection is down (weak internet). */
+const BIDS_POLL_MS = 4_000;
+
+/**
+ * Drivers' open bids while the ride is searching. Pushed by the server as `ride:bids` (instant); also fetched every
+ * few seconds while searching, so offers still show if the live connection dropped or is blocked on this network.
+ */
 export function useBids(ride: Ride | null | undefined) {
   const queryClient = useQueryClient();
   const rideId = ride?.status === 'searching' ? ride.id : null;
@@ -56,6 +67,7 @@ export function useBids(ride: Ride | null | undefined) {
       withReceivedAt(await api.rides.bids(rideId!), queryClient.getQueryData<ReceivedBid[]>(bidsKey(rideId!))),
     enabled: !!rideId,
     staleTime: Infinity,
+    refetchInterval: BIDS_POLL_MS,
   });
 }
 

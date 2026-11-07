@@ -18,8 +18,9 @@ const PEEK = space[3];
 /**
  * Drivers' offers as a stacked card deck (design: offers.html, like inDrive). The active card deals in from below;
  * skip (✕) or a lapsed timer brings the next one. "Ride with {name}" chooses that driver at their price.
+ * Shows `fallback` (the radar) while no offer is live.
  */
-export function OffersDeck({ ride, bids }: { ride: Ride; bids: ReceivedBid[] }) {
+export function OffersDeck({ ride, bids, fallback }: { ride: Ride; bids: ReceivedBid[]; fallback: ReactNode }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
@@ -43,7 +44,7 @@ export function OffersDeck({ ride, bids }: { ride: Ride; bids: ReceivedBid[] }) 
     onError: () => void queryClient.invalidateQueries({ queryKey: ['ride', ride.id, 'bids'] }),
   });
 
-  if (!active) return null;
+  if (!active) return <>{fallback}</>;
 
   const skip = () =>
     setSkipped((s) => {
@@ -55,6 +56,12 @@ export function OffersDeck({ ride, bids }: { ride: Ride; bids: ReceivedBid[] }) 
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.titleRow}>
+        <Text style={text.h1} accessibilityLiveRegion="polite">
+          {t('ride.offersIn', { count: ordered.length })}
+        </Text>
+        <Text style={[text.caption, styles.more]}>{t('ride.moreComing')}</Text>
+      </View>
       <View style={styles.deck}>
         {ordered.length > 2 ? <View style={[styles.peek, styles.peekBack]} /> : null}
         {ordered.length > 1 ? <View style={[styles.peek, styles.peekMiddle]} /> : null}
@@ -177,7 +184,9 @@ function BidCard({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  wrap: { gap: space[4] },
+  wrap: { gap: space[4], alignSelf: 'stretch' },
+  titleRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: space[3] },
+  more: { color: colors.textSecondary },
   deck: { paddingTop: PEEK * 2 },
   peek: { position: 'absolute', height: space[20], borderRadius: radius.stack },
   peekBack: { top: 0, left: space[8], right: space[8], backgroundColor: colors.brandTint2 },

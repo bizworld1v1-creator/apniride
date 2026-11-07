@@ -10,20 +10,22 @@ import { errorMessage } from '@/lib/errors';
 import { formatRupees } from '@/lib/fare';
 import { bodyFont, displayFont } from '@/lib/fonts';
 import { useEnter, useLoop } from '@/lib/motion';
-import { setCurrentRide } from '@/lib/ride';
+import { setCurrentRide, useBids } from '@/lib/ride';
 import { colors, fontSize, iconSize, radius, size, space, text } from '@/lib/theme';
+import { OffersDeck } from './OffersDeck';
 import { RouteCard } from './RouteCard';
 
 const RADAR = 120;
 
 /**
- * "Finding your driver" (design: offers.html header). With fixed fares the request goes to one driver at a time, so
- * there is no offer deck yet: that comes with fare bidding.
+ * "Finding your driver" (design: offers.html). The request goes to several drivers at once; their answers (accept
+ * the price or counter-offer) arrive as `ride:bids` and show as the offers deck in place of the radar.
  */
 export function SearchingScreen({ ride, fromLabel, toLabel }: { ride: Ride; fromLabel: string; toLabel: string }) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const title = useEnter('up', 1);
+  const { data: bids = [] } = useBids(ride);
 
   const cancel = useMutation({
     mutationFn: () => api.rides.cancel(ride.id),
@@ -45,16 +47,24 @@ export function SearchingScreen({ ride, fromLabel, toLabel }: { ride: Ride; from
       </View>
 
       <View style={styles.center}>
-        <Radar vehicle={ride.vehicleType} />
-        <Animated.View style={[styles.words, title]}>
-          <Text style={[text.h1, styles.centerText]} accessibilityLiveRegion="polite">
-            {ride.cancelledBy === 'driver' ? t('ride.driverCancelledSearching') : t('ride.searching')}
-          </Text>
-          <View style={styles.hintRow}>
-            <Text style={[text.body, styles.muted]}>{t('ride.findingHint')}</Text>
-          </View>
-          <HoppingDots />
-        </Animated.View>
+        <OffersDeck
+          ride={ride}
+          bids={bids}
+          fallback={
+            <>
+              <Radar vehicle={ride.vehicleType} />
+              <Animated.View style={[styles.words, title]}>
+                <Text style={[text.h1, styles.centerText]} accessibilityLiveRegion="polite">
+                  {ride.cancelledBy === 'driver' ? t('ride.driverCancelledSearching') : t('ride.searching')}
+                </Text>
+                <View style={styles.hintRow}>
+                  <Text style={[text.body, styles.muted]}>{t('ride.findingHint')}</Text>
+                </View>
+                <HoppingDots />
+              </Animated.View>
+            </>
+          }
+        />
       </View>
 
       <View style={styles.bottom}>
