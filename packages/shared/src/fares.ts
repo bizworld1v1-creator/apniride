@@ -62,6 +62,27 @@ export function clampOffer(recommendedFare: number, offer: number): number {
   return Math.min(max, Math.max(min, Math.round(offer / step) * step));
 }
 
+/** A driver's counter-offers: the passenger's offer + 10 %, + 20 %, + 30 % (rounded up to Rs 10, each at least Rs 10 more). */
+export const COUNTER_OFFER_PERCENT = [10, 20, 30] as const;
+
+export function counterOffers(offer: number): number[] {
+  const out: number[] = [];
+  let last = offer;
+  for (const percent of COUNTER_OFFER_PERCENT) {
+    // Whole numbers only (offer × 110 / 1000), so 100 + 10 % is exactly 110, not 110.00000000000001.
+    const raised = Math.ceil((offer * (100 + percent)) / (100 * OFFER_STEP)) * OFFER_STEP;
+    const next = Math.max(last + OFFER_STEP, raised);
+    out.push(next);
+    last = next;
+  }
+  return out;
+}
+
+/** What a driver may bid on a request: the passenger's own price, or one of the counter-offers. */
+export function isAllowedBid(offer: number, bid: number): boolean {
+  return bid === offer || counterOffers(offer).includes(bid);
+}
+
 /** Error codes from POST /fares/estimate. */
 export const fareErrorCodeSchema = z.enum(['outside_service_area', 'trip_too_short', 'trip_too_long']);
 export type FareErrorCode = z.infer<typeof fareErrorCodeSchema>;

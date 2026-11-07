@@ -63,6 +63,12 @@ export default async function DriverPage({ params }: { params: Promise<{ id: str
         <div>
           <h2>Decision</h2>
           <p className="muted">Check: photo matches selfie, CNIC and licence names match, licence valid, plate on the photo matches.</p>
+          {d.missingDocuments.length ? (
+            <p className="error">
+              {d.missingDocuments.length} required photo{d.missingDocuments.length === 1 ? ' is' : 's are'} missing:{' '}
+              {d.missingDocuments.map((t) => DOCUMENT_LABELS[t]).join(', ')}. Approve anyway, or reject and ask for them.
+            </p>
+          ) : null}
           <ReviewForm id={d.id} status={d.status} />
           {d.history.length ? (
             <>

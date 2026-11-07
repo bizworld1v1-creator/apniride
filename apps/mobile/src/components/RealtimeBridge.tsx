@@ -1,4 +1,4 @@
-import { type AppMode, type DriverPosition, type Ride, type RideOffer, SOCKET_EVENTS } from '@apniride/shared';
+import { type AppMode, type DriverPosition, type Ride, type RideBids, type RideOffer, SOCKET_EVENTS } from '@apniride/shared';
 import type { QueryClient } from '@tanstack/react-query';
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -8,7 +8,7 @@ import { EARNINGS_KEY, historyKey } from '@/lib/account';
 import { CURRENT_KEY, type DriverCurrent, patchCurrent, PROFILE_KEY, setOffer, setOwnEta } from '@/lib/driver';
 import { setDriverPosition } from '@/lib/driver-position';
 import { ONBOARDING_KEY } from '@/lib/onboarding';
-import { setCurrentRide } from '@/lib/ride';
+import { setBids, setCurrentRide } from '@/lib/ride';
 import { disconnectSocket, getSocket } from '@/lib/socket';
 
 type Handlers = Record<string, (payload: never) => void>;
@@ -24,6 +24,11 @@ function passengerHandlers(queryClient: QueryClient): Handlers {
       if (FINISHED.has(ride.status)) void queryClient.invalidateQueries({ queryKey: historyKey('passenger') });
     },
     [SOCKET_EVENTS.rideDriverLocation]: (p: DriverPosition) => setDriverPosition(queryClient, p),
+    // Drivers answering the request (offers deck). A short buzz for each new one.
+    [SOCKET_EVENTS.rideBids]: (data: RideBids) => {
+      setBids(queryClient, data);
+      if (data.bids.length) Vibration.vibrate(150);
+    },
     // After any (re)connect, catch up on what we may have missed while offline (ride + driver position).
     connect: () => void queryClient.invalidateQueries({ queryKey: ['ride'] }),
   };
@@ -43,7 +48,10 @@ function driverHandlers(queryClient: QueryClient): Handlers {
     },
     [SOCKET_EVENTS.rideUpdate]: (ride: Ride) => {
       // Back to "searching" means this driver is no longer on it (they cancelled).
-      patchCurrent(queryClient, { ride: ride.status === 'searching' ? null : ride });
+      const current = queryClient.getQueryData<DriverCurrent>(CURRENT_KEY);
+      // Chosen by the passenger: the request becomes this ride.
+      const offer = current?.offer?.rideId === ride.id ? null : (current?.offer ?? null);
+      patchCurrent(queryClient, { offer, ride: ride.status === 'searching' ? null : ride });
       if (ride.status === 'cancelled') Vibration.vibrate(400);
       if (FINISHED.has(ride.status)) {
         void queryClient.invalidateQueries({ queryKey: historyKey('driver') });

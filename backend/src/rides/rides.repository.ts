@@ -73,6 +73,8 @@ export function toRide(record: RideRecord): Ride {
   return ride;
 }
 
+export type OfferResponse = 'accepted' | 'declined' | 'expired' | 'cancelled' | 'bid_expired' | 'not_chosen';
+
 export interface NewRide {
   passengerId: string;
   city: CityCode;
@@ -166,14 +168,37 @@ export class RidesRepository {
     return rowCount ? this.find(id) : null;
   }
 
-  /** Assigns the driver. Null if the ride is no longer searching (e.g. passenger cancelled). */
-  async accept(id: string, driverId: string): Promise<RideRecord | null> {
+  /**
+   * Assigns the chosen driver at the price of their bid. Null if the ride is no longer searching (e.g. the passenger
+   * cancelled). Throws pg 23505 if this driver already has an active ride.
+   */
+  async accept(id: string, driverId: string, fare: number): Promise<RideRecord | null> {
     const { rowCount } = await this.pool.query(
-      `UPDATE rides SET status = 'accepted', driver_id = $2, accepted_at = now(), cancelled_by = NULL
+      `UPDATE rides SET status = 'accepted', driver_id = $2, fare = $3, accepted_at = now(), cancelled_by = NULL
         WHERE id = $1 AND status = 'searching'`,
-      [id, driverId],
+      [id, driverId, fare],
     );
     return rowCount ? this.find(id) : null;
+  }
+
+  /** First name and "Make Model" of a driver, shown to the passenger on a bid. */
+  async bidder(driverId: string): Promise<{ firstName: string; vehicle: string | null }> {
+    const { rows } = await this.pool.query<{ name: string | null; make: string | null; model: string | null }>(
+      `SELECT u.name, d.vehicle_make AS make, d.vehicle_model AS model
+         FROM users u LEFT JOIN drivers d ON d.user_id = u.id WHERE u.id = $1`,
+      [driverId],
+    );
+    const row = rows[0];
+    const vehicle = [row?.make, row?.model].filter((v) => v && v.trim()).join(' ').trim();
+    return { firstName: firstName(row?.name ?? null), vehicle: vehicle || null };
+  }
+
+  async recordBid(rideId: string, driverId: string, fare: number): Promise<void> {
+    await this.pool.query(`UPDATE ride_offers SET bid_fare = $3, bid_at = now() WHERE ride_id = $1 AND driver_id = $2`, [
+      rideId,
+      driverId,
+      fare,
+    ]);
   }
 
   async recordOffer(rideId: string, driverId: string, pickupDistanceKm: number): Promise<void> {
@@ -187,7 +212,7 @@ export class RidesRepository {
   async respondOffer(
     rideId: string,
     driverId: string,
-    response: 'accepted' | 'declined' | 'expired' | 'cancelled',
+    response: OfferResponse,
   ): Promise<void> {
     await this.pool.query(
       `UPDATE ride_offers SET response = $3, responded_at = now()

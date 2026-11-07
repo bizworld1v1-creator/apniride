@@ -1,5 +1,6 @@
 import {
   apiErrorBodySchema,
+  type AdminLoginBody,
   authSessionSchema,
   authTokensSchema,
   requestOtpResponseSchema,
@@ -44,7 +45,9 @@ import { healthResponseSchema, type HealthResponse } from './health';
 import { type NearbyDriversQuery, type NearbyDriversResponse, nearbyDriversResponseSchema } from './tracking';
 import {
   type BookRideBody,
+  type ChooseBidBody,
   currentRideResponseSchema,
+  type DriverBidBody,
   type DriverCurrentResponse,
   driverCurrentResponseSchema,
   type DriverPosition,
@@ -53,6 +56,10 @@ import {
   driverProfileSchema,
   type GoOnlineBody,
   type Ride,
+  type RideBids,
+  rideBidsSchema,
+  type RideOffer,
+  rideOfferSchema,
   rideSchema,
 } from './rides';
 import {
@@ -264,6 +271,14 @@ export function createApiClient(options: ApiClientOptions) {
           auth: false,
         }),
 
+      /** Admin panel sign-in with username + password. */
+      adminLogin: (body: AdminLoginBody): Promise<AuthSession> =>
+        request('/auth/admin/login', (d) => authSessionSchema.parse(d), {
+          method: 'POST',
+          body,
+          auth: false,
+        }),
+
       /** Switches this phone between passenger and driver mode (no new OTP). Returns the new session to store. */
       switchRole: (role: AppMode): Promise<AuthSession> =>
         request('/auth/switch-role', (d) => authSessionSchema.parse(d), {
@@ -309,6 +324,11 @@ export function createApiClient(options: ApiClientOptions) {
         request(`/rides/${id}/driver-location`, (d) => driverPositionResponseSchema.parse(d).position),
       cancel: (id: string): Promise<Ride> =>
         request(`/rides/${id}/cancel`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      /** Drivers' open bids while searching (after app start / reconnect; then pushed as `ride:bids`). */
+      bids: (id: string): Promise<RideBids> => request(`/rides/${id}/bids`, (d) => rideBidsSchema.parse(d)),
+      /** Ride with this driver at their price. 410 `bid_expired` if the bid is gone. */
+      choose: (id: string, body: ChooseBidBody): Promise<Ride> =>
+        request(`/rides/${id}/choose`, (d) => rideSchema.parse(d), { method: 'POST', body }),
       /** The passenger's finished rides, newest first. Pass the previous page's nextCursor for older ones. */
       history: (cursor?: string | null): Promise<RideHistoryPage> =>
         request(historyPath('/rides/history', cursor), (d) => rideHistoryPageSchema.parse(d)),
@@ -345,8 +365,9 @@ export function createApiClient(options: ApiClientOptions) {
         request('/driver/offline', (d) => driverProfileSchema.parse(d), { method: 'POST' }),
       current: (): Promise<DriverCurrentResponse> =>
         request('/driver/current', (d) => driverCurrentResponseSchema.parse(d)),
-      accept: (rideId: string): Promise<Ride> =>
-        request(`/driver/rides/${rideId}/accept`, (d) => rideSchema.parse(d), { method: 'POST' }),
+      /** Accept the passenger's price (fare = offer) or counter-offer. Returns the request with `bid` set. */
+      bid: (rideId: string, body: DriverBidBody): Promise<RideOffer> =>
+        request(`/driver/rides/${rideId}/bid`, (d) => rideOfferSchema.parse(d), { method: 'POST', body }),
       decline: (rideId: string): Promise<void> =>
         request(`/driver/rides/${rideId}/decline`, () => undefined, { method: 'POST' }),
       arrived: (rideId: string): Promise<Ride> =>

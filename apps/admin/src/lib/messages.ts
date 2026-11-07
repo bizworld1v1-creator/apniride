@@ -5,13 +5,10 @@ import { ApiError } from '@apniride/shared';
  * If the team wants Urdu, move these into i18n files like the apps.
  */
 const MESSAGES: Record<string, string> = {
-  invalid_phone: 'Enter a Pakistani mobile number, e.g. 0300 1234567.',
-  invalid_code: 'Wrong code. Check the SMS and try again.',
-  code_expired: 'The code has expired. Ask for a new one.',
-  too_many_attempts: 'Too many wrong codes. Ask for a new one.',
-  resend_too_soon: 'Please wait a minute before asking for another code.',
-  rate_limited: 'Too many codes asked for. Try again later.',
-  not_admin: 'This number is not an admin (or was disabled). Ask an existing admin to run: pnpm admins add <phone> "<name>".',
+  invalid_login: 'Wrong username or password.',
+  admin_login_off: 'The admin login is not set up. Put ADMIN_USERNAME and ADMIN_PASSWORD in backend/.env and restart the backend.',
+  rate_limited: 'Too many wrong tries. Wait 15 minutes and try again.',
+  not_admin: 'Please sign in again (the admin password may have changed).',
   invalid_driver_state: 'The driver changed state in the meantime. Reload the page.',
   driver_not_found: 'No such driver.',
   ride_not_found: 'No such ride.',

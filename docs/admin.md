@@ -5,35 +5,28 @@ set fare rates. English only for now (internal tool; see "Not done yet").
 
 ## Run it
 
-```powershell
-pnpm db:up; pnpm db:migrate; pnpm backend      # the API on :3000
-pnpm admins add 03001234567 "Your Name"        # once: put your number on the admin list
-pnpm admin                                     # the panel on http://localhost:3001
-```
+1. `pnpm dev` (or the single parts: `pnpm db:up; pnpm db:migrate; pnpm backend`, then `pnpm admin`).
+2. Open **http://localhost:3001**.
+3. Sign in with **`ADMIN_USERNAME`** and **`ADMIN_PASSWORD`** from `backend/.env`.
+4. **Drivers** → open the pending request → check the photos → **Approve** (or Reject with a reason).
 
-Sign in with that number. In development the code is shown on the login page (`OTP_DEV_ECHO=true`);
-in production it comes by SMS. The panel reads the API address from `API_URL` (`apps/admin/.env.local`,
-default `http://localhost:3000`).
+No commands, no phone number, no SMS. The panel reads the API address from `API_URL`
+(`apps/admin/.env.local`, default `http://localhost:3000`).
 
 ## Who can sign in
 
-- Admins sign in with **phone OTP**, role `admin`, through the same `/auth/otp/*` endpoints as the apps.
-- Only numbers in the `admins` table can. Nobody becomes an admin by signing in: `pnpm admins add` is the only
-  way in. For any other number the API answers exactly as usual but sends no SMS and stores no code, so
-  the admin list can't be probed.
-- `pnpm admins disable <phone>` locks an admin out **at once**: every admin request checks the table, so even a
-  token they already have stops working. `pnpm admins enable <phone>` undoes it. `pnpm admins list` shows all.
+- **One admin.** It signs in with the username + password in `backend/.env` (`POST /auth/admin/login`). The
+  admin row (and a user row with no phone number, name "Admin") is created on the first sign-in.
+- Phone OTP never opens the panel: `/auth/otp/*` only accepts the `passenger` and `driver` roles. Older
+  phone-based admins (from before 2026-11-07) can't get in any more.
+- **Change the password:** edit `ADMIN_PASSWORD` in `backend/.env` and restart the backend. Every admin request
+  checks a fingerprint of the username + password the session was opened with, so the old session stops working
+  at once. Changing `ADMIN_USERNAME` does the same (and starts a new admin row; the audit log keeps the old one).
+- `ADMIN_PASSWORD` must be at least 8 characters, **12 in production** (the server refuses to start otherwise).
+  Not set: the panel shows "admin login is not set up".
+- **10 wrong tries per IP in 15 minutes**, then that IP waits (HTTP 429), even with the right password.
+  The password is compared in constant time and never logged.
 - Admin sessions last **7 days** (apps: 60), then sign in again.
-
-```
-pnpm admins list
-pnpm admins add     <phone> "<name>"
-pnpm admins disable <phone>
-pnpm admins enable  <phone>
-```
-
-`pnpm admins` talks to the database directly (`DATABASE_URL` in `backend/.env`); run it on the server or with a
-tunnel to the production database.
 
 ## How the session is kept safe
 
@@ -87,7 +80,7 @@ A non-admin token gets `403 not_admin`.
 ## Not done yet
 
 - Complaints (comes with ratings + complaints).
-- Roles (everyone is a full admin), adding admins from the panel, audit log page.
+- More than one admin, roles, audit log page.
 - Urdu for the panel.
 - Search drivers / rides by phone or plate.
 - Changing an approved driver's vehicle.

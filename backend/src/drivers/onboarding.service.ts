@@ -160,20 +160,16 @@ export class OnboardingService {
     return this.get(driverId);
   }
 
-  /** Sends the application for review. Repeating it while pending is fine (lost response on weak internet). */
+  /**
+   * Sends the application for review. Repeating it while pending is fine (lost response on weak internet).
+   * Missing photos don't block it (owner decision 2026-11-07): the admin sees what's missing and approves or rejects.
+   */
   async submit(driverId: string): Promise<DriverOnboarding> {
     const app = await this.load(driverId);
     const status = app.row.approval_status;
     if (status === 'pending') return this.toOnboarding(app);
     if (!app.details) throw detailsRequired();
     if (!canEditDriverApplication(status)) throw locked();
-    if (app.missingDocuments.length > 0) {
-      throw new AppException(
-        HttpStatus.CONFLICT,
-        'documents_missing',
-        `Missing documents: ${app.missingDocuments.join(', ')}`,
-      );
-    }
     await this.pool.query(
       `UPDATE drivers SET approval_status = 'pending', submitted_at = now(), review_note = NULL, updated_at = now()
        WHERE user_id = $1 AND approval_status = ANY($2)`,

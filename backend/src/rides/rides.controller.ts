@@ -2,9 +2,12 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post
 import {
   type BookRideBody,
   bookRideBodySchema,
+  type ChooseBidBody,
+  chooseBidBodySchema,
   type CurrentRideResponse,
   type DriverPosition,
   type Ride,
+  type RideBids,
   type RideHistoryPage,
   rideHistoryQuerySchema,
 } from '@apniride/shared';
@@ -65,6 +68,25 @@ export class RidesController {
   ): Promise<{ position: DriverPosition | null }> {
     assertRole(me, 'passenger');
     return { position: await this.rides.driverPosition(me.userId, id) };
+  }
+
+  /** Drivers' answers while searching (also pushed as "ride:bids"). */
+  @Get(':id/bids')
+  bids(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string): Promise<RideBids> {
+    assertRole(me, 'passenger');
+    return this.rides.bids(me.userId, id);
+  }
+
+  /** Ride with this driver at their price. 410 bid_expired if the bid lapsed or the driver left. */
+  @Post(':id/choose')
+  @HttpCode(HttpStatus.OK)
+  choose(
+    @CurrentUser() me: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(chooseBidBodySchema)) body: ChooseBidBody,
+  ): Promise<Ride> {
+    assertRole(me, 'passenger');
+    return this.rides.choose(me.userId, id, body.bidId);
   }
 
   @Post(':id/cancel')

@@ -19,6 +19,10 @@ const envSchema = z
     OTP_SECRET: z.string().min(32, 'must be at least 32 characters'),
     /** Return the OTP in the API response so you can test without SMS. Dev only. */
     OTP_DEV_ECHO: boolString,
+    /** The one admin of the admin panel signs in with this username + password. */
+    ADMIN_USERNAME: z.string().trim().min(3).max(64).default('admin'),
+    /** Unset: the admin panel can't be opened. At least 12 characters in production. */
+    ADMIN_PASSWORD: z.string().min(8, 'must be at least 8 characters').max(200).optional(),
     /** Only "console" exists for now (prints the code in the server log). */
     SMS_PROVIDER: z.enum(['console']).default('console'),
     /** OTP codes per client IP per hour. Generous because many users share carrier NAT IPs. */
@@ -26,8 +30,12 @@ const envSchema = z
 
     /** Where driver document photos are stored (local disk). Relative paths are relative to backend/. */
     UPLOAD_DIR: z.string().min(1).default('uploads'),
-    /** Seconds a driver has to accept an offer before it goes to the next driver. */
+    /** Seconds a driver has to answer a ride request (accept the price, counter-offer or decline). */
     OFFER_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(60).default(15),
+    /** Seconds the passenger has to choose a driver's bid before it lapses. */
+    BID_TIMEOUT_SECONDS: z.coerce.number().int().min(5).max(120).default(20),
+    /** How many drivers see the same request at once (like inDrive). Topped up as they drop out. */
+    MAX_PARALLEL_REQUESTS: z.coerce.number().int().min(1).max(20).default(5),
     /** Give up and tell the passenger "no driver" after this long. */
     SEARCH_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(600).default(120),
     /** Only offer rides to drivers within this distance of the pickup. */
@@ -39,6 +47,9 @@ const envSchema = z
     if (env.NODE_ENV !== 'production') return;
     if (env.OTP_DEV_ECHO) {
       ctx.addIssue({ code: 'custom', path: ['OTP_DEV_ECHO'], message: 'must be false in production' });
+    }
+    if (!env.ADMIN_PASSWORD || env.ADMIN_PASSWORD.length < 12) {
+      ctx.addIssue({ code: 'custom', path: ['ADMIN_PASSWORD'], message: 'at least 12 characters in production' });
     }
     if (env.SMS_PROVIDER === 'console') {
       ctx.addIssue({

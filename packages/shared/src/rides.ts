@@ -75,7 +75,19 @@ export type DriverProfile = z.infer<typeof driverProfileSchema>;
 export const goOnlineBodySchema = z.object({ location: latLngSchema });
 export type GoOnlineBody = z.infer<typeof goOnlineBodySchema>;
 
-/** A ride offered to one driver, who has until expiresAt to accept. */
+/** The driver's own bid on a request, while the passenger is choosing. */
+export const ownBidSchema = z.object({
+  fare: z.number().int(),
+  /** Seconds the passenger still has to choose this bid. */
+  expiresInSeconds: z.number().int(),
+});
+export type OwnBid = z.infer<typeof ownBidSchema>;
+
+/**
+ * A ride request sent to a driver (like inDrive: to several drivers at once). Until expiresAt the driver can accept the
+ * passenger's price, counter-offer (`counterOffers(fare)`), or decline. After bidding, `bid` is set and the passenger
+ * chooses; the request then ends with a ride update (chosen) or `ride:offer_cancelled` (someone else / expired).
+ */
 export const rideOfferSchema = z.object({
   rideId: z.string().uuid(),
   expiresAt: z.string(),
@@ -90,8 +102,47 @@ export const rideOfferSchema = z.object({
   /** Straight-line distance from the driver to the pickup. */
   pickupDistanceKm: z.number(),
   passengerFirstName: z.string(),
+  /** This driver's bid, once sent (then `expiresInSeconds` counts down the bid instead of the request). */
+  bid: ownBidSchema.nullable().default(null),
 });
 export type RideOffer = z.infer<typeof rideOfferSchema>;
+
+/** Driver → server: accept the passenger's price (fare = the offer) or counter-offer. */
+export const driverBidBodySchema = z.object({ fare: z.number().int().positive() });
+export type DriverBidBody = z.infer<typeof driverBidBodySchema>;
+
+/**
+ * A driver's answer, as the passenger sees it (offers deck). No ids or phone numbers of the driver: `bidId` is only
+ * for choosing.
+ */
+export const bidSchema = z.object({
+  bidId: z.string().uuid(),
+  fare: z.number().int(),
+  /** "accepted": at the passenger's price. "counter": higher. */
+  kind: z.enum(['accepted', 'counter']),
+  /** Seconds left to choose it (count down from this; phone clocks are often wrong). */
+  expiresInSeconds: z.number().int(),
+  driver: z.object({
+    firstName: z.string(),
+    /** e.g. "Honda City" (make + model), null if not known. Never the number plate before choosing. */
+    vehicle: z.string().nullable(),
+  }),
+  pickupDistanceKm: z.number(),
+  /** Estimated minutes for the driver to reach the pickup. */
+  etaMin: z.number().int(),
+});
+export type Bid = z.infer<typeof bidSchema>;
+
+/** The open bids on a ride, newest last. Also pushed to the passenger as `ride:bids` whenever they change. */
+export const rideBidsSchema = z.object({ rideId: z.string().uuid(), bids: z.array(bidSchema) });
+export type RideBids = z.infer<typeof rideBidsSchema>;
+
+export const chooseBidBodySchema = z.object({ bidId: z.string().uuid() });
+export type ChooseBidBody = z.infer<typeof chooseBidBodySchema>;
+
+/** Why a request left the driver's screen. */
+export const offerClosedReasonSchema = z.enum(['expired', 'taken', 'cancelled']);
+export type OfferClosedReason = z.infer<typeof offerClosedReasonSchema>;
 
 /** What the driver app needs after (re)connecting: a pending offer and/or the ride in progress. */
 export const driverCurrentResponseSchema = z.object({
@@ -105,10 +156,12 @@ export type DriverCurrentResponse = z.infer<typeof driverCurrentResponseSchema>;
 // ---------------------------------------------------------------------------
 
 export const SOCKET_EVENTS = {
-  /** server → driver: RideOffer */
+  /** server → driver: RideOffer (a new request, or the same one with the driver's bid). */
   rideOffer: 'ride:offer',
-  /** server → driver: { rideId }. The offer expired or the passenger cancelled. */
+  /** server → driver: { rideId, reason: OfferClosedReason }. Expired, another driver was chosen, or the passenger cancelled. */
   rideOfferCancelled: 'ride:offer_cancelled',
+  /** server → passenger: RideBids. The drivers' answers while searching (offers deck). */
+  rideBids: 'ride:bids',
   /** server → passenger and driver: Ride (any status change) */
   rideUpdate: 'ride:update',
   /** driver → server: DriverLocationUpdate. Every few seconds while online or on a ride. */

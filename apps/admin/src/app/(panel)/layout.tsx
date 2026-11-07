@@ -17,7 +17,7 @@ export default async function PanelLayout({ children }: { children: ReactNode })
           <Link href="/fares">Fares</Link>
         </nav>
         <form action={logout} className="who">
-          <span className="muted">{me.name ?? me.phoneMasked}</span>
+          <span className="muted">{me.name ?? me.username}</span>
           <button type="submit" className="link">
             Sign out
           </button>

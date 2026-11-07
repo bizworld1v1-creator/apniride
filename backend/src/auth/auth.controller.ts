@@ -1,5 +1,7 @@
 import { Body, Controller, HttpCode, HttpStatus, Ip, Post, UseGuards } from '@nestjs/common';
 import {
+  type AdminLoginBody,
+  adminLoginBodySchema,
   type AuthSession,
   type AuthTokens,
   type RefreshBody,
@@ -13,6 +15,7 @@ import {
 import type { z } from 'zod';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { AuthGuard } from './auth.guard.js';
+import { AdminLoginService } from './admin-login.service.js';
 import { AuthService } from './auth.service.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { OtpService } from './otp.service.js';
@@ -24,17 +27,17 @@ export class AuthController {
     private readonly otp: OtpService,
     private readonly auth: AuthService,
     private readonly tokens: TokensService,
+    private readonly adminLogin: AdminLoginService,
   ) {}
 
-  /** Sends a 6-digit code by SMS. Same response whether or not the number has an account (or is an admin). */
+  /** Sends a 6-digit code by SMS (passenger / driver mode). Same response whether or not the number has an account. */
   @Post('otp/request')
   @HttpCode(HttpStatus.OK)
-  async request(
+  request(
     @Body(new ZodValidationPipe(requestOtpBodySchema)) body: z.output<typeof requestOtpBodySchema>,
     @Ip() ip: string,
   ): Promise<RequestOtpResponse> {
-    const deliver = body.role !== 'admin' || (await this.auth.activeAdminId(body.phone)) !== null;
-    return this.otp.request(body.phone, body.role, ip, deliver);
+    return this.otp.request(body.phone, body.role, ip);
   }
 
   /** Exchanges a valid code for tokens. Creates the account on first sign-in. */
@@ -44,6 +47,16 @@ export class AuthController {
     @Body(new ZodValidationPipe(verifyOtpBodySchema)) body: z.output<typeof verifyOtpBodySchema>,
   ): Promise<AuthSession> {
     return this.auth.verifyOtp(body.phone, body.role, body.code);
+  }
+
+  /** The admin panel: ADMIN_USERNAME + ADMIN_PASSWORD from backend/.env. */
+  @Post('admin/login')
+  @HttpCode(HttpStatus.OK)
+  adminSignIn(
+    @Body(new ZodValidationPipe(adminLoginBodySchema)) body: AdminLoginBody,
+    @Ip() ip: string,
+  ): Promise<AuthSession> {
+    return this.adminLogin.login(body.username, body.password, ip);
   }
 
   @Post('refresh')

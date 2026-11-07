@@ -7,7 +7,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="login">
       <h1>ApniRide Admin</h1>
-      <p className="muted">Sign in with your admin phone number.</p>
+      <p className="muted">Sign in with the admin username and password.</p>
       {errorFor(error) ? <p className="error">{errorFor(error)}</p> : null}
       <LoginForm next={safeNext(next)} />
     </main>

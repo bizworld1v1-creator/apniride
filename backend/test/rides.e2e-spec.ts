@@ -5,11 +5,13 @@ import type { App } from 'supertest/types.js';
 import {
   authSessionSchema,
   type DriverPosition,
+  counterOffers,
   fareEstimateResponseSchema,
   offerRange,
   type LatLng,
   requestOtpResponseSchema,
   type Ride,
+  type RideBids,
   type RideOffer,
   rideSchema,
   SOCKET_EVENTS,
@@ -143,6 +145,18 @@ describe('Booking and dispatch (e2e)', () => {
     next<RideOffer>(driver.socket, SOCKET_EVENTS.rideOffer, (o) => o.rideId === rideId);
   const update = (actor: Actor, rideId: string, status: Ride['status'], ms?: number) =>
     next<Ride>(actor.socket, SOCKET_EVENTS.rideUpdate, (r) => r.id === rideId && r.status === status, ms);
+  const bidsWith = (passenger: Actor, rideId: string, count: number) =>
+    next<RideBids>(passenger.socket, SOCKET_EVENTS.rideBids, (b) => b.rideId === rideId && b.bids.length === count);
+
+  /** The driver accepts the passenger's price (a bid) and the passenger chooses them. */
+  async function acceptAndChoose(driver: Actor, passenger: Actor, rideId: string, received?: RideOffer): Promise<Ride> {
+    const offer = received ?? (await offerFor(driver, rideId));
+    const bids = bidsWith(passenger, rideId, 1);
+    await http().post(`/driver/rides/${rideId}/bid`).set(driver.auth).send({ fare: offer.fare }).expect(200);
+    const [bid] = (await bids).bids;
+    const res = await http().post(`/rides/${rideId}/choose`).set(passenger.auth).send({ bidId: bid!.bidId }).expect(200);
+    return rideSchema.parse(res.body);
+  }
 
   it('rejects sockets without a valid token', async () => {
     const socket = io(url, { auth: { token: 'nope' }, transports: ['websocket'], reconnection: false });
@@ -157,7 +171,7 @@ describe('Booking and dispatch (e2e)', () => {
     expect(res.body.code).toBe('wrong_app');
   });
 
-  it('runs a full ride: offer → accept → arrived → start → complete', async () => {
+  it('runs a full ride: request → driver accepts the price → passenger chooses → arrived → start → complete', async () => {
     const pickup = spot(0, 0);
     const driver = await onlineDriver('car', { latitude: pickup.latitude + 0.003, longitude: pickup.longitude });
     const passenger = await signIn('passenger', 'Ayesha Khan');
@@ -178,10 +192,25 @@ describe('Booking and dispatch (e2e)', () => {
     // A reconnecting driver app sees the same offer.
     expect((await http().get('/driver/current').set(driver.auth).expect(200)).body.offer.rideId).toBe(ride.id);
 
+    // The driver accepts the passenger's price: that is a bid the passenger sees live.
+    const bidsIn = bidsWith(passenger, ride.id, 1);
+    const bidRes = await http().post(`/driver/rides/${ride.id}/bid`).set(driver.auth).send({ fare: offer.fare }).expect(200);
+    expect(bidRes.body.bid).toMatchObject({ fare: offer.fare });
+    const [bid] = (await bidsIn).bids;
+    expect(bid).toMatchObject({ fare: ride.fare, kind: 'accepted', driver: { firstName: 'Bilal' } });
+    expect(bid!.etaMin).toBeGreaterThan(0);
+    // The passenger never sees the driver's id or number, only a bid id to choose with.
+    expect(JSON.stringify(bid)).not.toContain(driver.userId);
+    expect(JSON.stringify(bid)).not.toMatch(/\+92|phone/i);
+    // A reconnecting passenger app fetches the same bids.
+    expect((await http().get(`/rides/${ride.id}/bids`).set(passenger.auth).expect(200)).body.bids).toHaveLength(1);
+
+    const driverSees = update(driver, ride.id, 'accepted');
     const accepted = update(passenger, ride.id, 'accepted');
-    const acceptRes = await http().post(`/driver/rides/${ride.id}/accept`).set(driver.auth).expect(200);
+    const acceptRes = await http().post(`/rides/${ride.id}/choose`).set(passenger.auth).send({ bidId: bid!.bidId }).expect(200);
     expect(acceptRes.body.driver).toEqual({ firstName: 'Bilal' });
     expect((await accepted).driver).toEqual({ firstName: 'Bilal' });
+    await driverSees;
     // No phone numbers anywhere in what the apps get.
     expect(JSON.stringify(acceptRes.body)).not.toMatch(/\+92|phone/i);
 
@@ -303,7 +332,7 @@ describe('Booking and dispatch (e2e)', () => {
     await http().post(`/driver/rides/${ride.id}/decline`).set(driver.auth).expect(204);
     expect((await noDriver).cancelledBy).toBe('system');
     // Too late to accept now.
-    await http().post(`/driver/rides/${ride.id}/accept`).set(driver.auth).expect(410);
+    await http().post(`/driver/rides/${ride.id}/bid`).set(driver.auth).send({ fare: ride.fare }).expect(410);
   });
 
   it('takes the offer back when the driver does not answer in time', async () => {
@@ -319,8 +348,8 @@ describe('Booking and dispatch (e2e)', () => {
       (p) => p.rideId === ride.id,
       12_000,
     );
-    expect(cancelled.rideId).toBe(ride.id);
-    await http().post(`/driver/rides/${ride.id}/accept`).set(driver.auth).expect(410);
+    expect(cancelled).toEqual({ rideId: ride.id, reason: 'expired' });
+    await http().post(`/driver/rides/${ride.id}/bid`).set(driver.auth).send({ fare: ride.fare }).expect(410);
     await http().post(`/rides/${ride.id}/cancel`).set(passenger.auth).expect(200);
   });
 
@@ -345,8 +374,7 @@ describe('Booking and dispatch (e2e)', () => {
     const passenger = await signIn('passenger', 'Fatima');
 
     const ride = await book(passenger, 'car', pickup);
-    await offerFor(first, ride.id);
-    await http().post(`/driver/rides/${ride.id}/accept`).set(first.auth).expect(200);
+    await acceptAndChoose(first, passenger, ride.id);
 
     const second = await onlineDriver('car', pickup);
     const researching = update(passenger, ride.id, 'searching');
@@ -355,10 +383,79 @@ describe('Booking and dispatch (e2e)', () => {
     expect((await researching).cancelledBy).toBe('driver');
 
     // The ride goes to the other driver, never back to the one who cancelled.
-    await secondOffer;
-    await http().post(`/driver/rides/${ride.id}/accept`).set(second.auth).expect(200);
+    await acceptAndChoose(second, passenger, ride.id, await secondOffer);
     const current = (await http().get('/rides/current').set(passenger.auth).expect(200)).body.ride;
     expect(current).toMatchObject({ status: 'accepted', cancelledBy: null });
+    await http().post(`/rides/${ride.id}/cancel`).set(passenger.auth).expect(200);
+  });
+
+  it('sends the request to several drivers; one counter-offers and the passenger chooses it', async () => {
+    const pickup = spot(0.08, 0.08);
+    const cheap = await onlineDriver('car', pickup);
+    const counter = await onlineDriver('car', { latitude: pickup.latitude + 0.002, longitude: pickup.longitude });
+    const passenger = await signIn('passenger', 'Mariam');
+
+    const ride = await book(passenger, 'car', pickup);
+    // Both drivers get it at the same time (no waiting for the first to answer).
+    const [offerA, offerB] = await Promise.all([offerFor(cheap, ride.id), offerFor(counter, ride.id)]);
+    const raised = counterOffers(ride.fare);
+    expect(raised).toHaveLength(3);
+
+    // Only the passenger's price or the listed counter-offers are allowed.
+    const bad = await http().post(`/driver/rides/${ride.id}/bid`).set(counter.auth).send({ fare: ride.fare + 1 }).expect(400);
+    expect(bad.body.code).toBe('bid_not_allowed');
+
+    const twoBids = bidsWith(passenger, ride.id, 2);
+    await http().post(`/driver/rides/${ride.id}/bid`).set(cheap.auth).send({ fare: offerA.fare }).expect(200);
+    await http().post(`/driver/rides/${ride.id}/bid`).set(counter.auth).send({ fare: raised[0] }).expect(200);
+    // Bidding twice is not possible: the request is now waiting for the passenger.
+    await http().post(`/driver/rides/${ride.id}/bid`).set(counter.auth).send({ fare: offerB.fare }).expect(410);
+    const { bids } = await twoBids;
+    const counterBid = bids.find((b) => b.kind === 'counter')!;
+    expect(counterBid.fare).toBe(raised[0]);
+    expect(bids.find((b) => b.kind === 'accepted')!.fare).toBe(ride.fare);
+
+    const notChosen = next<{ rideId: string; reason: string }>(
+      cheap.socket,
+      SOCKET_EVENTS.rideOfferCancelled,
+      (p) => p.rideId === ride.id,
+    );
+    const chosen = rideSchema.parse(
+      (await http().post(`/rides/${ride.id}/choose`).set(passenger.auth).send({ bidId: counterBid.bidId }).expect(200)).body,
+    );
+    // The ride is at the counter-offer price now.
+    expect(chosen).toMatchObject({ status: 'accepted', fare: raised[0] });
+    expect((await notChosen).reason).toBe('taken');
+    // The other bid can't be chosen any more.
+    const late = bids.find((b) => b.kind === 'accepted')!;
+    await http().post(`/rides/${ride.id}/choose`).set(passenger.auth).send({ bidId: late.bidId }).expect(409);
+    await http().post(`/rides/${ride.id}/cancel`).set(passenger.auth).expect(200);
+  });
+
+  it("lets a bid lapse when the passenger doesn't choose it in time", async () => {
+    const pickup = spot(-0.08, -0.08);
+    const driver = await onlineDriver('bike', pickup);
+    const passenger = await signIn('passenger', 'Nida');
+
+    const ride = await book(passenger, 'bike', pickup);
+    const offer = await offerFor(driver, ride.id);
+    const bidsIn = bidsWith(passenger, ride.id, 1);
+    await http().post(`/driver/rides/${ride.id}/bid`).set(driver.auth).send({ fare: offer.fare }).expect(200);
+    const [bid] = (await bidsIn).bids;
+    // While the passenger is choosing, the driver app gets its bid back after a reconnect.
+    expect((await http().get('/driver/current').set(driver.auth).expect(200)).body.offer.bid.fare).toBe(offer.fare);
+
+    const lapsed = next<{ rideId: string; reason: string }>(
+      driver.socket,
+      SOCKET_EVENTS.rideOfferCancelled,
+      (p) => p.rideId === ride.id,
+      12_000,
+    );
+    const empty = bidsWith(passenger, ride.id, 0);
+    expect((await lapsed).reason).toBe('expired');
+    await empty;
+    const res = await http().post(`/rides/${ride.id}/choose`).set(passenger.auth).send({ bidId: bid!.bidId }).expect(410);
+    expect(res.body.code).toBe('bid_expired');
     await http().post(`/rides/${ride.id}/cancel`).set(passenger.auth).expect(200);
   });
 });

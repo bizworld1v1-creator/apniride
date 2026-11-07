@@ -14,9 +14,11 @@ import {
 import type pg from 'pg';
 import { runMigrations } from '../scripts/migrate.mjs';
 import { AppModule } from '../src/app.module.js';
+import type { Redis } from 'ioredis';
 import { PG_POOL } from '../src/database/database.module.js';
+import { REDIS } from '../src/redis/redis.module.js';
 import { setupApp } from '../src/setup-app.js';
-import { addAdmin, randomPhone, removeTestAdmins, signInAdmin, toE164 } from './admin-helpers.js';
+import { randomPhone, signInAdmin, TEST_ADMIN, toE164 } from './admin-helpers.js';
 
 // Needs `pnpm db:up`.
 describe('Admin panel API (e2e)', () => {
@@ -34,39 +36,36 @@ describe('Admin panel API (e2e)', () => {
   });
 
   afterAll(async () => {
-    if (app) await removeTestAdmins(app);
+    // Wrong-password tests count against 127.0.0.1; don't lock out the next test run.
+    await app?.get<Redis>(REDIS).del('admin-login:fails:127.0.0.1', 'admin-login:fails:::ffff:127.0.0.1', 'admin-login:fails:::1');
     await app?.close();
   });
 
   describe('sign-in', () => {
-    it('signs in an admin with phone OTP', async () => {
-      const admin = await signInAdmin(app, 'Sana Malik');
-      expect(admin.session.user).toMatchObject({ role: 'admin', name: 'Sana Malik' });
-      expect(admin.session.isNewUser).toBe(false);
+    it('signs in the one admin with username + password', async () => {
+      const admin = await signInAdmin(app);
+      expect(admin.session.user).toMatchObject({ role: 'admin', name: 'Admin' });
       const me = await http().get('/admin/me').set(admin.auth).expect(200);
-      expect(me.body).toEqual({ id: admin.id, name: 'Sana Malik', phoneMasked: expect.stringMatching(/^\+92 3•• ••• \d{4}$/) });
+      expect(me.body).toEqual({ id: admin.id, name: 'Admin', username: TEST_ADMIN.username });
+      // Same admin every time (created once).
+      expect((await signInAdmin(app)).id).toBe(admin.id);
     });
 
-    it('never creates an admin: other numbers get the normal response but no code', async () => {
+    it('refuses a wrong username or password', async () => {
+      const bad = await http().post('/auth/admin/login').send({ ...TEST_ADMIN, password: 'wrong-password' }).expect(401);
+      expect(bad.body.code).toBe('invalid_login');
+      await http().post('/auth/admin/login').send({ ...TEST_ADMIN, username: 'admin2' }).expect(401);
+      await http().post('/auth/admin/login').send({ username: TEST_ADMIN.username }).expect(400);
+    });
+
+    it('phone OTP never opens the admin panel', async () => {
       const phone = randomPhone();
-      const res = await http().post('/auth/otp/request').send({ phone, role: 'admin' }).expect(200);
-      const otp = requestOtpResponseSchema.parse(res.body);
-      expect(otp.devCode).toBeUndefined();
-      expect(otp.expiresInSeconds).toBeGreaterThan(0);
+      await http().post('/auth/otp/request').send({ phone, role: 'admin' }).expect(400);
       await http().post('/auth/otp/verify').send({ phone, role: 'admin', code: '123456' }).expect(400);
-      const { rowCount } = await pool.query('SELECT 1 FROM users WHERE phone = $1', [toE164(phone)]);
-      expect(rowCount).toBe(0);
-    });
-
-    it('a passenger code does not open the admin panel', async () => {
-      const phone = randomPhone();
-      await addAdmin(app, phone);
+      // A passenger token is refused by the admin API.
       const otp = requestOtpResponseSchema.parse(
         (await http().post('/auth/otp/request').send({ phone, role: 'passenger' }).expect(200)).body,
       );
-      const bad = await http().post('/auth/otp/verify').send({ phone, role: 'admin', code: otp.devCode }).expect(400);
-      expect(bad.body.code).toBe('invalid_code');
-      // And a passenger token is refused by the admin API.
       const session = authSessionSchema.parse(
         (await http().post('/auth/otp/verify').send({ phone, role: 'passenger', code: otp.devCode }).expect(200)).body,
       );
@@ -74,18 +73,21 @@ describe('Admin panel API (e2e)', () => {
       expect(res.body.code).toBe('not_admin');
     });
 
-    it('disabling an admin locks them out at once, even with a valid token', async () => {
+    it('a changed password signs the admin out at once, even with a valid token', async () => {
       const admin = await signInAdmin(app);
       await http().get('/admin/stats').set(admin.auth).expect(200);
-      await pool.query('UPDATE admins SET disabled_at = now() WHERE user_id = $1', [admin.id]);
+      // As if ADMIN_PASSWORD changed since this sign-in.
+      await pool.query(`UPDATE admins SET login_fingerprint = 'old' WHERE user_id = $1`, [admin.id]);
       expect((await http().get('/admin/stats').set(admin.auth).expect(403)).body.code).toBe('not_admin');
+      const again = await signInAdmin(app);
+      await http().get('/admin/stats').set(again.auth).expect(200);
     });
   });
 
   describe('data', () => {
     let admin: Awaited<ReturnType<typeof signInAdmin>>;
     beforeAll(async () => {
-      admin = await signInAdmin(app, 'Ops Admin');
+      admin = await signInAdmin(app);
     });
 
     it('shows dashboard numbers', async () => {

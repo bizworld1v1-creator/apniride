@@ -104,7 +104,9 @@ export default function OnboardingScreen() {
       {canEdit ? (
         <>
           <View style={authStyles.gap} />
-          {!data.readyToSubmit ? <Text style={[pageStyles.muted, styles.center]}>{t('driver.onboarding.submitHint')}</Text> : null}
+          {details && !data.readyToSubmit ? (
+            <Text style={[pageStyles.muted, styles.center]}>{t('driver.onboarding.submitHint')}</Text>
+          ) : null}
           <FieldError message={submit.isError ? errorMessage(t, submit.error) : null} />
           <View style={authStyles.gap} />
           <Button
@@ -112,7 +114,6 @@ export default function OnboardingScreen() {
             label={t('driver.onboarding.submit')}
             onPress={() => submit.mutate()}
             loading={submit.isPending}
-            disabled={!data.readyToSubmit}
           />
         </>
       ) : null}

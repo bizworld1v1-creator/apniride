@@ -9,7 +9,6 @@ import {
   type CityCode,
   cityCodeSchema,
   fareRateBodySchema,
-  maskPhone,
   type RideStatus,
   type VehicleType,
   vehicleTypeSchema,
@@ -118,12 +117,12 @@ export class AdminOpsService {
   ) {}
 
   async me(adminId: string): Promise<AdminMe> {
-    const { rows } = await this.pool.query<{ name: string | null; phone: string }>(
-      'SELECT name, phone FROM users WHERE id = $1',
+    const { rows } = await this.pool.query<{ name: string | null; username: string }>(
+      'SELECT u.name, a.username FROM users u JOIN admins a ON a.user_id = u.id WHERE u.id = $1',
       [adminId],
     );
     const row = rows[0]!;
-    return { id: adminId, name: row.name, phoneMasked: maskPhone(row.phone) };
+    return { id: adminId, name: row.name, username: row.username };
   }
 
   async stats(): Promise<AdminStats> {
@@ -220,9 +219,10 @@ export class AdminOpsService {
         response: AdminRideDetail['offers'][number]['response'];
         responded_at: Date | null;
         pickup_distance_km: number;
+        bid_fare: number | null;
       }>(
         `SELECT o.driver_id, u.name, o.offered_at, o.response, o.responded_at,
-                o.pickup_distance_km::float8 AS pickup_distance_km
+                o.pickup_distance_km::float8 AS pickup_distance_km, o.bid_fare
            FROM ride_offers o JOIN users u ON u.id = o.driver_id
           WHERE o.ride_id = $1 ORDER BY o.offered_at`,
         [id],
@@ -248,6 +248,7 @@ export class AdminOpsService {
         response: o.response,
         respondedAt: iso(o.responded_at),
         pickupDistanceKm: o.pickup_distance_km,
+        bidFare: o.bid_fare,
       })),
     };
   }

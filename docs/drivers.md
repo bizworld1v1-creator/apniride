@@ -51,7 +51,9 @@ resubmit. When an admin acts, the app (in driver mode) gets a `driver:reviewed` 
   uploads on its own and is retried on network errors, so a weak connection only repeats one photo.
 - The server accepts only real JPEG / PNG files (checked by their first bytes, not the name), up to 5 MB.
 - Uploading again replaces the photo. Photos need the details first (`details_required`).
-- `POST /driver/onboarding/submit` → `pending`. Fails with `documents_missing` / `details_required`. Repeating it
+- `POST /driver/onboarding/submit` → `pending`. Needs the details (`details_required`) but **not** the photos
+  (owner decision 2026-11-07): the app shows a hint that photos are missing, and the admin panel lists the
+  missing ones in red on the driver's page; the admin approves anyway or rejects and asks for them. Repeating it
   while pending is fine. After submitting, edits fail with `application_locked`.
 
 ## Storage and privacy

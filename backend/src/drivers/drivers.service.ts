@@ -150,6 +150,13 @@ export class DriversService {
     await compareAndDelete(this.redis, driverKeys.offer(driverId), rideId);
   }
 
+  /** Keeps the driver held for this ride a little longer (after they bid, while the passenger chooses). */
+  async extendOffer(driverId: string, rideId: string, ttlSeconds: number): Promise<void> {
+    if ((await this.redis.get(driverKeys.offer(driverId))) === rideId) {
+      await this.redis.expire(driverKeys.offer(driverId), ttlSeconds);
+    }
+  }
+
   async currentOfferRideId(driverId: string): Promise<string | null> {
     return this.redis.get(driverKeys.offer(driverId));
   }

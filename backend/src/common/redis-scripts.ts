@@ -12,6 +12,21 @@ export async function compareAndDelete(redis: Redis, key: string, expected: stri
   return (await redis.eval(COMPARE_AND_DELETE, 1, key, expected)) === 1;
 }
 
+const COMPARE_AND_SET = `
+if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('set', KEYS[1], ARGV[2], 'EX', ARGV[3]) and 1 end
+return 0`;
+
+/** Sets `key` to `value` (with a new TTL) only if it still holds `expected`. Returns true if this call changed it. */
+export async function compareAndSet(
+  redis: Redis,
+  key: string,
+  expected: string,
+  value: string,
+  ttlSeconds: number,
+): Promise<boolean> {
+  return (await redis.eval(COMPARE_AND_SET, 1, key, expected, value, ttlSeconds)) === 1;
+}
+
 /** Splits a redis:// URL into the options BullMQ wants (it manages its own connections). */
 export function bullConnection(redisUrl: string) {
   const url = new URL(redisUrl);

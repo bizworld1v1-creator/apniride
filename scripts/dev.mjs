@@ -60,7 +60,7 @@ console.log(`
    Backend      http://${shown}:3000/health   (open it on the phone to check it can reach the laptop)
    Mobile app   scan the QR code in the "@apniride/mobile" output with Expo Go,
                 or in Expo Go → "Enter URL manually": exp://${shown}:8081
-   Admin panel  http://localhost:3001
+   Admin panel  http://localhost:3001   (ADMIN_USERNAME / ADMIN_PASSWORD in backend/.env)
 
    Stop everything with Ctrl + C. (The database keeps running; pnpm db:down stops it.)
    Wrong IP? Set it yourself: $env:REACT_NATIVE_PACKAGER_HOSTNAME="192.168.x.x"; pnpm dev

@@ -89,7 +89,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Feature | Where | Notes |
 | --- | --- | --- |
 | Monorepo, docker-compose, `/health` | root, `backend/src/health` | Postgres + PostGIS, Redis |
-| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log, 0006 profile photo + account deletion + saved places + history indexes |
+| SQL migrations | `backend/migrations`, `pnpm db:migrate` | 0001 users/sessions, 0002 fare_rates, 0003 drivers/rides/ride_offers, 0004 driver onboarding, 0005 admins + audit log, 0006 profile photo + account deletion + saved places + history indexes, 0007 bids, 0008 admin login |
 | Phone OTP sign-in | `backend/src/auth`, `apps/mobile/src/app/welcome, sign-in, complete-profile` | Dev SMS only (code shown in app + server log). See docs/auth.md |
 | Fixed fare estimate (bike + car AC) | `backend/src/fares`, passenger `FareScreen`, `lib/fare.ts` | **Lahore rates are placeholders, so the owner must set the real ones.** See docs/fares.md |
 | Booking + dispatch (chunk 1 of rides) | `backend/src/rides`, `backend/src/drivers`, `backend/src/realtime` | Driver online → nearest driver gets a 15 s offer → accept → arrived → start → complete; cancel by either side; Socket.IO + BullMQ. See docs/rides.md |
@@ -99,7 +99,7 @@ docker-compose.yml PostgreSQL + PostGIS, Redis
 | Live tracking + ETA (chunk 2 of rides) | `backend/src/drivers/tracking.service.ts`, passenger `VehicleMarker`, `lib/driver-position.ts` | Driver position forwarded only to that ride's passenger; ETA to pickup, then to destination; "last updated" when stale |
 | Driver onboarding + approval | `backend/src/drivers/onboarding.*`, `backend/src/admin`, `backend/src/storage`, `apps/mobile/src/app/onboarding*.tsx`, `DocumentRow`, `DriverStatusCard` | Gender, CNIC (one account per CNIC), licence, vehicle + 6 required photos (police certificate optional). incomplete → pending → approved / rejected (reason, fix, resubmit) / suspended. Reviewed in the admin panel. `DRIVER_AUTO_APPROVE` removed. See docs/drivers.md |
 | Vehicle markers + smooth tracking | `apps/mobile/src/components/VehicleMarker.tsx`, `design/vehicles`, `packages/shared/src/tracking.ts`, `backend/src/drivers/nearby-drivers.*` | Top-down car / bike images that glide natively and turn with the heading; nearby drivers on the passenger map before booking (privacy-safe); driver sees own vehicle + ETA. See docs/rides.md |
-| Admin panel | `apps/admin`, `backend/src/admin`, `pnpm admins` | Phone-OTP sign-in for numbers on the `admins` list only; tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
+| Admin panel | `apps/admin`, `backend/src/admin`, `backend/src/auth/admin-login.service.ts` | One admin: username + password from `backend/.env` (`ADMIN_USERNAME` / `ADMIN_PASSWORD`, no commands, no OTP; changing the password signs the admin out; 10 wrong tries per IP / 15 min); tokens in httpOnly cookies on the Next.js server. Dashboard, drivers (photos, approve/reject/suspend), rides (detail + offers), fare rates (with example fares). Audit log of every change. English only. See docs/admin.md |
 | Unified theme | `packages/shared/src/theme.ts`, `apps/mobile/src/lib/theme.ts`, admin `layout.tsx` + `globals.css` | One file for every colour, font size/weight, spacing step (`space[n]` = n × 4 px), corner, shadow, border, opacity and tap size (admin gets CSS variables). Brand: mobile app royal blue + yellow accent (both modes, since 2026-11-07), admin amber. See docs/theme.md |
 | One app, two modes (like inDrive) | `apps/mobile` (`app/index.tsx`, `lib/mode.ts`, `ModeSwitch`, `RealtimeBridge`), `backend/src/auth` (`switch-role`) | `apps/passenger` + `apps/driver` merged into `apps/mobile` (`pnpm mobile`, package `pk.apniride.app`). "Driver mode" / "Passenger mode" button on the home card swaps the session without a new OTP; refused while online (`go_offline_first`) or with an active ride (`active_ride_exists`). Signs in to the last used mode. Driver texts under `driver.*` in i18n. A full ride test now needs two devices. See docs/auth.md |
 | Side menu (like inDrive) | `apps/mobile/src/components/SideMenu.tsx`, `app/history/*`, `app/places/*`, `app/profile.tsx`, `app/settings.tsx`, `lib/account.ts`, `lib/language.ts`, `backend/src/users`, `backend/src/rides/history.service.ts` | ☰ on the home card: ride history (20 per page; driver mode adds cash today / 7 days / all time), saved places (Home / Work / up to 20, one-tap destinations when booking), profile (photo, name, delete account), settings (language incl. RTL after restart, help, 15 / 1122), mode switch, sign out (blocked while online / on a ride). No addresses (no geocoding). See docs/account.md |
@@ -183,7 +183,7 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
 - No addresses anywhere (no geocoding API): saved places and ride history show pins and user-given names.
 - The profile photo is only shown to the user themself (not yet to the other person on a ride).
 - Driver cancellations / declines have no penalty yet.
-- Admin panel: no roles (every admin can do everything), English only, admins added only by `pnpm admins`.
+- Admin panel: one admin only (username + password in `backend/.env`), no roles, English only.
 - Driver documents are on local disk (`backend/uploads/`); production with several servers needs S3-compatible
   storage behind `FileStorage`.
 - Approved drivers can't change their vehicle in the app (needs a new review). Licence expiry is only checked at sign-up.
@@ -197,5 +197,5 @@ Owner's rule (2026-11-05): **build the free things now; anything that costs mone
 - Dev: **`pnpm dev`** runs everything (database, migrations, backend, app, admin; finds the Wi-Fi IP itself).
   Single parts: `pnpm backend`, `pnpm mobile`, `pnpm admin`. The laptop's LAN IP was `192.168.100.6`.
 - `backend/.env` has the dev-only flag `OTP_DEV_ECHO=true` (refused when `NODE_ENV=production`).
-- Admin panel: `pnpm admins add <phone> "<name>"` once, then `pnpm admin` → http://localhost:3001.
-- The e2e tests share the dev database; they remove the test admins they create (`removeTestAdmins`).
+- Admin panel: http://localhost:3001 (part of `pnpm dev`), sign in with `ADMIN_USERNAME` / `ADMIN_PASSWORD` from `backend/.env`.
+- The e2e tests share the dev database; they use their own admin login (`e2e-admin`, set in `vitest.config.e2e.ts`).

@@ -213,7 +213,10 @@ export const driverOnboardingSchema = z.object({
   documents: z.array(driverDocumentSchema),
   /** Required documents not uploaded yet. */
   missingDocuments: z.array(driverDocumentTypeSchema),
-  /** True when details are saved and every required document is uploaded. */
+  /**
+   * True when details are saved and every required document is uploaded. Only a hint: the application can be
+   * sent once details are saved, even with photos missing (the admin decides).
+   */
   readyToSubmit: z.boolean(),
   canEdit: z.boolean(),
   /** Why the application was rejected or the account suspended (shown to the driver). */

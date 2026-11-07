@@ -20,7 +20,7 @@ import { PG_POOL } from '../src/database/database.module.js';
 import { setupApp } from '../src/setup-app.js';
 
 // Needs `pnpm db:up`. UPLOAD_DIR comes from vitest.config.e2e.ts.
-import { removeTestAdmins, signInAdmin } from './admin-helpers.js';
+import { signInAdmin } from './admin-helpers.js';
 // Raiwind, like the rides tests: far from where a real driver tests the app.
 const LOCATION = { latitude: 31.33, longitude: 74.25 };
 /** Only the first bytes matter: the server checks the JPEG signature. */
@@ -57,7 +57,6 @@ describe('Driver onboarding and admin review (e2e)', () => {
   });
 
   afterAll(async () => {
-    if (app) await removeTestAdmins(app);
     for (const s of sockets) s.disconnect();
     await app?.close();
   });
@@ -132,9 +131,9 @@ describe('Driver onboarding and admin review (e2e)', () => {
     expect(tooBig.body.code).toBe('file_too_large');
     await http().put('/driver/onboarding/documents/passport').set(d.auth).attach('file', JPEG, 'x.jpg').expect(400);
 
-    // Submitting with photos missing says which.
-    const early = await http().post('/driver/onboarding/submit').set(d.auth).expect(409);
-    expect(early.body.code).toBe('documents_missing');
+    // Photos missing don't block sending: the admin sees which and decides.
+    const early = await http().post('/driver/onboarding/submit').set(d.auth).expect(200);
+    expect(early.body).toMatchObject({ status: 'pending', readyToSubmit: false, missingDocuments: REQUIRED_DRIVER_DOCUMENTS });
   });
 
   it('allows one driver account per CNIC', async () => {
@@ -211,7 +210,7 @@ describe('Driver onboarding and admin review (e2e)', () => {
     // Audit trail: who did it and why.
     expect(rejected.body.history[0]).toMatchObject({
       action: 'driver.reject',
-      adminName: 'Test Admin',
+      adminName: 'Admin',
       details: { reason: 'CNIC photo is blurry' },
     });
     expect(await event).toEqual({ status: 'rejected' });

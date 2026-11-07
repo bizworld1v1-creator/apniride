@@ -22,7 +22,7 @@
     "typecheck": "tsc --noEmit",
     "dev": "nest start --watch",
     "migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
-    "admins": "node --env-file-if-exists=.env scripts/admins.mjs"
+    "dummy-driver": "node --env-file-if-exists=.env scripts/dummy-driver.mjs"
   },
   "dependencies": {
     "@apniride/shared": "workspace:*",

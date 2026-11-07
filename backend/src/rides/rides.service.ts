@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import type { BookRideBody, DriverCurrentResponse, DriverPosition, Ride, RideStatus } from '@apniride/shared';
+import type { BookRideBody, DriverCurrentResponse, DriverPosition, Ride, RideBids, RideStatus } from '@apniride/shared';
 import { offerRange } from '@apniride/shared';
 import { AppException } from '../common/app-exception.js';
 import { DriversService } from '../drivers/drivers.service.js';
@@ -95,6 +95,20 @@ export class RidesService {
     return this.tracking.lastPosition(rideId, ride.driverId);
   }
 
+  /** Drivers' open bids on the passenger's searching ride (offers deck). */
+  async bids(passengerId: string, rideId: string): Promise<RideBids> {
+    const ride = await this.rides.find(rideId);
+    if (!ride || ride.passengerId !== passengerId) throw notFound();
+    return this.dispatch.bidsFor(ride);
+  }
+
+  /** The passenger chooses a driver's bid (like inDrive). */
+  async choose(passengerId: string, rideId: string, bidId: string): Promise<Ride> {
+    const ride = await this.rides.find(rideId);
+    if (!ride || ride.passengerId !== passengerId) throw notFound();
+    return this.dispatch.choose(ride, bidId);
+  }
+
   async cancelByPassenger(passengerId: string, rideId: string): Promise<Ride> {
     const before = await this.rides.find(rideId);
     if (!before || before.passengerId !== passengerId) throw notFound();
@@ -106,7 +120,7 @@ export class RidesService {
     });
     if (!ride) throw invalidState();
 
-    await this.dispatch.withdrawOffer(rideId);
+    await this.dispatch.withdrawAll(rideId);
     await this.tracking.stop(rideId);
     if (before.driverId) await this.drivers.clearBusy(before.driverId, rideId);
     this.dispatch.broadcast(ride, { toDriverId: before.driverId });

@@ -115,7 +115,7 @@ export class UsersService {
     await assertNotBusy(this.pool, this.redis, userId);
     const isAdmin = await this.pool.query('SELECT 1 FROM admins WHERE user_id = $1', [userId]);
     if (isAdmin.rowCount) {
-      throw new AppException(HttpStatus.FORBIDDEN, 'wrong_app', 'Admins are removed with pnpm admins, not in the app');
+      throw new AppException(HttpStatus.FORBIDDEN, 'wrong_app', 'The admin account is not deleted in the app');
     }
 
     const client = await this.pool.connect();

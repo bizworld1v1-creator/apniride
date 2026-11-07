@@ -18,7 +18,8 @@ import { rideStatusSchema } from './rides';
 export const adminMeSchema = z.object({
   id: z.string().uuid(),
   name: z.string().nullable(),
-  phoneMasked: z.string(),
+  /** ADMIN_USERNAME. */
+  username: z.string(),
 });
 export type AdminMe = z.infer<typeof adminMeSchema>;
 
@@ -117,9 +118,11 @@ export const adminRideDetailSchema = adminRideSummarySchema.extend({
       driverId: z.string().uuid(),
       driverName: z.string().nullable(),
       offeredAt: z.string(),
-      response: z.enum(['accepted', 'declined', 'expired', 'cancelled']).nullable(),
+      response: z.enum(['accepted', 'declined', 'expired', 'cancelled', 'bid_expired', 'not_chosen']).nullable(),
       respondedAt: z.string().nullable(),
       pickupDistanceKm: z.number(),
+      /** What the driver bid (the passenger's price or a counter-offer); null if they never bid. */
+      bidFare: z.number().int().nullable(),
     }),
   ),
 });

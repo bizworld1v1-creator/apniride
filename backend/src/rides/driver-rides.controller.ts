@@ -1,8 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post, Query, UseGuards } from '@nestjs/common';
 import {
+  type DriverBidBody,
+  driverBidBodySchema,
   type DriverCurrentResponse,
   type DriverEarnings,
   type Ride,
+  type RideOffer,
   type RideHistoryPage,
   rideHistoryQuerySchema,
 } from '@apniride/shared';
@@ -50,11 +53,19 @@ export class DriverRidesController {
     return this.rideHistory.earnings(me.userId);
   }
 
-  @Post('rides/:id/accept')
+  /**
+   * Answer a request: fare = the passenger's price ("accept") or one of `counterOffers(price)`. The passenger then
+   * chooses among the drivers who answered. 410 offer_expired if the request is gone.
+   */
+  @Post('rides/:id/bid')
   @HttpCode(HttpStatus.OK)
-  accept(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string): Promise<Ride> {
+  bid(
+    @CurrentUser() me: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(driverBidBodySchema)) body: DriverBidBody,
+  ): Promise<RideOffer> {
     assertRole(me, 'driver');
-    return this.dispatch.accept(me.userId, id);
+    return this.dispatch.bid(me.userId, id, body.fare);
   }
 
   @Post('rides/:id/decline')

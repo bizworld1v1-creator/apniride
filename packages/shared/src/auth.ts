@@ -56,17 +56,21 @@ export const pkMobileSchema = z
 export const OTP_LENGTH = 6;
 
 /**
- * Which app the person is signing in to. One phone number can be several.
- * "admin" only works for numbers an existing admin added (`pnpm admins add`); nobody can sign up as one.
+ * The role of a session. One phone number can be a passenger and a driver.
+ * "admin" is the admin panel, signed in with username + password (POST /auth/admin/login), never with OTP.
  */
 export const userRoleSchema = z.enum(['passenger', 'driver', 'admin']);
 export type UserRole = z.infer<typeof userRoleSchema>;
+
+/** The two modes of the one mobile app. One account can use both (like inDrive's "Driver mode"). */
+export const appModeSchema = z.enum(['passenger', 'driver']);
+export type AppMode = z.infer<typeof appModeSchema>;
 
 export const otpCodeSchema = z.string().regex(new RegExp(`^\\d{${OTP_LENGTH}}$`), 'invalid_code');
 
 export const requestOtpBodySchema = z.object({
   phone: pkMobileSchema,
-  role: userRoleSchema,
+  role: appModeSchema,
 });
 export type RequestOtpBody = z.input<typeof requestOtpBodySchema>;
 
@@ -82,16 +86,23 @@ export type RequestOtpResponse = z.infer<typeof requestOtpResponseSchema>;
 
 export const verifyOtpBodySchema = z.object({
   phone: pkMobileSchema,
-  role: userRoleSchema,
+  role: appModeSchema,
   code: otpCodeSchema,
 });
 export type VerifyOtpBody = z.input<typeof verifyOtpBodySchema>;
+
+/** The admin panel's sign-in: ADMIN_USERNAME + ADMIN_PASSWORD from backend/.env. */
+export const adminLoginBodySchema = z.object({
+  username: z.string().trim().min(1, 'required').max(64),
+  password: z.string().min(1, 'required').max(200),
+});
+export type AdminLoginBody = z.input<typeof adminLoginBodySchema>;
 
 export const userSchema = z.object({
   id: z.string().uuid(),
   role: userRoleSchema,
   name: z.string().nullable(),
-  /** Masked – the full number is never sent back to apps. */
+  /** Masked – the full number is never sent back to apps. Empty for the admin (no phone). */
   phoneMasked: z.string(),
   /** When the profile photo last changed (null / missing: no photo). Use it to bust the image cache. */
   photoUpdatedAt: z.string().nullable().optional(),
@@ -115,10 +126,6 @@ export type AuthSession = z.infer<typeof authSessionSchema>;
 
 export const refreshBodySchema = z.object({ refreshToken: z.string().min(20) });
 export type RefreshBody = z.infer<typeof refreshBodySchema>;
-
-/** The two modes of the one mobile app. One account can use both (like inDrive's "Driver mode"). */
-export const appModeSchema = z.enum(['passenger', 'driver']);
-export type AppMode = z.infer<typeof appModeSchema>;
 
 /**
  * Switches the signed-in phone to the other mode without a new OTP: the server ends this session and starts one
@@ -151,6 +158,10 @@ export const authErrorCodeSchema = z.enum([
   'go_offline_first',
   /** switch-role (or booking) while a ride is still going on. */
   'active_ride_exists',
+  /** Admin panel: wrong username or password. */
+  'invalid_login',
+  /** Admin panel: ADMIN_PASSWORD is not set on the server. */
+  'admin_login_off',
 ]);
 export type AuthErrorCode = z.infer<typeof authErrorCodeSchema>;
 

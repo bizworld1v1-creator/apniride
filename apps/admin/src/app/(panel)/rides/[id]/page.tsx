@@ -7,7 +7,9 @@ const RESPONSE_LABELS: Record<string, string> = {
   accepted: 'accepted',
   declined: 'declined',
   expired: 'did not answer',
-  cancelled: 'offer withdrawn',
+  cancelled: 'request withdrawn',
+  bid_expired: 'bid not chosen in time',
+  not_chosen: 'passenger chose another driver',
 };
 
 const mapLink = (p: { latitude: number; longitude: number }) =>
@@ -59,13 +61,13 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
           </table>
         </div>
       </section>
-      <h2>Offers to drivers</h2>
+      <h2>Requests to drivers</h2>
       {r.offers.length === 0 ? (
-        <p className="muted">No driver was offered this ride.</p>
+        <p className="muted">No driver was sent this ride.</p>
       ) : (
         <table>
           <thead>
-            <tr><th>Offered</th><th>Driver</th><th>Distance to pickup</th><th>Answer</th></tr>
+            <tr><th>Sent</th><th>Driver</th><th>Distance to pickup</th><th>Bid</th><th>Answer</th></tr>
           </thead>
           <tbody>
             {r.offers.map((o) => (
@@ -73,6 +75,7 @@ export default async function RidePage({ params }: { params: Promise<{ id: strin
                 <td>{when(o.offeredAt)}</td>
                 <td><Link href={`/drivers/${o.driverId}`}>{o.driverName ?? '–'}</Link></td>
                 <td>{o.pickupDistanceKm} km</td>
+                <td>{o.bidFare === null ? '–' : `Rs ${o.bidFare.toLocaleString('en-PK')}`}</td>
                 <td>{o.response ? RESPONSE_LABELS[o.response] : 'waiting…'}</td>
               </tr>
             ))}
